@@ -25,15 +25,19 @@
 // oder, ohne Benutzung des Timer0 (PWM an Pin 5 und 6 funktioniert):
 // https://github.com/MicroBahner/NmraDcc/archive/Without-use-of-HW-timers.zip
 
+// ---------  gegebenenfalls anzupassende Konstante ( nicht über CV änderbar) --------------------
 // defines zum Einstellen der verwendeten Variante. Ist das jeweilige define aktiv, so wird diese
 // Variante erzeugt.
+#define VAR_ALLWAYSPOM       // PoM ist immer aktiv, keine automatische Addressvergabe. PoM-Adresse wird immer
+                        // aus dem Programmkonstanten geladen.
 //#define VAR_INIADDR     // Die Addressen und der Anschlusstyp werden bei jedem Programmstart initiiert
                         // und in die jeweiligen CV's geschrieben
-//#define VAR_INISERVO  // Die Servo-Impuse werden beim Programmstart sofort ausgegeben.
+#define VAR_INISERVO  // Die Servo-Impuse werden beim Programmstart sofort ausgegeben.
                         
-// ---------  gegebenenfalls anzupassende Konstante ( nicht über CV änderbar) --------------------
-#define DCC_DECODER_VERSION_ID 02
 #define DEBUG ;                  // Wenn dieser Wert gesetzt ist, werden Debug ausgaben auf dem ser. Monitor ausgegeben
+
+#define DCC_DECODER_VERSION_ID 02
+
 // Pin-Festlegungen
 const byte progPin = 0 ;    // CV-Programmierung nur möglich, wenn auf 0
 const byte isROCO = 0  ;    // wegen unterschiedlicher Weichenadressberechnung bei Roco (sonst = 0)
@@ -79,6 +83,8 @@ typedef struct {        // Definition der Struktur des decoderspezifischen CV-Bl
                       // DoppelspuleAuto: Einschaltzeit Ausgang 2 ( 10ms-Schritte )
                       // FBlinken:        Ausschaltphase des Blinkens ( 10ms Schritte )
         byte Par3;    // Servo: Speed
+        byte State;   // aktueller Status des Ausgangs (Ein/Aus)
+                      // Nach einem Neustart werden die Funktionsausgänge entsprechend eingestellt.
     } Fkt [WeichenZahl];
 } CvVar_t;
 
@@ -138,6 +144,11 @@ char dbgbuf[80];
 //###################### Ende der Definitionen ##############################
 //###########################################################################
 void setup() {
+    #ifdef VAR_ALLWAYSPOM
+    // Pom-Modus ist immer aktiv, Programmierschalter und LED werden nicht genutzt
+    progMode=PROGMODE;
+    #else
+    // PoM-Mode nur bei aktiviertem Programmierschalter
     pinMode( A4,OUTPUT);
     pinMode( modePin, OUTPUT );
     digitalWrite( modePin, LOW );
@@ -149,6 +160,7 @@ void setup() {
         progMode = NORMALMODE;
         
     delay( 1000 );
+    #endif
     
     #ifdef DEBUG
       pinMode( modePin, INPUT );
@@ -166,7 +178,9 @@ void setup() {
         CLR_PROGLED;
     } else {
         Dcc.init( MAN_ID_DIY, 15, FLAGS_DCC_ACCESSORY_DECODER, (uint8_t)((uint16_t) &CV->PomAddrLow) );
+        # ifndef VAR_ALLWAYSPOM
         SET_PROGLED;
+        #endif
     }
     
     // Wenn in initVal kein sinnvoller Wert steht wird alles initiiert.
@@ -186,16 +200,20 @@ void setup() {
             Dcc.setCV( (int) &CV->Fkt[i].Par1, iniServoGerade );
             Dcc.setCV( (int) &CV->Fkt[i].Par2, iniServoAbzw );
             Dcc.setCV( (int) &CV->Fkt[i].Par3, speed );
+            Dcc.setCV( (int) &CV->Fkt[i].State, 0 );
         }
         Dcc.setCV( (int) &CV->initVal, 0x55 );
     } //--- Ende Grundinitiierung ---------------------------------
 
     // Adresse der 1. Weiche aus Decoderaddresse berechnen
     weichenAddr = (Dcc.getAddr( )-1)*4 +1 +isROCO;
-    DB_PRINT( "BoardAdr: %d, weichenAddr: %d" ,Dcc.getAddr( ), weichenAddr );
+    DB_PRINT( "BoardAdr: %d, weichenAddr: %d PoM-Adr: %d "  ,
+                Dcc.getAddr( ), weichenAddr , Dcc.getCV( (int) &CV->PomAddrLow )+ 256*Dcc.getCV( (int) &CV->PomAddrHigh ));
     for ( byte i=0; i<WeichenZahl; i++ ) {
         // Funktionen initiieren
         byte autoOff = 0;
+        weicheIst[i] = Dcc.getCV( (int) &CV->Fkt[i].State );
+        weicheSoll[i] = weicheIst[i];
         switch ( Dcc.getCV(  (int) &CV->Fkt[i].Typ ) ) {
           case FSERVOAUTO:
             autoOff = 1;
@@ -203,6 +221,14 @@ void setup() {
             weicheS[i].attach( servoPins[i], autoOff );
             weicheS[i].setSpeed( Dcc.getCV(  (int) &CV->Fkt[i].Par3 ) );
             pinMode( relaisPins[i], OUTPUT );
+            #ifdef VAR_INISERVO
+            // Servowerte initiieren und ausgeben
+                if ( weicheSoll[i] == GERADE ) {
+                    weicheS[i].write( Dcc.getCV( (int) &CV->Fkt[i].Par1 ) );
+                } else {
+                    weicheS[i].write( Dcc.getCV( (int) &CV->Fkt[i].Par2 ) );
+                }
+            #endif
             break;
         }
     }
@@ -221,7 +247,11 @@ void loop() {
             if ( weicheIst[i] & MOVING ) {
                 // Weiche wird gerade ungestellt, Schaltpunkt Relais und Bewegungsende überwachen
                 if ( weicheS[i].moving() < 50 ) relaisOut[i] = weicheIst[i]& 0x1;
-                if ( weicheS[i].moving() == 0 ) weicheIst[i] &= 0x1; // Bewegung abgeschlossen, 'MOVING'-Bit löschen
+                if ( weicheS[i].moving() == 0 ) {
+                    // Bewegung abgeschlossen, 'MOVING'-Bit löschen und Lage in CV speichern
+                    weicheIst[i] &= 0x1; 
+                    Dcc.setCV( (int) &CV->Fkt[i].State, weicheIst[i] );
+                }
             } else if ( weicheSoll[i] != weicheIst[i] ) {
                 // Weiche muss umgestellt werden
                 DB_PRINT( "WeicheIx=%d stellen, Ist=%d,Soll=%d", i, weicheIst[i], weicheSoll[i] );
@@ -242,6 +272,7 @@ void loop() {
 
     if ( !AckImpuls.running() ) digitalWrite( ackPin, LOW );
 
+    #ifndef VAR_ALLWAYSPOM
     // Programmierled blinkt im Programmiermode nach dem Empfang einer Adresse
     if ( ! ledTimer.running() && progMode == PROGMODE) {
         ledTimer.setTime( 500 );
@@ -250,6 +281,7 @@ void loop() {
         else
             SET_PROGLED;
     }
+    #endif
 }
 //////////////////////////////////////////////////////////////
 // Unterprogramme, die von der DCC Library aufgerufen werden:
