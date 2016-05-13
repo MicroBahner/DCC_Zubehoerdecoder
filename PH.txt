@@ -1,0 +1,26 @@
+Funktionen des programmierbaren Zubehördecoders:
+
+Für 8 Zubehörartikel ( 2 Grundadressen )
+2 Ausgänge je Objekt
+Funktionen:
+1) Servo+Relais (für Weichen)
+2) Magnetartikel Standard (Ausschalten per Befehl)
+3) Magnetartikel auto (Pulsausgänge)
+4) statisch ein/aus
+5) Blinker ein/aus
+
+Funktionen sind per CV einstellbar, bei Servo auch die Endlagen
+Adressen per CV einstellbar
+
+Pinzuordnung:
+DP2     DCC-Signal
+DP4     ACK-Signal
+
+DP3,9   Adr0
+DP5,6   Adr1
+DP10,11 Adr2
+DP7,8   Adr3
+DP12,13 Adr4
+A0,1    Adr5
+A2,3    Adr6
+A4,5    Adr7 + Prog-Pin(Für Adresszuordnung)
