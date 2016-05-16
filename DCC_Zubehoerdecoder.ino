@@ -28,7 +28,7 @@
 // ---------  gegebenenfalls anzupassende Konstante ( nicht über CV änderbar) --------------------
 // defines zum Einstellen der verwendeten Variante. Ist das jeweilige define aktiv, so wird diese
 // Variante erzeugt.
-#define VAR_ALLWAYSPOM       // PoM ist immer aktiv, keine automatische Addressvergabe. PoM-Adresse wird immer
+//#define VAR_ALLWAYSPOM       // PoM ist immer aktiv, keine automatische Addressvergabe. PoM-Adresse wird immer
                         // aus dem Programmkonstanten geladen.
 //#define VAR_INIADDR     // Die Addressen und der Anschlusstyp werden bei jedem Programmstart initiiert
                         // und in die jeweiligen CV's geschrieben
@@ -222,12 +222,15 @@ void setup() {
             weicheS[i].setSpeed( Dcc.getCV(  (int) &CV->Fkt[i].Par3 ) );
             pinMode( relaisPins[i], OUTPUT );
             #ifdef VAR_INISERVO
-            // Servowerte initiieren und ausgeben
+            // Servowerte und Relaisausgang initiieren und ausgeben
                 if ( weicheSoll[i] == GERADE ) {
                     weicheS[i].write( Dcc.getCV( (int) &CV->Fkt[i].Par1 ) );
                 } else {
                     weicheS[i].write( Dcc.getCV( (int) &CV->Fkt[i].Par2 ) );
                 }
+                weicheIst[i] = weicheSoll[i];
+                relaisOut[i] = weicheIst[i];
+                digitalWrite( relaisPins[i], relaisOut[i] );
             #endif
             break;
         }
