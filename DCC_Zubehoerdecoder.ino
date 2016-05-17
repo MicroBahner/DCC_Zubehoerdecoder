@@ -5,9 +5,10 @@
  *   Version 0.1 - erstmal nur Servos
  *   Version 0.2 - alternativ auch ohne Programmierschalter nutzbar. PoM ist dann immer aktiv,
  *                  Addressen nur über den Sketch änderbar.
+ *                  Adressierung als Board- oder Outputadressierung je nach CV29:6 (1=Outputaddr.)
  *  ----------------------------------------
  * Eigenschaften:
- * Bis zu 8 (aufeinaderfolgende) Zubehöradressen ansteuerbar
+ * Bis zu 8 (aufeinanderfolgende) Zubehöradressen ansteuerbar
  * 1. Adresse per Programmierung einstellbar
  * 
  * 2 Ausgänge / Zubehöradresse
@@ -37,7 +38,7 @@
 #define DEBUG ;                  // Wenn dieser Wert gesetzt ist, werden Debug ausgaben auf dem ser. Monitor ausgegeben
 
 #define DCC_DECODER_VERSION_ID 02
-
+#
 // Pin-Festlegungen
 const byte progPin = 0 ;    // CV-Programmierung nur möglich, wenn auf 0
 const byte isROCO = 0  ;    // wegen unterschiedlicher Weichenadressberechnung bei Roco (sonst = 0)
@@ -101,10 +102,11 @@ CVPair FactoryDefaultCVs [] =
   {CV_ACCESSORY_DECODER_ADDRESS_MSB, DccAddr/256},
   {CV_VERSION_ID, DCC_DECODER_VERSION_ID},
   {CV_MANUFACTURER_ID, MAN_ID_DIY},
-  {CV_29_CONFIG, 0b11000000},
+  {CV_29_CONFIG, CV29_ACCESSORY_DECODER | CV29_OUTPUT_ADDRESS_MODE},
 };
 
 // ----------------------- Variable ---------------------------------------------------
+byte isOutputAddr;              // Flag ob Output-Adressing
 word weichenAddr;               // Addresse der 1. Weiche (des 8er Blocks)
 byte weicheSoll[WeichenZahl];  // Solllage der Weichen
 byte weicheIst[WeichenZahl];   // Istlagen der Weichen
@@ -205,10 +207,16 @@ void setup() {
         Dcc.setCV( (int) &CV->initVal, 0x55 );
     } //--- Ende Grundinitiierung ---------------------------------
 
+    // Adressmodus aus CV29 auslesen
+    isOutputAddr = Dcc.getCV( CV_29_CONFIG ) & CV29_OUTPUT_ADDRESS_MODE;
     // Adresse der 1. Weiche aus Decoderaddresse berechnen
-    weichenAddr = (Dcc.getAddr( )-1)*4 +1 +isROCO;
-    DB_PRINT( "BoardAdr: %d, weichenAddr: %d PoM-Adr: %d "  ,
-                Dcc.getAddr( ), weichenAddr , Dcc.getCV( (int) &CV->PomAddrLow )+ 256*Dcc.getCV( (int) &CV->PomAddrHigh ));
+    if ( isOutputAddr ) 
+        weichenAddr = Dcc.getAddr( );
+    else
+        weichenAddr = (Dcc.getAddr( )-1)*4 +1 +isROCO;
+        
+    DBprintCV(); // im Debug-Mode alle CV-Werte ausgeben
+    
     for ( byte i=0; i<WeichenZahl; i++ ) {
         // Funktionen initiieren
         byte autoOff = 0;
@@ -241,7 +249,10 @@ void loop() {
     if (digitalRead( A4)) digitalWrite(A4,LOW); else digitalWrite(A4,HIGH); // Test Zykluszeit
     
     Dcc.process(); // Hier werden die empfangenen Telegramme analysiert und der Sollwert gesetzt
-
+    #ifdef DEBUG
+    // Merker CV für CV-Ausgabe rücksetzen
+    Dcc.setCV( (int) &CV->Fkt[WeichenZahl].Typ , 0xff );
+    #endif
     // Servos und Relais ansteuern
     for ( byte i=0; i<WeichenZahl; i++ ) {
         switch ( Dcc.getCV( (int) &CV->Fkt[i].Typ ) ) {
@@ -296,9 +307,15 @@ void notifyDccAccState( uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, u
     // Im Programmiermodus bestimmt das erste empfangen Programm die erste Weichenadresse
     if ( progMode == ADDRMODE ) {
         // Adresse berechnen und speichern
-        Dcc.setCV( CV_ACCESSORY_DECODER_ADDRESS_LSB, BoardAddr%64 );
-        Dcc.setCV( CV_ACCESSORY_DECODER_ADDRESS_MSB, BoardAddr/64 );
-        weichenAddr = (Dcc.getAddr( )-1)*4 +1 +isROCO;
+        if (isOutputAddr ) {
+            weichenAddr = wAddr;
+            Dcc.setCV( CV_ACCESSORY_DECODER_ADDRESS_LSB, wAddr%256 );
+            Dcc.setCV( CV_ACCESSORY_DECODER_ADDRESS_MSB, wAddr/256 );
+        } else {
+            Dcc.setCV( CV_ACCESSORY_DECODER_ADDRESS_LSB, BoardAddr%64 );
+            Dcc.setCV( CV_ACCESSORY_DECODER_ADDRESS_MSB, BoardAddr/64 );
+            weichenAddr = (Dcc.getAddr( )-1)*4 +1 +isROCO;
+        }
         progMode = PROGMODE;
         DB_PRINT( "Neu: Boardaddr: %d, 1.Weichenaddr: %d", BoardAddr, weichenAddr );
     }
@@ -345,20 +362,62 @@ void notifyCVChange( uint16_t CvAddr, uint8_t Value ) {
             }
         }
     }
+    #ifdef DEBUG
+        // prüfen ob die CV-Adresse HINTER den Weichenadressen verändert wurde. Wenn ja,
+        // alle CV-Werte ausgeben und Wert wieder auf 0xff setzen
+        if ( CvAddr ==  (int) &CV->Fkt[WeichenZahl].Typ && Value !=0xff ) {
+            DBprintCV();
+        }
+        
+    #endif
 }    
 //-----------------------------------------------------
 void notifyCVResetFactoryDefault(void) {
     // Auf Standardwerte zurücksetzen. Hier wird nur ein Merker gesetzt, das eigentliche Rücksetzen findet
     // beim nächsten Neustart statt.
     Dcc.setCV( (int) &CV->initVal, 255 );
+    DBprintCV();
 }
 //------------------------------------------------------
 #ifdef DEBUG
 void notifyDccReset( uint8_t hardReset ) {
-    DB_PRINT("Reset empfangen");
+    if ( hardReset > 0 ) DB_PRINT("Reset empfangen, Value: %d", hardReset);
+    // wird bei CV-Auslesen gesendet
 }
 #endif
 //--------------------------------------------------------
 void softReset(void){
 ;asm volatile ("  jmp 0");
 }
+#ifdef DEBUG
+void DBprintCV(void) {
+    // für Debug-Zwecke den gesamten genutzten CV-Speicher ausgeben
+    // Standard-Adressen
+    DB_PRINT ("--------- Debug-Ausgabe CV-Werte ---------" );
+    DB_PRINT ("Version: %d, ManufactId: %d", Dcc.getCV( CV_VERSION_ID ), Dcc.getCV( CV_MANUFACTURER_ID ) );
+    DB_PRINT ("Konfig   (CV29)  : 0x%X", Dcc.getCV( CV_29_CONFIG ) );
+    DB_PRINT ("Adresse: (CV1/9) : %d", Dcc.getCV( CV_ACCESSORY_DECODER_ADDRESS_LSB )+Dcc.getCV( CV_ACCESSORY_DECODER_ADDRESS_MSB )*256);
+    DB_PRINT ("1.Weichenaddresse: %d", weichenAddr );
+    
+    // Decoder-Konfiguration global
+    DB_PRINT ( "Initierungswert: 0x%x ", Dcc.getCV( (int) &CV->initVal ) );
+    DB_PRINT ( "PoM-Adresse    : %d"   , Dcc.getCV( (int) &CV->PomAddrLow) + 256* Dcc.getCV( (int) &CV->PomAddrHigh ) );
+    
+    // Output-Konfiguration
+    DB_PRINT( "Wadr | CV's  | Typ | Par1 | Par2 | Par3 | Status |");
+    for( byte i=0; i<WeichenZahl; i++ ) {
+        DB_PRINT( "%4d | %2d-%2d |%4d | %4d | %4d | %4d | %3d ", weichenAddr+i, &CV->Fkt[i].Typ,  &CV->Fkt[i].State,
+                                                                 Dcc.getCV( (int)  &CV->Fkt[i].Typ ),
+                                                                 Dcc.getCV( (int)  &CV->Fkt[i].Par1 ),
+                                                                 Dcc.getCV( (int)  &CV->Fkt[i].Par2 ),
+                                                                 Dcc.getCV( (int)  &CV->Fkt[i].Par3 ),
+                                                                 Dcc.getCV( (int)  &CV->Fkt[i].State ) );
+    }
+    
+}
+#else
+void DBprintCV(void) {
+    
+}
+#endif
+

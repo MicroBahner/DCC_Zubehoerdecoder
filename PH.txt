@@ -24,3 +24,19 @@ DP12,13 Adr4
 A0,1    Adr5
 A2,3    Adr6
 A4,5    Adr7 + Prog-Pin(Für Adresszuordnung)
+
+Konfigurationsmodi:
+Die Programmiergleis-Konfiguration ist immer möglich. Über das Programmiergleis können alle CV-Werte programmiert werden.
+
+Die PoM-Programmierung kann entweder per Schalter aktiviert werden, oder ist immer aktiv. Dies kann ebenfalls per CV eingestellt werden.
+Bei per Schalter aktivierbarer PoM-Programmierung wird im aktivierten Modus auch die Zubehöradresse aus dem ersten empfangenen Telegramm entnommen.
+
+CV47 bestimmt die Betriebsart des Decoders:
+0xff:   Initialer Start. Übernahme der Standardkonfiguration aus dem Source-Code
+        Basisadresse wird vom ersten empfangenen Telegramm übernommen.
+        Wird CV47 per CV-Programmierung auf 0xff gesetzt, so wird automatisch ein Reset
+        ausgeführt.
+        
+0x50:   Betrieb entspr. CV-Werten, PoM über Schalter, keine automatische Adresserkennung
+0x51:   Betrieb entspr. CV-Werten, PoM über Schalter, automatische Adresserkennung
+0x52:   Betrieb entspr. CV-Werten, PoM ist immer aktiv
