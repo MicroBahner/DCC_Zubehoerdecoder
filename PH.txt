@@ -4,10 +4,9 @@ Für 8 Zubehörartikel ( 2 Grundadressen )
 2 Ausgänge je Objekt
 Funktionen:
 1) Servo+Relais (für Weichen)
-2) Magnetartikel Standard (Ausschalten per Befehl)
-3) Magnetartikel auto (Pulsausgänge)
-4) statisch ein/aus
-5) Blinker ein/aus
+2) Magnetartikel auto (Pulsausgänge)
+3) statisch ein/aus
+4) Blinker ein/aus
 
 Funktionen sind per CV einstellbar, bei Servo auch die Endlagen
 Adressen per CV einstellbar
@@ -16,19 +15,10 @@ Pinzuordnung:
 DP2     DCC-Signal
 DP4     ACK-Signal
 
-DP3,9   Adr0
-DP5,6   Adr1
-DP10,11 Adr2
-DP7,8   Adr3
-DP12,13 Adr4
-A0,1    Adr5
-A2,3    Adr6
-A4,5    Adr7 + Prog-Pin(Für Adresszuordnung)
-
 Konfigurationsmodi:
 Die Programmiergleis-Konfiguration ist immer möglich. Über das Programmiergleis können alle CV-Werte programmiert werden.
 
-Die PoM-Programmierung kann entweder per Schalter aktiviert werden, oder ist immer aktiv. Dies kann nur per define eingestellt werden. Eine CV-Einstellung macht wenig Sinn, da dies auch HW-abhängig ist.
+Die PoM-Programmierung kann entweder per Schalter aktiviert werden, oder ist immer aktiv. Dies kann nur per #define eingestellt werden. Eine CV-Einstellung macht wenig Sinn, da dies auch HW-abhängig ist.
 Grundsätzlich werden alle HW-abhängigen Varianten per #define oder const eingestellt. Dazu gehört auch die Funktionalität an den einzelnen Anschlüssen.
 Alles andere kann per CV konfiguriert werden.
 
@@ -37,7 +27,7 @@ Bei per Schalter aktivierbarer PoM-Programmierung wird im aktivierten Modus auch
 CV47 bestimmt die Betriebsart des Decoders:
 0xff:   Initialer Start. Übernahme der Standardkonfiguration aus dem Source-Code
         Basisadresse wird vom ersten empfangenen Telegramm übernommen.
-        Wird CV47 per CV-Programmierung auf 0xff gesetzt, so wird automatisch ein Reset
+        Wird CV47 per CV-Programmierung verändert, so wird automatisch ein Reset
         ausgeführt.
 0x5?    CV-Werte werden als gültig erachtet. Bits 0..4 definieren den Betriebsmodus       
 Bit0:   automatische Adresserkennung wenn PoM über Schalter
