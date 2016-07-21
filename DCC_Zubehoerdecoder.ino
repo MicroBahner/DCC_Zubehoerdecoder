@@ -7,6 +7,9 @@
  *                  Addressen nur über den Sketch änderbar.
  *                  Adressierung als Board- oder Outputadressierung je nach CV29:6 (1=Outputaddr.)
  *                  Ansteuerung von Doppelspulenantrieben 
+ *   Version 0.2A   Einstellen der Servoendlagen per Drehencoder. Wegen der 2 Encodereingänge
+ *                  können maximal 6 Weichen angesteuert werden.
+ *                  Der Drehencoder bezieht sich immer auf die zuletzt gestellte Weiche.
  *  ----------------------------------------
  * Eigenschaften:
  * Bis zu 8 (aufeinanderfolgende) Zubehöradressen ansteuerbar
@@ -42,7 +45,7 @@
                             // 1; Decoder und PoM-Adress werden bei jedem Programmstart aus den Factory
                             //    defaults geladen
 
-//#define DEBUG ;             // Wenn dieser Wert gesetzt ist, werden Debug ausgaben auf dem ser. Monitor ausgegeben
+#define DEBUG ;             // Wenn dieser Wert gesetzt ist, werden Debug ausgaben auf dem ser. Monitor ausgegeben
 
 #
 // Pin-Festlegungen
@@ -53,8 +56,10 @@ const byte modePin      =   1;  // leuchtet im Programier(Pom) Modus. Da dies au
 #endif
 const byte dccPin       =   2;
 const byte ackPin       =   4;
-const byte out1Pins[]   =   {   3,   5,   9,   7,  12,  A0,  A2};  // output-pins der Funktionen
-const byte out2Pins[]   =   {  11,   6,  10,   8,  13,  A1,  A3};
+const byte encode1P     =   A2; // Eingang Drehencoder zur Justierung.
+const byte encode2P     =   A3;
+const byte out1Pins[]   =   {   3,   5,   9,   7,  12,  A0};  // output-pins der Funktionen
+const byte out2Pins[]   =   {  11,   6,  10,   8,  13,  A1};
 // Mögliche Funktionstypen je Ausgang. Derzeit sind nur die Servofunktionen implementiert
 #define FOFF        0 // Funktionsausgang abgeschaltet
 #define FSERVO      1 // Standardservoausgang (Impulse liegen dauerhaft an)
@@ -147,9 +152,24 @@ byte relaisOut[WeichenZahl];    // Ausgabewerte für die Relais ( 0/1, entsprich
 
 byte progMode;      // Merker ob Decoder im Programmiermodus
 #define NORMALMODE  0
-#define ADDRMODE    1   // Warte auf 1. Telgramm zur Bestimmung der ersten Weichenadresse
+#define ADDRMODE    1   // Warte auf 1. Telegramm zur Bestimmung der ersten Weichenadresse
 #define PROGMODE    2   // Adresse empfangen, POM-Programmierung möglich
 
+// -------- Encoderauswertung ----- Justierung der Servoendlage -----------------------------
+byte encoderState;
+int8_t encoderCount;
+#define IDLE    0   // Ruhezustand (keine Bewegung)
+#define UPCOUNT 1
+#define DOWNCOUNT 2
+#define ACTIVE  3   // 
+// Die zuletzt empfangene Weichenposition kann per Encoder justiert werden. 
+// Die Werte werden gespeichert, sobald eine ander Weichenposition empfangen wird.
+
+byte adjWix;       // Weichenindex, der z.Z. vom Encoder beeinflusst wird.
+byte adjPulse;      // per Encoder aktuell eingestellte Servoposition
+#define NO_ADJ 255    // Wert von adjPulse solange keine Änderung erfolgt ist
+
+//---- Library-Objekte ----
 Servo8 weicheS[WeichenZahl];
 EggTimer AckImpuls;
 EggTimer ledTimer;  // zum Blinken der Programmierled
@@ -181,7 +201,7 @@ void setup() {
         // alles initiieren mit den Defaultwerten
         // Wird über DCC ein 'factory-Reset' empfangen wird dieser Wert zurückgesetzt, was beim nächsten
         // Start ebenfalls zum initiieren führt.
-
+        //
         // Standard-CV's
         for ( byte i=0; i<(sizeof(FactoryDefaultCVs) / sizeof(CVPair)); i++ ) {
                 Dcc.setCV( FactoryDefaultCVs[i].CV, FactoryDefaultCVs[i].Value);
@@ -255,7 +275,10 @@ void setup() {
         SET_PROGLED;
         #endif
     }
-    
+
+    // Encoder-Init
+    IniEncoder();
+
     //--- Ende Grundinitiierung ---------------------------------
 
     setWeichenAddr();
@@ -294,6 +317,7 @@ void setup() {
 ////////////////////////////////////////////////////////////////
 void loop() {
     if (digitalRead( A4)) digitalWrite(A4,LOW); else digitalWrite(A4,HIGH); // Test Zykluszeit
+    getEncoder();    // Drehencoder auswerten und Servolage gegebenenfalls anpassen
     
     Dcc.process(); // Hier werden die empfangenen Telegramme analysiert und der Sollwert gesetzt
     
@@ -390,6 +414,7 @@ void loop() {
 // Die folgende Funktion wird von Dcc.process() aufgerufen, wenn ein Weichentelegramm empfangen wurde
 void notifyDccAccState( uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, uint8_t State ){
     // Weichenadresse berechnen
+    byte i;
     word wAddr = Addr+rocoOffs; // Roco zählt ab 0, alle anderen lassen die ersten 4 Weichenadressen frei
     // Im Programmiermodus bestimmt das erste empfangen Programm die erste Weichenadresse
     if ( progMode == ADDRMODE ) {
@@ -408,7 +433,7 @@ void notifyDccAccState( uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, u
     }
     // Testen ob eigene Weichenadresse
     //DB_PRINT( "DecAddr=%d, Weichenadresse: %d , Ausgang: %d, State: %d", BoardAddr, wAddr, OutputAddr, State );
-    for ( byte i = 0; i < WeichenZahl; i++ ) {
+    for ( i = 0; i < WeichenZahl; i++ ) {
         if (  wAddr == weichenAddr+i ) {
             // ist eigene Adresse, Sollwert setzen
             weicheSoll[i] =  OutputAddr & 0x1;
@@ -416,6 +441,7 @@ void notifyDccAccState( uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, u
             break; // Schleifendurchlauf abbrechen, es kann nur eine Weiche sein
         }
     }
+    ChkAdjEncode( i );
 }
 //---------------------------------------------------
 // wird aufgerufen, wenn die Zentrale ein CV ausliest. Es wird ein 60mA Stromimpuls erzeugt
@@ -486,6 +512,97 @@ void notifyDccReset( uint8_t hardReset ) {
 //--------------------------------------------------------
 
 /////////////////////////////////////////////////////////////////////////
+// Unterprogramme zur Servojustierung mit Drehencoder
+void IniEncoder( void ) {
+    // Encoder initiieren
+    pinMode( encode1P, INPUT_PULLUP );
+    pinMode( encode2P, INPUT_PULLUP );
+    encoderState = IDLE;
+    encoderCount  = 0;
+    adjWix = WeichenZahl;
+    adjPulse = NO_ADJ;
+}
+   
+void getEncoder( void ) {
+    // Encoder-Statemachine
+    switch ( encoderState ) {
+      case IDLE: // Grundstellung, beide Eingänge sind high
+        if ( digitalRead( encode1P ) == 0 ) encoderState = UPCOUNT;
+        if ( digitalRead( encode2P ) == 0 ) encoderState = DOWNCOUNT;
+        break;
+      case UPCOUNT:
+        if ( digitalRead( encode2P )== 0 ) {
+            // beide Eingänge aktiv, hochzählen
+            encoderCount++;
+            encoderState = ACTIVE;
+        } else if ( digitalRead( encode1P ) ) {
+            encoderState = IDLE;
+        }
+        break;
+      case DOWNCOUNT:
+        if ( digitalRead( encode1P )== 0 ) {
+            // beide Eingänge aktiv, runterzählen
+            encoderCount--;
+            encoderState = ACTIVE;
+        } else if ( digitalRead( encode2P ) ) {
+            encoderState = IDLE;
+        }
+        break;
+      case ACTIVE: // Warten bis Ruhelage
+        if ( digitalRead( encode2P ) && digitalRead( encode1P ) ) encoderState = IDLE;
+        break;
+    }
+    #ifdef DEBUG
+    // encoderzähler ausgeben
+    if ( encoderCount != 0 ) {
+        DB_PRINT( "Encoder: %d", encoderCount );        
+    }
+    #endif
+
+    if ( encoderCount != 0 && adjWix < WeichenZahl && !(weicheIst[adjWix] & MOVING ) ) {
+        // Drehencoder wurde bewegt, und es gibt eine aktuell zu justierende Weiche, die sich nicht
+        // gerade bewegt
+        if ( adjPulse == NO_ADJ ) {
+            // ist erster Justierimpuls, aktuelle Position aus CV auslesen
+            if ( weicheSoll[adjWix] == GERADE ) {
+                adjPulse = Dcc.getCV( (int) &CV->Fkt[adjWix].Par1 );
+            } else {
+                adjPulse = Dcc.getCV( (int) &CV->Fkt[adjWix].Par2 );
+            }
+        }
+        if ( (encoderCount>0 && adjPulse<180) || (encoderCount<0 && adjPulse>0) )
+            adjPulse += encoderCount; // adjPulse nur im Bereich 0...180 
+        weicheS[adjWix].write( adjPulse );
+    }
+    encoderCount = 0;
+}
+
+void ChkAdjEncode( byte WIndex ){
+    // nach dem Empfang einer Weichenadresse wird geprüft, ob eine vorherige Justierung gespeichert werden
+    // muss. Die empfangene Weichenadresse wird als neue Justieradresse gespeichert wenn es sich um einen
+    // Servoantrieb handelt.
+    if ( adjPulse != NO_ADJ ) {
+        // Es wurde justiert, testen ob gespeichert werden muss (Weichenwechsel)
+        if ( WIndex != adjWix || weicheIst[adjWix] != weicheSoll[adjWix] ) {
+            // Weiche wurde umgeschaltet, oder eine andere Weiche betätigt -> Justierung speichern
+            if ( weicheIst[adjWix] == GERADE ) {
+                Dcc.setCV( (int) &CV->Fkt[adjWix].Par1, adjPulse );
+            } else {
+                Dcc.setCV( (int) &CV->Fkt[adjWix].Par2, adjPulse );
+            }
+            adjPulse = NO_ADJ;
+        }
+    }
+    adjWix = WIndex;
+    if ( adjWix < WeichenZahl ) 
+        if ( iniTyp[ adjWix ] != FSERVO ) adjWix = WeichenZahl;
+    
+}
+
+
+
+
+//////////////////////////////////////////////////////////////////////////
 // Allgemeine Unterprogramme 
 void setWeichenAddr(void) {
     // Adressmodus aus CV29 auslesen

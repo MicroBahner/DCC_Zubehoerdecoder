@@ -1,10 +1,11 @@
 Funktionen des programmierbaren Zubehördecoders:
 
-Für 8 Zubehörartikel ( 2 Grundadressen )
+Für bis zu 8 Zubehörartikel 
 2 Ausgänge je Objekt
 Funktionen:
 1) Servo+Relais (für Weichen)
 2) Magnetartikel auto (Pulsausgänge)
+noch nicht realisiert:
 3) statisch ein/aus
 4) Blinker ein/aus
 
