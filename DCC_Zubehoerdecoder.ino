@@ -432,7 +432,7 @@ void notifyDccAccState( uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, u
         DB_PRINT( "Neu: Boardaddr: %d, 1.Weichenaddr: %d", BoardAddr, weichenAddr );
     }
     // Testen ob eigene Weichenadresse
-    DB_PRINT( "DecAddr=%d, Weichenadresse: %d , Ausgang: %d, State: %d", BoardAddr, wAddr, OutputAddr, State );
+    //DB_PRINT( "DecAddr=%d, Weichenadresse: %d , Ausgang: %d, State: %d", BoardAddr, wAddr, OutputAddr, State );
     for ( i = 0; i < WeichenZahl; i++ ) {
         if (  wAddr == weichenAddr+i ) {
             // ist eigene Adresse, Sollwert setzen
