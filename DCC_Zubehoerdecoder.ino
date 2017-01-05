@@ -7,22 +7,24 @@
  *                  Addressen nur über den Sketch änderbar.
  *                  Adressierung als Board- oder Outputadressierung je nach CV29:6 (1=Outputaddr.)
  *                  Ansteuerung von Doppelspulenantrieben 
- *   Version 0.2A   Einstellen der Servoendlagen per Drehencoder. Wegen der 2 Encodereingänge
+ *   Version 2.1   Einstellen der Servoendlagen per Drehencoder. Wegen der 2 Encodereingänge
  *                  können maximal 6 Weichen angesteuert werden.
  *                  Der Drehencoder bezieht sich immer auf die zuletzt gestellte Weiche.
- *   Version 0.3    Die Betriebsmodi und Startverhalten wird jetzt über die Analogeingänge A6/A7 eingestellt. Dazu 
+ *   Version 3.0    Die Betriebsmodi und Startverhalten wird jetzt über die Analogeingänge A4/A5 eingestellt. Dazu 
  *                  müssen dort Pullups eingebaut werden. Jenachdem wieweit die Spannung  heruntergezogen wird werden
  *                  die Modi eingestellt:
- *                  A7:
+ *                  A5:
  *                  5V (offen) normaler Betriebsmodus, kein PoM
  *                  3,3V (Spannungsteiler 1:2) PoM immer aktiv, Adresse immer aus defaults
  *                  1,6V (Spannungsteiler 2:1) 
  *                  0V Programmiermodus / PoM ( 1. Empfamgenes Telegramm bestimmt Adresse )
- *                  A6:
- *                  wird A6 auf 0 gezogen , wird der aktuell vom Drehencoder beeinflusste Servo in die  
+ *                  A4:
+ *                  wird A4 auf 0 gezogen , wird der aktuell vom Drehencoder beeinflusste Servo in die  
  *                  Mittellage gebracht. Sobald der Encoder wieder bewegt wird, bewegt sich das Servo wieder
  *                  zur vorhergehenden Position.
- *                  Ist A6 beim Programmstart auf 0, werden alle CV's auf die Defaults zurückgesetzt
+ *                  Ist A4 beim Programmstart auf 0, werden alle CV's auf die Defaults zurückgesetzt
+ *                  Bei Nano- und Mini-Versionen kann dies auf A6/A7 umgestellt werden, um Ports freizumachen
+ *                  (A6/7 sind beim UNO nicht vorhanden)
  *                  
  * Eigenschaften:
  * Bis zu 8 (aufeinanderfolgende) Zubehöradressen ansteuerbar
@@ -38,8 +40,17 @@
  *  Die Funnktionalität wird über CV-Programmierung festgelegt. Bei Servoausgängen
  *  sind die Endlagen per CV-Wert einstellbar
 */
-#define DCC_DECODER_VERSION_ID 02
-#define DEBUG ;             // Wenn dieser Wert gesetzt ist, werden Debug ausgaben auf dem ser. Monitor ausgegeben
+#define DCC_DECODER_VERSION_ID 0x30
+// für debugging ------------------------------------------------------------
+//#define DEBUG ;             // Wenn dieser Wert gesetzt ist, werden Debug Ausgaben auf dem ser. Monitor ausgegeben
+
+#ifdef DEBUG
+#define DB_PRINT( x, ... ) { sprintf_P( dbgbuf, PSTR( x ), __VA_ARGS__ ) ; Serial.println( dbgbuf ); }
+char dbgbuf[80];
+#else
+#define DB_PRINT ;
+#endif
+
 
 //------------------------------------------ //
 // die NmraDcc - Library gibt es unter https://github.com/mrrwa/NmraDcc/archive/master.zip
@@ -170,14 +181,6 @@ const byte debTime = 4;
 NmraDcc Dcc;
 
 
-// für debugging ------------------------------------------------------------
-#ifdef DEBUG
-#define DB_PRINT( x, ... ) { sprintf_P( dbgbuf, PSTR( x ), __VA_ARGS__ ) ; Serial.println( dbgbuf ); }
-char dbgbuf[80];
-#else
-#define DB_PRINT ;
-#endif
-
 //^^^^^^^^^^^^^^^^^^^^^^^^ Ende der Definitionen ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //###########################################################################
 
@@ -201,7 +204,7 @@ void setup() {
     
 
     
-    if ( (Dcc.getCV( (int) &CV->modeVal)&0xf0) != ( iniMode&0xf0 ) || analogRead(A6) < 100 ) {
+    if ( (Dcc.getCV( (int) &CV->modeVal)&0xf0) != ( iniMode&0xf0 ) || analogRead(resModeP) < 100 ) {
         // In modeVal steht kein sinnvoller Wert ( oder A6 ist auf 0 ),
         // alles initiieren mit den Defaultwerten
         // Wird über DCC ein 'factory-Reset' empfangen wird modeVal zurückgesetzt, was beim nächsten
@@ -214,32 +217,14 @@ void setup() {
         // Decoderspezifische CV's
         Dcc.setCV( (int) &CV->PomAddrLow, PomAddr%256 );
         Dcc.setCV( (int) &CV->PomAddrHigh, PomAddr/256 );
-        for ( byte i = 0; i<WeichenZahl; i++ ) {
-            switch ( iniTyp[i] ) {
-              case FSERVO :
-                Dcc.setCV( (int) &CV->Fkt[i].Mode, iniServoMode );
-                Dcc.setCV( (int) &CV->Fkt[i].Par1, iniServoGerade );
-                Dcc.setCV( (int) &CV->Fkt[i].Par2, iniServoAbzw );
-                Dcc.setCV( (int) &CV->Fkt[i].Par3, inispeed );
-                Dcc.setCV( (int) &CV->Fkt[i].State, 0 );
-                break;
-              case FCOIL:
-                Dcc.setCV( (int) &CV->Fkt[i].Mode, iniCoilMode );
-                Dcc.setCV( (int) &CV->Fkt[i].Par1, iniCoilOn );
-                Dcc.setCV( (int) &CV->Fkt[i].Par2, iniCoilOff );
-                Dcc.setCV( (int) &CV->Fkt[i].Par3, 0 );
-                Dcc.setCV( (int) &CV->Fkt[i].State, 0 );
-                break;
-              case FSTATIC :
-                Dcc.setCV( (int) &CV->Fkt[i].Mode, iniStaticMode );
-                Dcc.setCV( (int) &CV->Fkt[i].Par1, iniBlinkOn );
-                Dcc.setCV( (int) &CV->Fkt[i].Par2, iniBlinkOff );
-                Dcc.setCV( (int) &CV->Fkt[i].Par3, 0 );
-                Dcc.setCV( (int) &CV->Fkt[i].State, 0 );
-                break;
-            }
-        }
         Dcc.setCV( (int) &CV->modeVal, iniMode );
+        for ( byte i = 0; i<WeichenZahl; i++ ) {
+            Dcc.setCV( (int) &CV->Fkt[i].Mode, iniFmode[i] );
+            Dcc.setCV( (int) &CV->Fkt[i].Par1, iniPar1[i] );
+            Dcc.setCV( (int) &CV->Fkt[i].Par2, iniPar2[i] );
+            Dcc.setCV( (int) &CV->Fkt[i].Par3, iniPar3[i] );
+            Dcc.setCV( (int) &CV->Fkt[i].State, 0 );
+        }
     } else if ( progMode == INIMODE ) {
         // Standard-CV's immer initiieren
         for ( byte i=0; i<(sizeof(FactoryDefaultCVs) / sizeof(CVPair)); i++ ) {
