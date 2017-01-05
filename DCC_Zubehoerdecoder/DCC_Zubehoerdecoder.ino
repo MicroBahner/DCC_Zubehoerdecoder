@@ -42,7 +42,7 @@
 */
 #define DCC_DECODER_VERSION_ID 0x30
 // für debugging ------------------------------------------------------------
-#define DEBUG ;             // Wenn dieser Wert gesetzt ist, werden Debug Ausgaben auf dem ser. Monitor ausgegeben
+//#define DEBUG ;             // Wenn dieser Wert gesetzt ist, werden Debug Ausgaben auf dem ser. Monitor ausgegeben
 
 #ifdef DEBUG
 #define DB_PRINT( x, ... ) { sprintf_P( dbgbuf, PSTR( x ), __VA_ARGS__ ) ; Serial.println( dbgbuf ); }
@@ -397,7 +397,7 @@ void loop() {
                     weicheIst[i]&= ~MOVING;
                     //DB_PRINT( "Pin%d LOW, Pin%d LOW", coil1Pins[i], coil2Pins[i] );
                     pulseON[i] = false;
-                    pulseT[i].setTime( Dcc.getCV( (int) &CV->Fkt[i].Par2 ) * 100 );
+                    pulseT[i].setTime( Dcc.getCV( (int) &CV->Fkt[i].Par2 ) * 10 );
                 }
                 
             }
@@ -478,10 +478,10 @@ void notifyCVAck ( void ) {
 void notifyCVChange( uint16_t CvAddr, uint8_t Value ) {
     // Es wurde ein CV verändert. Ist dies eine aktive Servoposition, dann die Servoposition
     // entsprechend anpassen
-    //DB_PRINT( "neu: CV%d=%d", CvAddr, Value );
+    DB_PRINT( "neu: CV%d=%d", CvAddr, Value );
     for ( byte i=0; i<WeichenZahl; i++ ) {
         // prüfen ob Ausgang einen Servo ansteuert:
-        switch ( Dcc.getCV( (uint16_t) &CV->Fkt[i].Mode ) ) {
+        switch ( iniTyp[i] ) {
           case FSERVO:
             // gehört der veränderte CV zu diesem Servo?
             if (  (CvAddr == (uint16_t) &CV->Fkt[i].Par1 && weicheSoll[i] == GERADE) ||
@@ -492,6 +492,7 @@ void notifyCVChange( uint16_t CvAddr, uint8_t Value ) {
                  weicheS[i].write( Value );
             } else if ( CvAddr == (uint16_t) &CV->Fkt[i].Par3 ) {
                 // die Geschwindigkeit des Servo wurde verändert
+                //DB_PRINT( "Ausg.%d , Speed. %d neu einstellen", i, Value );
                 weicheS[i].setSpeed( Value );
             }
         }

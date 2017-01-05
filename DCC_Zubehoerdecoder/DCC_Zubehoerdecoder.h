@@ -84,7 +84,7 @@ const byte encode2P     =   A2;
 // Ausgänge:  mit NC gekennzeichnete Ausgänge werden keinem Port zugeordnet. Damit können Ports gespart werden,
 //            z.B. wenn bei einem Servo kein Polarisierungsrelais benötigt wird
 const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmierung) (Led)
-const byte iniTyp[]     =   { FSERVO, FSERVO, FSERVO, FSERVO, FSTATIC, FSTATIC, FSTATIC };
+const byte iniTyp[]     =   { FSERVO, FSERVO, FSERVO, FSERVO, FSTATIC, FSTATIC,   FCOIL };
 const byte out1Pins[]   =   {     A0,     A1,     11,     12,       7,       8,      10 };  // output-pins der Funktionen
 const byte out2Pins[]   =   {      3,      5,      6,     NC,      NC,      NC,       9 };
 
@@ -94,18 +94,18 @@ const byte out2Pins[]   =   {      3,      5,      6,     NC,      NC,      NC, 
 // sinnvollen Werte im CV47 stehen.
 //-------------------------------------------------------------------------------------------------------
 const byte DccAddr          =  17;    // DCC-Decoderadresse
-const byte iniMode          = 0x50 | AUTOADDR | ROCOADDR;  // default-Betriebsmodus ( CV47 )
+const byte iniMode          = 0x50 | AUTOADDR /*| ROCOADDR*/;  // default-Betriebsmodus ( CV47 )
 const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV48/49 )
 
 // Funktionsspezifische Parameter. Diese Parameter beginnen bei CV 50 und pro Funktionsausgang gibt es
-// 5 CV-Werte. Die ersten 4 Werte steuern das Verhalten und in der folgenden Tabelle sind Rstinitiierungswerte
-// für diese CV's enthalten. Der 5 Wert dient internen Zwecken und wird hier nicht initiiert
+// 5 CV-Werte. Die ersten 4 Werte steuern das Verhalten und in der folgenden Tabelle sind Erstinitiierungswerte
+// für diese CV's enthalten. Der 5. Wert dient internen Zwecken und wird hier nicht initiiert
 // In der Betriebsart 'INIMode' werden Mode und Parx Werte bei jedem Start aus der folgenden Tabelle übernommen
 // Die Tabellenwerte müssen an die Typaufteilung ( iniTyp, s.o.) angepasst werden.
-const byte iniFmode[]     = { SAUTOOFF, SAUTOOFF, SAUTOOFF,       0,       0,BLINKMODE };
-const byte iniPar1[]      = {        0,        0,        0,       0,       0,      100 };
-const byte iniPar2[]      = {      180,      180,      180,       0,       0,       50 };
-const byte iniPar3[]      = {        8,        8,        8,       0,       0,        0 };
+const byte iniFmode[]     = { SAUTOOFF, SAUTOOFF, SAUTOOFF,       0,       0,       0, CAUTOOFF };
+const byte iniPar1[]      = {        0,        0,        0,       0,       0,       0,      100 };
+const byte iniPar2[]      = {      180,      180,      180,     180,       0,       0,       50 };
+const byte iniPar3[]      = {        8,        8,        8,       0,       0,       0,        0 };
 
 //-------------------------------------------------------------------------------------
 /* die folgenden Werte dienen als Beispiele für sinnvolle Einträge in der obigen Paramtertabelle. 
