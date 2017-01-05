@@ -65,7 +65,7 @@
 
 // vom Anwender änderbare Parameter um den Zubehördecoder an die verwendete HW anzupassen
 
-// Beispiel für Variante mit 3 Servos + 3 statische Ausgänge, mit Betriebsmode Led an Pin 13 (interne Led)
+// Beispiel für Variante mit 4 Servos + 3 statischen Ausgängen, mit Betriebsmode Led an Pin 13 (interne Led)
 
 //----------------------------------------------------------------
 // Hardwareabhängige Konstante ( nicht per CV änderbar)
@@ -84,9 +84,9 @@ const byte encode2P     =   A2;
 // Ausgänge:  mit NC gekennzeichnete Ausgänge werden keinem Port zugeordnet. Damit können Ports gespart werden,
 //            z.B. wenn bei einem Servo kein Polarisierungsrelais benötigt wird
 const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmierung) (Led)
-const byte iniTyp[]     =   { FSERVO, FSERVO, FSERVO, FSTATIC, FSTATIC, FSTATIC };
-const byte out1Pins[]   =   {     A0,     A1,     11,       7,       8,      10 };  // output-pins der Funktionen
-const byte out2Pins[]   =   {      3,      5,      6,      NC,      NC,       9 };
+const byte iniTyp[]     =   { FSERVO, FSERVO, FSERVO, FSERVO, FSTATIC, FSTATIC, FSTATIC };
+const byte out1Pins[]   =   {     A0,     A1,     11,     12,       7,       8,      10 };  // output-pins der Funktionen
+const byte out2Pins[]   =   {      3,      5,      6,     NC,      NC,      NC,       9 };
 
 //-------------------------------------------------------------------------------------------------------
 // Betriebswerte ( per CV änderbar ) Diese Daten werden nur im Initiierungsmodus in die CV's geschrieben.

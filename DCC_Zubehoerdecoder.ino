@@ -14,9 +14,9 @@
  *                  müssen dort Pullups eingebaut werden. Jenachdem wieweit die Spannung  heruntergezogen wird werden
  *                  die Modi eingestellt:
  *                  A5:
- *                  5V (offen) normaler Betriebsmodus, kein PoM
+ *                  5V (nur Pullup) normaler Betriebsmodus, kein PoM
  *                  3,3V (Spannungsteiler 1:2) PoM immer aktiv, Adresse immer aus defaults
- *                  1,6V (Spannungsteiler 2:1) 
+ *                  1,6V (Spannungsteiler 2:1) IniMode: CV's werden immer auf init-Werte aus .h-Datei gesetzt
  *                  0V Programmiermodus / PoM ( 1. Empfamgenes Telegramm bestimmt Adresse )
  *                  A4:
  *                  wird A4 auf 0 gezogen , wird der aktuell vom Drehencoder beeinflusste Servo in die  
@@ -42,11 +42,11 @@
 */
 #define DCC_DECODER_VERSION_ID 0x30
 // für debugging ------------------------------------------------------------
-//#define DEBUG ;             // Wenn dieser Wert gesetzt ist, werden Debug Ausgaben auf dem ser. Monitor ausgegeben
+#define DEBUG ;             // Wenn dieser Wert gesetzt ist, werden Debug Ausgaben auf dem ser. Monitor ausgegeben
 
 #ifdef DEBUG
 #define DB_PRINT( x, ... ) { sprintf_P( dbgbuf, PSTR( x ), __VA_ARGS__ ) ; Serial.println( dbgbuf ); }
-char dbgbuf[80];
+static char dbgbuf[80];
 #else
 #define DB_PRINT ;
 #endif
@@ -82,7 +82,7 @@ const byte dccPin       =   2;
 const byte ackPin       =   4;
 #include "DCC_Zubehoerdecoder.h"
 
-const byte WeichenZahl = sizeof(out1Pins);
+const byte WeichenZahl = sizeof(iniTyp);
 
 // CV Default-Werte der Standardadressen:
 struct CVPair {
@@ -205,7 +205,7 @@ void setup() {
 
     
     if ( (Dcc.getCV( (int) &CV->modeVal)&0xf0) != ( iniMode&0xf0 ) || analogRead(resModeP) < 100 ) {
-        // In modeVal steht kein sinnvoller Wert ( oder A6 ist auf 0 ),
+        // In modeVal steht kein sinnvoller Wert ( oder resModeP ist auf 0 ),
         // alles initiieren mit den Defaultwerten
         // Wird über DCC ein 'factory-Reset' empfangen wird modeVal zurückgesetzt, was beim nächsten
         // Start zum initiieren führt.
@@ -327,7 +327,7 @@ void setup() {
 }
 ////////////////////////////////////////////////////////////////
 void loop() {
-    if (digitalRead( A4)) digitalWrite(A4,LOW); else digitalWrite(A4,HIGH); // Test Zykluszeit
+    //if (digitalRead( A4)) digitalWrite(A4,LOW); else digitalWrite(A4,HIGH); // Test Zykluszeit
     getEncoder();    // Drehencoder auswerten und Servolage gegebenenfalls anpassen
     
     Dcc.process(); // Hier werden die empfangenen Telegramme analysiert und der Sollwert gesetzt
@@ -437,7 +437,7 @@ void notifyDccAccState( uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, u
     // Weichenadresse berechnen
     byte i;
     word wAddr = Addr+rocoOffs; // Roco zählt ab 0, alle anderen lassen die ersten 4 Weichenadressen frei
-    // Im Programmiermodus bestimmt das erste empfangen Programm die erste Weichenadresse
+    // Im Programmiermodus bestimmt das erste empfangene Programm die erste Weichenadresse
     if ( progMode == ADDRMODE ) {
         // Adresse berechnen und speichern
         if (isOutputAddr ) {
