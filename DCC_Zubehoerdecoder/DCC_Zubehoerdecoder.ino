@@ -55,7 +55,10 @@ static char dbgbuf[80];
 //------------------------------------------ //
 // die NmraDcc - Library gibt es unter https://github.com/mrrwa/NmraDcc/archive/master.zip
 
-#define NC NOT_A_PIN    // nicht verwendeten Funktiosausgängen kann der Port NC zugeweisen werden.
+#define NC 0xff    // nicht verwendeten Funktionsausgängen kann der Port NC zugeweisen werden.
+// die arduino digitalWrite und digitalRead Funktionen prüfen auf gültige Pin-Nummern und machen nichts
+// bei ungültigen Nummern. 0xff ist nie eine gültige Pinnummer
+
 
 // Grenzwerte des Analogeingangs für die jeweiligen Betriebsmodi ( gesamter Bereich 0...1024):
 #define ISNORMAL    853         // > 853 gilt als normalbetrieb
