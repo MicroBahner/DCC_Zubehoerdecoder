@@ -141,6 +141,7 @@ byte weicheIst[WeichenZahl];   // Istlagen der Weichen
 #define GERADE  0x0
 #define ABZW    0x1
 #define MOVING  0x2               // nur für Ist-Zustand, Bit 1 gesetzt während Umlauf
+#define BLKON   0x4               // nur für Ist-Zustand, Blinken ist EIN
 
 //int geradePulse[WeichenZahl] ;  // Pulslänge geradeaus
 //int abzweigPulse[WeichenZahl];  // Pulslänge abzweigend
@@ -407,12 +408,44 @@ void loop() {
             break;
           case FSTATIC: // Ausgang statisch ein/ausschalten ------------------------------------
             // muss Ausgang umgeschaltet werden?
-            if ( weicheSoll[i] != weicheIst[i] ) {
+            if ( weicheSoll[i] != (weicheIst[i]&1) ) {
                 digitalWrite( out1Pins[i], weicheSoll[i] );
-                digitalWrite( out2Pins[i], !weicheSoll[i] );
-                //DB_PRINT( "Pin%d=%d, Pin%d=%d", out1Pins[i],weicheSoll[i], coil2Pins[i],!weicheSoll[i] );
+                if ( Dcc.getCV( (int) &CV->Fkt[i].Mode ) & BLINKMODE ) {
+                    digitalWrite( out2Pins[i], LOW ); 
+                } else {                   
+                    digitalWrite( out2Pins[i], !weicheSoll[i] );                    
+                }
+                DB_PRINT( "Pin%d=%d, Pin%d=%d", out1Pins[i],weicheSoll[i], coil2Pins[i],!weicheSoll[i] );
                 weicheIst[i] = weicheSoll[i];
+                if ( weicheIst[i] && ( Dcc.getCV( (int) &CV->Fkt[i].Mode ) & BLINKMODE ) ) {
+                    // Funktion wird eingeschaltet und Blinkmode ist aktiv -> Timer setzen
+                    pulseT[i].setTime( Dcc.getCV( (int) &CV->Fkt[i].Par1 )*10 );
+                    DB_PRINT( "BlkEin %d/%d", Dcc.getCV( (int) &CV->Fkt[i].Par1) , Dcc.getCV( (int) &CV->Fkt[i].Par2 ) );
+                    weicheIst[i] |= BLKON;
+                }
             }
+            if ( weicheIst[i] && ( Dcc.getCV( (int) &CV->Fkt[i].Mode ) & BLINKMODE ) ) {
+                // bei aktivem Blinken die Timer abfragen/setzen
+                if ( !pulseT[i].running() ) {
+                    // Timer abgelaufen, Led-Status wechseln
+                    if ( weicheIst[i] & BLKON ) {
+                        // Led ausschalten
+                        digitalWrite( out1Pins[i], LOW );
+                        digitalWrite( out2Pins[i], HIGH );
+                        weicheIst[i] &= ~BLKON;
+                        pulseT[i].setTime( Dcc.getCV( (int) &CV->Fkt[i].Par2 )*10 );
+                    } else {
+                        // Led einschalten
+                        digitalWrite( out1Pins[i], HIGH );
+                        digitalWrite( out2Pins[i], LOW );
+                        weicheIst[i] |= BLKON;
+                        pulseT[i].setTime( Dcc.getCV( (int) &CV->Fkt[i].Par1 )*10 );
+                    }
+                    
+                }
+                
+            }
+            
 
             break;
         } // - Ende Switch Funktionstypen-------------------------------------------

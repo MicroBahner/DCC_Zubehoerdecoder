@@ -13,19 +13,20 @@
  *           3,3V (Spannungsteiler 1:2) PoM immer aktiv, Adresse immer aus defaults
  *           1,6V (Spannungsteiler 2:1) 
  *           0V Programmiermodus / PoM ( 1. Empfamgenes Telegramm bestimmt Adresse )
- *     A4:   wird A6 auf 0 gezogen , wird der aktuell vom Drehencoder beeinflusste Servo in die  
+ *     A4:   wird A4 auf 0 gezogen , wird der aktuell vom Drehencoder beeinflusste Servo in die  
  *           Mittellage gebracht. Sobald der Encoder wieder bewegt wird, bewegt sich das Servo wieder
  *           zur vorhergehenden Position.
- *           Ist A6 beim Programmstart auf 0, werden alle CV's auf die Defaults zurückgesetzt
+ *           Ist A4 beim Programmstart auf 0, werden alle CV's auf die Defaults zurückgesetzt
  *                  
  * Eigenschaften:
- * Bis zu 8 (aufeinanderfolgende) Zubehöradressen ansteuerbar
+ * Bis zu 8 (aufeinanderfolgende) Zubehöradressen ansteuerbar. Je nach verfügbaren Digitalausgängen 
+ * sind ggfs auch mehr möglich.
  * 1. Adresse per Programmierung einstellbar
  * 
- *  Das Verhalten der Funktionalität wird über CV-Programmierung festgelegt: 
+ *  Das Verhalten der konfigurierten Funktionen wird über CV-Programmierung festgelegt: 
  *  Bei Servoausgängen die Endlagen und die Geschwindigkeit
  *  bei Doppelspulenantrieben die Einschaltzeit der Spulen.
- *  bei blinkenden Ausgängen das Blinkverhalten
+ *  bei blinkenden Ausgängen das Blinkverhalten ( in V3.0 noch nicht realisiert )
  *  
  *  Aufteilung der CV's:
  *  CV      Bedeutung    
@@ -86,7 +87,7 @@ const byte encode2P     =   A2;
 const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmierung) (Led)
 const byte iniTyp[]     =   { FSERVO, FSERVO, FSERVO, FSERVO, FSTATIC, FSTATIC,   FCOIL };
 const byte out1Pins[]   =   {     A0,     A1,     11,     12,       7,       8,      10 };  // output-pins der Funktionen
-const byte out2Pins[]   =   {      3,      5,      6,     NC,      NC,      NC,       9 };
+const byte out2Pins[]   =   {      3,      5,     NC,     NC,       6,      NC,       9 };
 
 //-------------------------------------------------------------------------------------------------------
 // Betriebswerte ( per CV änderbar ) Diese Daten werden nur im Initiierungsmodus in die CV's geschrieben.
@@ -102,10 +103,10 @@ const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV
 // für diese CV's enthalten. Der 5. Wert dient internen Zwecken und wird hier nicht initiiert
 // In der Betriebsart 'INIMode' werden Mode und Parx Werte bei jedem Start aus der folgenden Tabelle übernommen
 // Die Tabellenwerte müssen an die Typaufteilung ( iniTyp, s.o.) angepasst werden.
-const byte iniFmode[]     = { SAUTOOFF, SAUTOOFF, SAUTOOFF,       0,       0,       0, CAUTOOFF };
-const byte iniPar1[]      = {        0,        0,        0,       0,       0,       0,      100 };
-const byte iniPar2[]      = {      180,      180,      180,     180,       0,       0,       50 };
-const byte iniPar3[]      = {        8,        8,        8,       0,       0,       0,        0 };
+const byte iniFmode[]     = { SAUTOOFF, SAUTOOFF, SAUTOOFF,       0,BLINKMODE,       0, CAUTOOFF };
+const byte iniPar1[]      = {        0,        0,        0,       0,      100,       0,      100 };
+const byte iniPar2[]      = {      180,      180,      180,     180,       50,       0,       50 };
+const byte iniPar3[]      = {        8,        8,        8,       0,        0,       0,        0 };
 
 //-------------------------------------------------------------------------------------
 /* die folgenden Werte dienen als Beispiele für sinnvolle Einträge in der obigen Paramtertabelle. 
