@@ -34,8 +34,8 @@
  * Einstellbare Funktionalität:
  *  - Servo mit Umschaltrelais zur Weichenpolarisierung
  *  - Doppelspulenantriebe
- *  - statische Ausgänge   (noch nicht realisert)
- *  - blinkende Ausgänge   (noch nicht realisert)
+ *  - statische Ausgänge
+ *  - blinkende Ausgänge
  *  
  *  Die Funnktionalität wird über CV-Programmierung festgelegt. Bei Servoausgängen
  *  sind die Endlagen per CV-Wert einstellbar
@@ -79,7 +79,8 @@ static char dbgbuf[80];
                         // 1: Outputadresse 0 ist Weichenadress 1
 #define SAUTOOFF 0x01
 #define CAUTOOFF 0x01
-#define BLINKMODE   1
+#define BLKMODE 0x01    // FSTATIC: Ausgänge blinken
+#define BLKSTRT 0x02    // FSTATIC: Starten mit beide Ausgängen EIN
 
 const byte dccPin       =   2;
 const byte ackPin       =   4;
@@ -129,7 +130,7 @@ typedef struct {        // Definition der Struktur des decoderspezifischen CV-Bl
 } CvVar_t;
 
 const CvVar_t *CV = (CvVar_t *) CV_START; //Pointer auf die decoderspezifischen CV-Werte im EEProm
-
+#define GetCvPar(ix,par) Dcc.getCV((int)&CV->Fkt[ix].par)
 
 // ----------------------- Variable ---------------------------------------------------
 byte opMode;                    // Bit 0..3 aus modeVal
@@ -322,8 +323,16 @@ void setup() {
           case FSTATIC:
             pinMode( out1Pins[i], OUTPUT );
             pinMode( out2Pins[i], OUTPUT );
-            digitalWrite( out1Pins[i], LOW );
-            digitalWrite( out2Pins[i], HIGH );
+
+            if ( GetCvPar(i,Mode) & BLKMODE ) {
+                // aktuellen Blinkstatus berücksichtigen
+                digitalWrite( out1Pins[i], LOW );
+                digitalWrite( out2Pins[i], LOW );
+            } else {
+                // statische Ausgabe
+                digitalWrite( out1Pins[i], weicheIst[i] & 0x1 );
+                digitalWrite( out2Pins[i], !(weicheIst[i] & 0x1  ) );
+            }
             break;
             
         }
@@ -408,23 +417,24 @@ void loop() {
             break;
           case FSTATIC: // Ausgang statisch ein/ausschalten ------------------------------------
             // muss Ausgang umgeschaltet werden?
-            if ( weicheSoll[i] != (weicheIst[i]&1) ) {
+            if ( (weicheSoll[i]&1) != (weicheIst[i]&1) ) {
                 digitalWrite( out1Pins[i], weicheSoll[i] );
-                if ( Dcc.getCV( (int) &CV->Fkt[i].Mode ) & BLINKMODE ) {
-                    digitalWrite( out2Pins[i], LOW ); 
+                if ( GetCvPar(1,Mode) & BLKMODE ) {
+                    digitalWrite( out2Pins[i], (GetCvPar(i,Mode) & BLKSTRT)&& (weicheSoll[i]&1) ); 
                 } else {                   
                     digitalWrite( out2Pins[i], !weicheSoll[i] );                    
                 }
-                DB_PRINT( "Pin%d=%d, Pin%d=%d", out1Pins[i],weicheSoll[i], coil2Pins[i],!weicheSoll[i] );
+                DB_PRINT( "Soll=%d, Ist=%d", weicheSoll[i], weicheIst[i] );
                 weicheIst[i] = weicheSoll[i];
-                if ( weicheIst[i] && ( Dcc.getCV( (int) &CV->Fkt[i].Mode ) & BLINKMODE ) ) {
+                Dcc.setCV( (int) &CV->Fkt[i].State, weicheIst[i] );
+                if ( weicheIst[i] && ( Dcc.getCV( (int) &CV->Fkt[i].Mode ) & BLKMODE ) ) {
                     // Funktion wird eingeschaltet und Blinkmode ist aktiv -> Timer setzen
-                    pulseT[i].setTime( Dcc.getCV( (int) &CV->Fkt[i].Par1 )*10 );
-                    DB_PRINT( "BlkEin %d/%d", Dcc.getCV( (int) &CV->Fkt[i].Par1) , Dcc.getCV( (int) &CV->Fkt[i].Par2 ) );
+                    pulseT[i].setTime( GetCvPar(i,Par3)*10 );
+                    DB_PRINT( "BlkEin %d/%d, Strt=%x", GetCvPar(i,Par1) , GetCvPar(i,Par2), (GetCvPar(i,Mode) & BLKSTRT)  );
                     weicheIst[i] |= BLKON;
                 }
             }
-            if ( weicheIst[i] && ( Dcc.getCV( (int) &CV->Fkt[i].Mode ) & BLINKMODE ) ) {
+            if ( weicheIst[i] && ( Dcc.getCV( (int) &CV->Fkt[i].Mode ) & BLKMODE ) ) {
                 // bei aktivem Blinken die Timer abfragen/setzen
                 if ( !pulseT[i].running() ) {
                     // Timer abgelaufen, Led-Status wechseln
@@ -495,7 +505,7 @@ void notifyDccAccState( uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, u
         if (  wAddr == weichenAddr+i ) {
             // ist eigene Adresse, Sollwert setzen
             weicheSoll[i] =  OutputAddr & 0x1;
-            //DB_PRINT( "Weiche %d, Index %d, Soll %d, Ist %d", wAddr, i, weicheSoll[i],  weicheIst[i] );
+            DB_PRINT( "Weiche %d, Index %d, Soll %d, Ist %d", wAddr, i, weicheSoll[i],  weicheIst[i] );
             break; // Schleifendurchlauf abbrechen, es kann nur eine Weiche sein
         }
     }

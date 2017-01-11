@@ -51,13 +51,13 @@
  *  CV53    -
  *  CV54    aktuelle Weichenstellung ( nicht manuell verändern! )
  *  
- *  statischer/Blinkender Ausgang ( derzeit nur statisch möglich )
+ *  statischer/Blinkender Ausgang 
  *  CV50    Bit0 = 1: Blinken,  0: statisch
  *          Bit1 = 1: Beim Blinken starten erst beide Leds dann Wechselblinken
  *          Bit2: mit weichem Auf/Abblenden (Pins müssen PWM-fähig sein)
  *  CV51    Einschaltzeit des Blinkens ( 10ms Einheiten )
  *  CV52    Ausschaltzeit des Blinkens ( 10ms Einheiten )
- *  CV53    Auf/Abblendezeit
+ *  CV53    1. Einschaltzeit beim Start des Blinkens
  *  CV54    aktueller Zusatnd ( nicht manuell verändern! )
  *  
 */
@@ -85,9 +85,9 @@ const byte encode2P     =   A2;
 // Ausgänge:  mit NC gekennzeichnete Ausgänge werden keinem Port zugeordnet. Damit können Ports gespart werden,
 //            z.B. wenn bei einem Servo kein Polarisierungsrelais benötigt wird
 const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmierung) (Led)
-const byte iniTyp[]     =   { FSERVO, FSERVO, FSERVO, FSERVO, FSTATIC, FSTATIC,   FCOIL };
-const byte out1Pins[]   =   {     A0,     A1,     11,     12,       7,       8,      10 };  // output-pins der Funktionen
-const byte out2Pins[]   =   {      3,      5,     NC,     NC,       6,      NC,       9 };
+const byte iniTyp[]     =   {   FSERVO,   FSERVO,   FSERVO,   FSERVO,  FSTATIC,  FSTATIC,    FCOIL };
+const byte out1Pins[]   =   {       A0,       A1,       11,       12,        7,        8,       10 };  // output-pins der Funktionen
+const byte out2Pins[]   =   {        3,        5,       NC,       NC,        6,       NC,        9 };
 
 //-------------------------------------------------------------------------------------------------------
 // Betriebswerte ( per CV änderbar ) Diese Daten werden nur im Initiierungsmodus in die CV's geschrieben.
@@ -103,10 +103,10 @@ const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV
 // für diese CV's enthalten. Der 5. Wert dient internen Zwecken und wird hier nicht initiiert
 // In der Betriebsart 'INIMode' werden Mode und Parx Werte bei jedem Start aus der folgenden Tabelle übernommen
 // Die Tabellenwerte müssen an die Typaufteilung ( iniTyp, s.o.) angepasst werden.
-const byte iniFmode[]     = { SAUTOOFF, SAUTOOFF, SAUTOOFF,       0,BLINKMODE,       0, CAUTOOFF };
-const byte iniPar1[]      = {        0,        0,        0,       0,      100,       0,      100 };
-const byte iniPar2[]      = {      180,      180,      180,     180,       50,       0,       50 };
-const byte iniPar3[]      = {        8,        8,        8,       0,        0,       0,        0 };
+const byte iniFmode[]     = { SAUTOOFF, SAUTOOFF, SAUTOOFF,        0,  BLKMODE,        0, CAUTOOFF };
+const byte iniPar1[]      = {        0,        0,        0,        0,       50,        0,       50 };
+const byte iniPar2[]      = {      180,      180,      180,      180,       50,        0,       50 };
+const byte iniPar3[]      = {        8,        8,        8,        0,      100,        0,        0 };
 
 //-------------------------------------------------------------------------------------
 /* die folgenden Werte dienen als Beispiele für sinnvolle Einträge in der obigen Paramtertabelle. 
