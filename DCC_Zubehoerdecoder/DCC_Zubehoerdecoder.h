@@ -36,14 +36,14 @@
  *  55-59   Parameter für 2. Weichenadresse
  *  ...
  *  Bedeutung der CV's bei den verschiedenen Funktione (CV-Nummern für 1. Weichenadresse)
- *  Servo:
+ *  FSERVO Servo:
  *  CV50    Bit0 = 1: AutoOff der Servoimpulse bei Stillstand des Servo
  *  CV51    Position des Servo für Weichenstellung '0' ( in Grad, 0...180 )
  *  CV52    Position des Servo für Weichenstellung '1' ( in Grad, 0...180 )
  *  CV53    Geschwindigkeit des Servo
  *  CV54    aktuelle Weichenstellung ( nicht manuell verändern! )
  *  
- *  Doppelspulenantrieb: ( derzeit nur mit automatischer Abschaltung )
+ *  FCOIL Doppelspulenantrieb: ( derzeit nur mit automatischer Abschaltung )
  *  CV50    Bit0 = 1: Spulenausgang automatisch abschalten
  *               = 0: Spulenausgang über DCC-Befehl abschalten
  *  CV51    Einschaltdauer der Spule 1 ( in 10ms Einheiten )
@@ -51,7 +51,7 @@
  *  CV53    -
  *  CV54    aktuelle Weichenstellung ( nicht manuell verändern! )
  *  
- *  statischer/Blinkender Ausgang 
+ *  FSTATIC statischer/Blinkender Ausgang 
  *  CV50    Bit0 = 1: Blinken,  0: statisch
  *          Bit1 = 1: Beim Blinken starten erst beide Leds dann Wechselblinken
  *          Bit2: mit weichem Auf/Abblenden (Pins müssen PWM-fähig sein)
@@ -60,6 +60,22 @@
  *  CV53    1. Einschaltzeit beim Start des Blinkens
  *  CV54    aktueller Zusatnd ( nicht manuell verändern! )
  *  
+ *  FSIGNAL2 / FSIGNAL3  Signaldecoder mit 2/3 Weichenadressen 
+ *          bei den Folgeadressen ist als Typ FSIGNAL0 einzutragen
+ *  CV50    Signalmodus / reserviert
+ *  CV51    Bitmuster der Ausgänge für Zustand 000
+ *  CV52    Bitmuster der Ausgägne für Zustand 001
+ *  CV53    Überblendzeit in 10ms-Schritten
+ *  CV55    Bitmuster hard/soft gibt an, welche Ausgänge 'hart' umschalten (Bit=0)
+ *          und Welche Ausgänge weich überblenden (Bit=1)
+ *  CV56    Bitmuster der Ausgänge für Zustand 010
+ *  CV57    Bitmuster der Ausgänge für Zustand 011
+ *  CV58    reserved
+ *  die folgenden CV's sind nur relevant bei FSIGNAL3 (3 Adressen, 8 Zustände 6 Ausgänge)
+ *  CV60     Bitmuster der Ausgänge für Zustand 100
+ *  CV61     Bitmuster der Ausgänge für Zustand 101
+ *  CV62     Bitmuster der Ausgänge für Zustand 110
+ *  CV63     Bitmuster der Ausgänge für Zustand 111
 */
 #define ENCODER_DOUBLE  // Eigenschaften des Drehencoders (Impulse per Raststellung)
 
@@ -85,9 +101,9 @@ const byte encode2P     =   A2;
 // Ausgänge:  mit NC gekennzeichnete Ausgänge werden keinem Port zugeordnet. Damit können Ports gespart werden,
 //            z.B. wenn bei einem Servo kein Polarisierungsrelais benötigt wird
 const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmierung) (Led)
-const byte iniTyp[]     =   {   FSERVO,   FSERVO,   FSERVO,   FSERVO,  FSTATIC,  FSTATIC,    FCOIL };
-const byte out1Pins[]   =   {       A0,       A1,       11,       12,        7,        8,       10 };  // output-pins der Funktionen
-const byte out2Pins[]   =   {        3,        5,       NC,       NC,        6,       NC,        9 };
+const byte iniTyp[]     =   {   FSIGNAL2,   FSIGNAL0,   FSERVO,   FSERVO,  FSTATIC,  FSTATIC,    FCOIL };
+const byte out1Pins[]   =   {          9,         11,       A0,       A1,        7,        8,       A2 };  // output-pins der Funktionen
+const byte out2Pins[]   =   {         10,         12,       NC,       NC,        6,       NC,       A3 };
 
 //-------------------------------------------------------------------------------------------------------
 // Betriebswerte ( per CV änderbar ) Diese Daten werden nur im Initiierungsmodus in die CV's geschrieben.
@@ -103,10 +119,10 @@ const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV
 // für diese CV's enthalten. Der 5. Wert dient internen Zwecken und wird hier nicht initiiert
 // In der Betriebsart 'INIMode' werden Mode und Parx Werte bei jedem Start aus der folgenden Tabelle übernommen
 // Die Tabellenwerte müssen an die Typaufteilung ( iniTyp, s.o.) angepasst werden.
-const byte iniFmode[]     = { SAUTOOFF, SAUTOOFF, SAUTOOFF,        0,  BLKMODE,        0, CAUTOOFF };
-const byte iniPar1[]      = {        0,        0,        0,        0,       50,        0,       50 };
-const byte iniPar2[]      = {      180,      180,      180,      180,       50,        0,       50 };
-const byte iniPar3[]      = {        8,        8,        8,        0,      100,        0,        0 };
+const byte iniFmode[]     = {        0,   0b1111, SAUTOOFF,        0,  BLKMODE,        0, CAUTOOFF };
+const byte iniPar1[]      = {   0b1111,   0b1011,        0,        0,       50,        0,       50 };
+const byte iniPar2[]      = {   0b1101,   0b0101,      180,      180,       50,        0,       50 };
+const byte iniPar3[]      = {       50,        8,        8,        0,      100,        0,        0 };
 
 //-------------------------------------------------------------------------------------
 /* die folgenden Werte dienen als Beispiele für sinnvolle Einträge in der obigen Paramtertabelle. 
