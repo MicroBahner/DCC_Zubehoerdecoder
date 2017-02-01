@@ -1,7 +1,7 @@
 #include <NmraDcc.h>
 #include <MobaTools.h>
 
-/* Weichendecoder für Greißelbach
+/* Universeller DCC-Decoder für Weichen und (Licht-)Signale
  *   Version 0.1 - erstmal nur Servos
  *   Version 0.2 - alternativ auch ohne Programmierschalter nutzbar. PoM ist dann immer aktiv,
  *                  Addressen nur über den Sketch änderbar.
@@ -38,11 +38,14 @@
  *  - Doppelspulenantriebe
  *  - statische Ausgänge
  *  - blinkende Ausgänge
+ *  - Signalfunktionen
  *  
- *  Die Funnktionalität wird über CV-Programmierung festgelegt. Bei Servoausgängen
- *  sind die Endlagen per CV-Wert einstellbar
+ *  Die Funnktionalität und IO-Zuordnung wird über Tabellen im h-File festgelegt.
+ *  Die Konfiguration der einzelnen Funktionen geschieht über CV-Programmierung.
+ *  So sind z.B. bei Servoausgängen die Endlagen per CV-Wert einstellbar, bei Lichtsignalen ist die 
+ *  Zuordnung der Ausgangszustände zum Signalzustand frei konfigurierbar.
 */
-#define DCC_DECODER_VERSION_ID 0x30
+#define DCC_DECODER_VERSION_ID 0x31
 // für debugging ------------------------------------------------------------
 #define DEBUG ;             // Wenn dieser Wert gesetzt ist, werden Debug Ausgaben auf dem ser. Monitor ausgegeben
 
@@ -85,6 +88,7 @@ static char dbgbuf[60];
 #define CAUTOOFF 0x01
 #define BLKMODE 0x01    // FSTATIC: Ausgänge blinken
 #define BLKSTRT 0x02    // FSTATIC: Starten mit beide Ausgängen EIN
+#define BLKSOFT 0x04    // FSTATIC: Ausgänge als Softleds
 
 const byte dccPin       =   2;
 const byte ackPin       =   4;
@@ -168,9 +172,6 @@ byte slIx;                        // Zählindex für die Vergabe der Softled-Obj
 SoftLed SigLed[ MAX_LEDS ];
 
 
-//int geradePulse[WeichenZahl] ;  // Pulslänge geradeaus
-//int abzweigPulse[WeichenZahl];  // Pulslänge abzweigend
-
 byte relaisOut[WeichenZahl];    // Ausgabewerte für die Relais ( 0/1, entspricht Sollwert )
 byte pulseON[WeichenZahl];    // CoiL: Flag ob Pausentimer läuft
 
@@ -186,6 +187,7 @@ byte progMode;      // Merker ob Decoder im Programmiermodus
 #define CLR_PROGLED digitalWrite( modePin, LOW )
 
 // -------- Encoderauswertung ----- Justierung der Servoendlage -----------------------------
+# ifdef ENCODER_AKTIV
 byte encoderState;
 int8_t encoderCount;
 #define IDLE    0   // Ruhezustand (keine Bewegung)
@@ -198,7 +200,7 @@ int8_t encoderCount;
 byte adjWix;       // Weichenindex, der z.Z. vom Encoder beeinflusst wird.
 byte adjPulse;      // per Encoder aktuell eingestellte Servoposition
 #define NO_ADJ 255    // Wert von adjPulse solange keine Änderung erfolgt ist
-
+#endif
 //---- Library-Objekte ----
 Servo8 weicheS[WeichenZahl];
 EggTimer AckImpuls;
@@ -230,12 +232,11 @@ static void setSigPin( byte wIx, byte pIx, byte Value ) {
     // wIx: Weichenindex (Grundadresse des Signals)
     // pIx: Signalinterner Portindex ( 0...5 )
     // Value: HIGH oder LOW, ON oder OFF
-    if ( pIx > 1 ) {
-        // Es ist ein Port der Folgeadresse (Signal!)
-        wIx += ( pIx >> 1 );
-        pIx &= 0x01;
-    }
-    //DB_PRINT( "set port Typ %d, pIx %d,  wIx %d, pins %d %d, Wert=%d ", portTyp[pIx][wIx], pIx, wIx, out1Pins[wIx], out2Pins[wIx], Value ); 
+    
+    // Falls es ein Port der Folgeadresse ist (Signal!)
+    wIx += ( pIx >> 1 );
+    pIx &= 0x01;
+    DB_PRINT( "set port Typ %d, pIx %d,  wIx %d, pins %d %d, Wert=%d ", portTyp[pIx][wIx], pIx, wIx, out1Pins[wIx], out2Pins[wIx], Value ); 
     if ( portTyp[pIx][wIx] >=0 ) {
         // Es ist ein Softled-Ausgang
         byte typ = Value? LINEAR : BULB;
@@ -296,7 +297,7 @@ static void clrSignal ( byte wIx ) {
       case FSIGNAL2:
         // nur 'soft' Ausgangszustände löschen
         for ( byte pIx=0; pIx< (iniTyp[wIx] == FSIGNAL3 ? 8 : 4) ; pIx++ ) {
-            if ( portTyp[pIx][wIx] >=0 ) {
+            if ( portTyp[pIx&1][wIx+(pIx>>1)] >=0 ) {
                 // Es ist ein Softled-Ausgang
                 setSigPin( wIx, pIx, OFF );
             }
@@ -463,6 +464,7 @@ void setup() {
             // Bei Signalen steht in WeicheIst[wIx] der Gesamtzustand des Signals ( der auch im CV gespeichert wird )
             // in WeicheIst[wIx+1] steht der SollZustand des gesamten Signals.
             // in WeicheSoll[..] stehen die einzelnen empfangenen Dcc-Sollzustände der Weichenadressen
+            // Signale werden immer mit dem Grundzuustand initiiert ( = HP0 oder Hp00 )
             weicheIst[wIx+1] = weicheIst[wIx]; // Gesamt Soll = Istzustand
             weicheSoll[wIx] = weicheIst[wIx] & 1; // EinzelSollzustände
             weicheSoll[wIx+1] = (weicheIst[wIx]>>1) & 1;
@@ -476,7 +478,7 @@ void setup() {
             for ( byte sigO = 0; sigO < outMax ; sigO++ ) {
                 // sigMode enthält bitcodiert die Info ob harte/weiche Umschaltung
                 byte outPin = sigPin( wIx, sigO );
-                //DB_PRINT( "SigMode=%02x, Index= %d, pin=%d, ", sigMode, sigO,outPin);
+                // DB_PRINT( "SigMode=%02x, Index= %d, pin=%d, ", sigMode, sigO,outPin);
                 if ( sigMode & (1<<sigO) ) {
                     // Bit gesetzt -> harte Umschaltung
                     pinMode(outPin, OUTPUT );
@@ -492,6 +494,7 @@ void setup() {
                         //DB_PRINT( "Softled, pin %d, Att=%d", outPin, att );
                     }
                 }
+                //DB_PRINT( "portTyp[%d][%d] = %d" , sigO&1, wIx+(sigO>>1), portTyp[sigO&1][wIx+(sigO>>1)] );
              }
             setSignal(wIx); // Signalausgänge setzen
             // Folgeadressen bei der Initiierung überspringen
@@ -504,6 +507,9 @@ void setup() {
         } // Ende switch Funktionstypen
     } // Ende loop über alle Funktionen
 }
+
+
+
 ////////////////////////////////////////////////////////////////
 void loop() {
     //if (digitalRead( A4)) digitalWrite(A4,LOW); else digitalWrite(A4,HIGH); // Test Zykluszeit
@@ -728,6 +734,11 @@ void notifyCVAck ( void ) {
 //-----------------------------------------------------
 // Wird aufgerufen, nachdem ein CV-Wert verändert wurde
 void notifyCVChange( uint16_t CvAddr, uint8_t Value ) {
+    #ifdef DEBUG
+    long eeTime = micros();
+    while ( ! Dcc.isSetCVReady() );
+    DB_PRINT( "CVWrite: %ld us", (micros()-eeTime) );
+    #endif
     // Es wurde ein CV verändert. Ist dies eine aktive Servoposition, dann die Servoposition
     // entsprechend anpassen
     DB_PRINT( "neu: CV%d=%d", CvAddr, Value );
@@ -789,6 +800,7 @@ void notifyDccReset( uint8_t hardReset ) {
 /////////////////////////////////////////////////////////////////////////
 // Unterprogramme zur Servojustierung mit Drehencoder
 void IniEncoder( void ) {
+    #ifdef ENCODER_AKTIV
     // Encoder initiieren
     pinMode( encode1P, INPUT_PULLUP );
     pinMode( encode2P, INPUT_PULLUP );
@@ -796,9 +808,11 @@ void IniEncoder( void ) {
     encoderCount  = 0;
     adjWix = WeichenZahl;
     adjPulse = NO_ADJ;
+    #endif
 }
    
 void getEncoder( void ) {
+    #ifdef ENCODER_AKTIV
     // Encoder-Statemachine
     if ( debounceT.running() ) return; // keine Abfrage während Entprellzeit läuft
     debounceT.setTime( debTime );
@@ -865,9 +879,11 @@ void getEncoder( void ) {
         }
     }
     encoderCount = 0;
+    #endif
 }
 
 void ChkAdjEncode( byte WIndex ){
+    #ifdef ENCODER_AKTIV
     // nach dem Empfang einer Weichenadresse wird geprüft, ob eine vorherige Justierung gespeichert werden
     // muss. Die empfangene Weichenadresse wird als neue Justieradresse gespeichert wenn es sich um einen
     // Servoantrieb handelt.
@@ -886,7 +902,7 @@ void ChkAdjEncode( byte WIndex ){
     adjWix = WIndex;
     if ( adjWix < WeichenZahl ) 
         if ( iniTyp[ adjWix ] != FSERVO ) adjWix = WeichenZahl;
-    
+    #endif
 }
 
 

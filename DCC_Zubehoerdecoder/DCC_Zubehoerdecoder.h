@@ -66,8 +66,8 @@
  *  CV51    Bitmuster der Ausgänge für Zustand 000
  *  CV52    Bitmuster der Ausgägne für Zustand 001
  *  CV53    Überblendzeit in 10ms-Schritten
- *  CV55    Bitmuster hard/soft gibt an, welche Ausgänge 'hart' umschalten (Bit=0)
- *          und Welche Ausgänge weich überblenden (Bit=1)
+ *  CV55    Bitmuster hard/soft gibt an, welche Ausgänge 'hart' umschalten (Bit=1)
+ *          und Welche Ausgänge weich überblenden (Bit=0)
  *  CV56    Bitmuster der Ausgänge für Zustand 010
  *  CV57    Bitmuster der Ausgänge für Zustand 011
  *  CV58    reserved
@@ -94,9 +94,15 @@ const byte betrModeP    =   A5;     // Analogeingang zur Bestimmung des Betriebs
                                     // Programmstart eingelesen!
 const byte resModeP     =   A4;     // Rücksetzen CV-Werte + Mittelstellung Servos
 
-// Eingänge digital (die Ports A0-A5 lassen sich auch digital verwenden):
+// Eingänge digital (die Ports A0-A5 lassen sich auch digital verwenden): ---------
+
+// Drehencoder zur Servojustierung ...........
+//#define ENCODER_AKTIV       // Wird diese Zeile auskommentiert, wird der Encoder nicht verwendet. 
+                            // Die Encoder-Ports werden dann ignoriert, und können anderweitig 
+                            // verwendet werden.
 const byte encode1P     =   A3;     // Eingang Drehencoder zur Justierung.
 const byte encode2P     =   A2;
+// ............................................
 
 // Ausgänge:  mit NC gekennzeichnete Ausgänge werden keinem Port zugeordnet. Damit können Ports gespart werden,
 //            z.B. wenn bei einem Servo kein Polarisierungsrelais benötigt wird
@@ -119,9 +125,9 @@ const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV
 // für diese CV's enthalten. Der 5. Wert dient internen Zwecken und wird hier nicht initiiert
 // In der Betriebsart 'INIMode' werden Mode und Parx Werte bei jedem Start aus der folgenden Tabelle übernommen
 // Die Tabellenwerte müssen an die Typaufteilung ( iniTyp, s.o.) angepasst werden.
-const byte iniFmode[]     = {        0,   0b1111, SAUTOOFF,        0,  BLKMODE,        0, CAUTOOFF };
-const byte iniPar1[]      = {   0b1111,   0b1011,        0,        0,       50,        0,       50 };
-const byte iniPar2[]      = {   0b1101,   0b0101,      180,      180,       50,        0,       50 };
+const byte iniFmode[]     = {        0,   0b0000, SAUTOOFF,        0,  BLKMODE,        0, CAUTOOFF };
+const byte iniPar1[]      = {   0b0010,   0b0100,        0,        0,       50,        0,       50 };
+const byte iniPar2[]      = {   0b0001,   0b1001,      180,      180,       50,        0,       50 };
 const byte iniPar3[]      = {       50,        8,        8,        0,      100,        0,        0 };
 
 //-------------------------------------------------------------------------------------
