@@ -166,7 +166,8 @@ byte weicheIst[WeichenZahl];   // Istlagen der Weichen
 #define SIG_DARK_TIME   300     // Zeit zwsichen Dunkelschalten und Aufblenden des neuen Signalbilds
 
 // Zuordnung der Softleds zu den Ausgangsports
-int8_t portTyp[2][WeichenZahl];   // -1 = Standardport
+#define PPF 3       // Outputports pro Funktion
+int8_t portTyp[PPF][WeichenZahl];   // -1 = Standardport
                                   // >=0 Softled-Objekt
 byte slIx;                        // Zählindex für die Vergabe der Softled-Objekte bei der Initiierung
 SoftLed SigLed[ MAX_LEDS ];
@@ -217,16 +218,17 @@ NmraDcc Dcc;
 // Bequemlichkeitsmacros:
 #define getPar( Adr, Par ) Dcc.getCV((int)&CV->Fkt[Adr].Par )
 //----------------------------------------------------------------------------------------
-static byte sigPin(byte wIx,byte pIx) {
+static byte getIoPin(byte wIx,byte pIx) {
     // Portadresse für Signalpins bestimmen.
     // wIx: Weichenindex (Grundadresse des Signals)
     // pIx: Signalinterner Portindex ( 0...5 )
-    if ( ( pIx & 0x01 ) == 0 ) return out1Pins[wIx+pIx/2];
-    else                   return out2Pins[wIx+pIx/2];
+    if ( ( pIx % PPF ) == 0 ) return out1Pins[wIx+pIx/PPF];
+    else if ( ( pIx % PPF ) == 1 ) return out2Pins[wIx+pIx/PPF];
+    else  return out3Pins[wIx+pIx/PPF];
 }
 
 //----------------------------------------------------------------------------------------
-static void setSigPin( byte wIx, byte pIx, byte Value ) {
+static void setIoPin( byte wIx, byte pIx, byte Value ) {
     // setzen/Rücksetzen eines Ausgangsport. Je nach Konfiguration wird
     // direkt oder per sofLed geschaltet
     // wIx: Weichenindex (Grundadresse des Signals)
@@ -234,9 +236,9 @@ static void setSigPin( byte wIx, byte pIx, byte Value ) {
     // Value: HIGH oder LOW, ON oder OFF
     
     // Falls es ein Port der Folgeadresse ist (Signal!)
-    wIx += ( pIx >> 1 );
-    pIx &= 0x01;
-    DB_PRINT( "set port Typ %d, pIx %d,  wIx %d, pins %d %d, Wert=%d ", portTyp[pIx][wIx], pIx, wIx, out1Pins[wIx], out2Pins[wIx], Value ); 
+    wIx += ( pIx / PPF );
+    pIx = pIx % PPF;
+    DB_PRINT( "set port Typ %d, pIx %d,  wIx %d, pin  %d, Wert=%d ", portTyp[pIx][wIx], pIx, wIx, getIoPin(wIx,pIx), Value ); 
     if ( portTyp[pIx][wIx] >=0 ) {
         // Es ist ein Softled-Ausgang
         byte typ = Value? LINEAR : BULB;
@@ -244,7 +246,8 @@ static void setSigPin( byte wIx, byte pIx, byte Value ) {
     } else {
         // Standard-Digitalausgang
         if ( pIx == 0 ) { digitalWrite( out1Pins[wIx], Value ); }
-        else            { digitalWrite( out2Pins[wIx], Value ); }
+        else if ( pIx == 1 ) { digitalWrite( out2Pins[wIx], Value ); } 
+        else { digitalWrite( out3Pins[wIx], Value ); }
     }
 }
 
@@ -273,12 +276,12 @@ static void setSignal ( byte wIx ) {
     switch ( iniTyp[wIx] ) {
       case FSIGNAL3:
       case FSIGNAL2:
-       // der Sollzustand des gesamten Signals steht in weicheIst[wIx+1]
+       // der Sollzustand des gesamten Signals steht in weicheIst[wIx+1] (=signalSoll[wIx])
         sigZustand = signalSoll(wIx);
         // Ausgangszustände entsprechend Signalzustand bestimmen (CV-Wert)
         sigOutMsk = Dcc.getCV( CVBaseAdr[sigZustand] + CVoffs );
-        for ( byte i=0; i< (iniTyp[wIx] == FSIGNAL3 ? 8 : 4) ; i++ ) {
-            setSigPin( wIx, i, sigOutMsk&1 );
+        for ( byte i=0; i< (iniTyp[wIx] == FSIGNAL3 ? (min(8,PPF*3)) : (PPF*2) ) ; i++ ) {
+            setIoPin( wIx, i, sigOutMsk&1 );
             sigOutMsk = sigOutMsk >> 1;
         }
         break;
@@ -296,10 +299,10 @@ static void clrSignal ( byte wIx ) {
       case FSIGNAL3:
       case FSIGNAL2:
         // nur 'soft' Ausgangszustände löschen
-        for ( byte pIx=0; pIx< (iniTyp[wIx] == FSIGNAL3 ? 8 : 4) ; pIx++ ) {
-            if ( portTyp[pIx&1][wIx+(pIx>>1)] >=0 ) {
+        for ( byte pIx=0; pIx< (iniTyp[wIx] == FSIGNAL3 ?(min(8,PPF*3)) : (PPF*2)) ; pIx++ ) {
+            if ( portTyp[pIx%PPF][wIx+(pIx/PPF)] >=0 ) {
                 // Es ist ein Softled-Ausgang
-                setSigPin( wIx, pIx, OFF );
+                setIoPin( wIx, pIx, OFF );
             }
         }
         break;
@@ -445,17 +448,33 @@ void setup() {
             digitalWrite( coil2Pins[wIx], LOW );
             break;
           case FSTATIC:
-            pinMode( out1Pins[wIx], OUTPUT );
-            pinMode( out2Pins[wIx], OUTPUT );
-
+            // Modi der Ausgangsports
+            if ( GetCvPar(wIx,Mode) & BLKSOFT ) {
+                // Ausgangsports als Softleds einrichten
+                for ( byte i=0; i<2; i++ ) {
+                    byte outPin = getIoPin( wIx, i );
+                    if ( outPin != NC ) {
+                        byte att, rise, writ;
+                        att=SigLed[slIx].attach( outPin );
+                        SigLed[slIx].riseTime( 500 );
+                        SigLed[slIx].write( OFF, LINEAR );
+                        portTyp[i][wIx] = slIx++;
+                        DB_PRINT( "Softled, pin %d, Att=%d", outPin, att );
+                    }
+                }
+            } else {
+                pinMode( out1Pins[wIx], OUTPUT );
+                pinMode( out2Pins[wIx], OUTPUT );
+            }
+            // Grundstellung der Ausgangsports
             if ( GetCvPar(wIx,Mode) & BLKMODE ) {
                 // aktuellen Blinkstatus berücksichtigen
-                digitalWrite( out1Pins[wIx], LOW );
-                digitalWrite( out2Pins[wIx], LOW );
+                setIoPin( wIx, 0, LOW );
+                setIoPin( wIx, 1, LOW );
             } else {
                 // statische Ausgabe
-                digitalWrite( out1Pins[wIx], weicheIst[wIx] & 0x1 );
-                digitalWrite( out2Pins[wIx], !(weicheIst[wIx] & 0x1  ) );
+                setIoPin( wIx, 0, weicheIst[wIx] & 0x1 );
+                setIoPin( wIx, 1, !(weicheIst[wIx] & 0x1  ) );
             }
             break;
           case FSIGNAL2:
@@ -468,21 +487,21 @@ void setup() {
             weicheIst[wIx+1] = weicheIst[wIx]; // Gesamt Soll = Istzustand
             weicheSoll[wIx] = weicheIst[wIx] & 1; // EinzelSollzustände
             weicheSoll[wIx+1] = (weicheIst[wIx]>>1) & 1;
-            byte outMax = 4;                             // Zahl der zugeordneten Ausgangsports
+            byte outMax = PPF*2;                             // Zahl der zugeordneten Ausgangsports
             if ( iniTyp[wIx] == FSIGNAL3 ) {
                 weicheSoll[wIx+2] = (weicheIst[wIx]>>2) & 1;
-                outMax = 6;                             // 6 Ports bei FSIGNAL3
+                outMax = min( 8, PPF*3 );                             // 6 Ports bei FSIGNAL3
             }
             // Modi der Ausgänge setzen
             byte sigMode = getPar(wIx+1,Mode); // Bitcodierung harte/weiche Ledumschaltung
             for ( byte sigO = 0; sigO < outMax ; sigO++ ) {
                 // sigMode enthält bitcodiert die Info ob harte/weiche Umschaltung
-                byte outPin = sigPin( wIx, sigO );
+                byte outPin = getIoPin( wIx, sigO );
                 // DB_PRINT( "SigMode=%02x, Index= %d, pin=%d, ", sigMode, sigO,outPin);
+                portTyp[sigO%PPF][wIx+(sigO/PPF)] = -1; // Default ( auch für 'NC' Ports )
                 if ( sigMode & (1<<sigO) ) {
                     // Bit gesetzt -> harte Umschaltung
                     pinMode(outPin, OUTPUT );
-                    portTyp[sigO&1][wIx+(sigO>>1)] = -1;
                 } else {
                     // Bit = 0 -> Softled
                     if ( outPin != NC ) {
@@ -490,7 +509,7 @@ void setup() {
                         att=SigLed[slIx].attach( outPin );
                         SigLed[slIx].riseTime( 500 );
                         SigLed[slIx].write( OFF, LINEAR );
-                        portTyp[sigO&1][wIx+(sigO>>1)] = slIx++;
+                        portTyp[sigO%PPF][wIx+(sigO/PPF)] = slIx++;
                         //DB_PRINT( "Softled, pin %d, Att=%d", outPin, att );
                     }
                 }
@@ -590,11 +609,11 @@ void loop() {
           case FSTATIC: // Ausgang statisch ein/ausschalten ------------------------------------
             // muss Ausgang umgeschaltet werden?
             if ( (weicheSoll[i]&1) != (weicheIst[i]&1) ) {
-                digitalWrite( out1Pins[i], weicheSoll[i] );
+                setIoPin( i,0, weicheSoll[i] );
                 if ( GetCvPar(1,Mode) & BLKMODE ) {
-                    digitalWrite( out2Pins[i], (GetCvPar(i,Mode) & BLKSTRT)&& (weicheSoll[i]&1) ); 
+                    setIoPin( i,1, (GetCvPar(i,Mode) & BLKSTRT)&& (weicheSoll[i]&1) ); 
                 } else {                   
-                    digitalWrite( out2Pins[i], !weicheSoll[i] );                    
+                    setIoPin( i,1, !weicheSoll[i] );                    
                 }
                 //DB_PRINT( "Soll=%d, Ist=%d", weicheSoll[i], weicheIst[i] );
                 weicheIst[i] = weicheSoll[i];
@@ -612,14 +631,14 @@ void loop() {
                     // Timer abgelaufen, Led-Status wechseln
                     if ( weicheIst[i] & BLKON ) {
                         // Led ausschalten
-                        digitalWrite( out1Pins[i], LOW );
-                        digitalWrite( out2Pins[i], HIGH );
+                        setIoPin( i,0, LOW );
+                        setIoPin( i,1, HIGH );
                         weicheIst[i] &= ~BLKON;
                         pulseT[i].setTime( Dcc.getCV( (int) &CV->Fkt[i].Par2 )*10 );
                     } else {
                         // Led einschalten
-                        digitalWrite( out1Pins[i], HIGH );
-                        digitalWrite( out2Pins[i], LOW );
+                        setIoPin( i,0, HIGH );
+                        setIoPin( i,1, LOW );
                         weicheIst[i] |= BLKON;
                         pulseT[i].setTime( Dcc.getCV( (int) &CV->Fkt[i].Par1 )*10 );
                     }

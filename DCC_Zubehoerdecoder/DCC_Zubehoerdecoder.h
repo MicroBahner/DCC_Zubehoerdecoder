@@ -54,7 +54,7 @@
  *  FSTATIC statischer/Blinkender Ausgang 
  *  CV50    Bit0 = 1: Blinken,  0: statisch
  *          Bit1 = 1: Beim Blinken starten erst beide Leds dann Wechselblinken
- *          Bit2: mit weichem Auf/Abblenden (Pins müssen PWM-fähig sein)
+ *          Bit2: mit weichem Auf/Abblenden 
  *  CV51    Einschaltzeit des Blinkens ( 10ms Einheiten )
  *  CV52    Ausschaltzeit des Blinkens ( 10ms Einheiten )
  *  CV53    1. Einschaltzeit beim Start des Blinkens
@@ -108,8 +108,9 @@ const byte encode2P     =   A2;
 //            z.B. wenn bei einem Servo kein Polarisierungsrelais benötigt wird
 const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmierung) (Led)
 const byte iniTyp[]     =   {   FSIGNAL2,   FSIGNAL0,   FSERVO,   FSERVO,  FSTATIC,  FSTATIC,    FCOIL };
-const byte out1Pins[]   =   {          9,         11,       A0,       A1,        7,        8,       A2 };  // output-pins der Funktionen
-const byte out2Pins[]   =   {         10,         12,       NC,       NC,        6,       NC,       A3 };
+const byte out1Pins[]   =   {          9,         12,       A0,       A1,        7,        8,       A2 };  // output-pins der Funktionen
+const byte out2Pins[]   =   {         10,          5,       NC,       NC,        6,       NC,       A3 };
+const byte out3Pins[]   =   {         11,         NC,       NC,       NC,       NC,       NC,       NC };
 
 //-------------------------------------------------------------------------------------------------------
 // Betriebswerte ( per CV änderbar ) Diese Daten werden nur im Initiierungsmodus in die CV's geschrieben.
@@ -125,9 +126,9 @@ const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV
 // für diese CV's enthalten. Der 5. Wert dient internen Zwecken und wird hier nicht initiiert
 // In der Betriebsart 'INIMode' werden Mode und Parx Werte bei jedem Start aus der folgenden Tabelle übernommen
 // Die Tabellenwerte müssen an die Typaufteilung ( iniTyp, s.o.) angepasst werden.
-const byte iniFmode[]     = {        0,   0b0000, SAUTOOFF,        0,  BLKMODE,        0, CAUTOOFF };
-const byte iniPar1[]      = {   0b0010,   0b0100,        0,        0,       50,        0,       50 };
-const byte iniPar2[]      = {   0b0001,   0b1001,      180,      180,       50,        0,       50 };
+const byte iniFmode[]     = {        0,  0b10000, SAUTOOFF,        0,  BLKMODE,        0, CAUTOOFF };
+const byte iniPar1[]      = {  0b00010,  0b10100,        0,        0,       50,        0,       50 };
+const byte iniPar2[]      = {  0b10001,  0b11001,      180,      180,       50,        0,       50 };
 const byte iniPar3[]      = {       50,        8,        8,        0,      100,        0,        0 };
 
 //-------------------------------------------------------------------------------------
