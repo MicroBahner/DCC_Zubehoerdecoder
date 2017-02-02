@@ -47,7 +47,7 @@
 */
 #define DCC_DECODER_VERSION_ID 0x31
 // für debugging ------------------------------------------------------------
-#define DEBUG ;             // Wenn dieser Wert gesetzt ist, werden Debug Ausgaben auf dem ser. Monitor ausgegeben
+//#define DEBUG ;             // Wenn dieser Wert gesetzt ist, werden Debug Ausgaben auf dem ser. Monitor ausgegeben
 
 #ifdef DEBUG
 #define DB_PRINT( x, ... ) { sprintf_P( dbgbuf, PSTR( x ), __VA_ARGS__ ) ; Serial.println( dbgbuf ); }
@@ -610,7 +610,7 @@ void loop() {
             // muss Ausgang umgeschaltet werden?
             if ( (weicheSoll[i]&1) != (weicheIst[i]&1) ) {
                 setIoPin( i,0, weicheSoll[i] );
-                if ( GetCvPar(1,Mode) & BLKMODE ) {
+                if ( GetCvPar(i,Mode) & BLKMODE ) {
                     setIoPin( i,1, (GetCvPar(i,Mode) & BLKSTRT)&& (weicheSoll[i]&1) ); 
                 } else {                   
                     setIoPin( i,1, !weicheSoll[i] );                    
