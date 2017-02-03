@@ -116,20 +116,20 @@ const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV
 // Ausgänge:  mit NC gekennzeichnete Ausgänge werden keinem Port zugeordnet. Damit können Ports gespart werden,
 //            z.B. wenn bei einem Servo kein Polarisierungsrelais benötigt wird
 const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmierung) (Led)
-const byte iniTyp[]     =   {    FCOIL,   FSIGNAL2, FSIGNAL0,   FSERVO,   FSERVO,          FSTATIC };
-const byte out1Pins[]   =   {       A2,          9,       12,       A0,       A1,                5 };  // output-pins der Funktionen
-const byte out2Pins[]   =   {       A3,         10,       NC,        7,        3,                6 };
-const byte out3Pins[]   =   {       NC,         11,       NC,        8,       NC,               NC };
+const byte iniTyp[]     =   {    FCOIL,   FSIGNAL2, FSIGNAL0,   FSERVO,   FSERVO,          FSTATIC,  FSTATIC };
+const byte out1Pins[]   =   {       A2,          9,       12,       A0,       A1,                7,        8 };  // output-pins der Funktionen
+const byte out2Pins[]   =   {       A3,         10,        5,       NC,       NC,                6,       NC };
+const byte out3Pins[]   =   {       NC,         11,       NC,       NC,       NC,               NC,       NC };
 
 // Funktionsspezifische Parameter. Diese Parameter beginnen bei CV 50 und pro Funktionsausgang gibt es
 // 5 CV-Werte. Die ersten 4 Werte steuern das Verhalten und in der folgenden Tabelle sind Erstinitiierungswerte
 // für diese CV's enthalten. Der 5. Wert dient internen Zwecken und wird hier nicht initiiert
 // In der Betriebsart 'INIMode' werden Mode und Parx Werte bei jedem Start aus der folgenden Tabelle übernommen
 // Die Tabellenwerte müssen an die Typaufteilung ( iniTyp, s.o.) angepasst werden.
-const byte iniFmode[]     = { CAUTOOFF,         0,0b11110000,        0,        0,  BLKMODE|BLKSOFT };
-const byte iniPar1[]      = {       50, 0b0000010,0b00000100,        0,        0,               50 };
-const byte iniPar2[]      = {       50, 0b0000001,0b00001001,      180,      180,               50 };
-const byte iniPar3[]      = {        0,        50,         8,        8,        8,              100 };
+const byte iniFmode[]     = { CAUTOOFF,         0,   0b10000, SAUTOOFF,        0,  BLKMODE|BLKSOFT,        0 };
+const byte iniPar1[]      = {       50,   0b00010,   0b10100,        0,        0,               50,        0 };
+const byte iniPar2[]      = {       50,   0b10001,   0b11001,      180,      180,               50,        0 };
+const byte iniPar3[]      = {        0,        50,         8,        8,        0,              100,        0 };
 
 //------------------------------------------------------------------------------------
 /* die folgenden Werte dienen als Beispiele für sinnvolle Einträge in der obigen Paramtertabelle. 
