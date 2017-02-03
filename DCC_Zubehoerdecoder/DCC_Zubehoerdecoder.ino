@@ -27,6 +27,7 @@
  *                  (A6/7 sind beim UNO nicht vorhanden)
  *   Version 3.1    Wechselblinker mit Softleds, 
  *                  Zusammenfassung von Weichenadressen zur Ansteuerung von Lichtsignalen                
+ *                  Weichensteuerung mit Servos und 2 Relais. Während der Bewegung sind beide Relais abgefallen
  *   
  * Eigenschaften:
  * Bis zu 8 (aufeinanderfolgende) Zubehöradressen ansteuerbar
@@ -112,7 +113,8 @@ CVPair FactoryDefaultCVs [] =
 
 // allgemeine defines ---------------------------------------------------------
 #define servoPins out1Pins  // Portnamen fürs Servofunktion
-#define relaisPins out2Pins
+#define relais1Pins out2Pins
+#define relais2Pins out3Pins
 #define coil1Pins out1Pins  // Portnamen für Magnetartikelfunktion
 #define coil2Pins out2Pins
 
@@ -429,7 +431,8 @@ void setup() {
           case FSERVO:
             weicheS[wIx].attach( servoPins[wIx], Dcc.getCV(  (int) &CV->Fkt[wIx].Mode) & SAUTOOFF );
             weicheS[wIx].setSpeed( Dcc.getCV(  (int) &CV->Fkt[wIx].Par3 ) );
-            pinMode( relaisPins[wIx], OUTPUT );
+            pinMode( relais1Pins[wIx], OUTPUT );
+            pinMode( relais2Pins[wIx], OUTPUT );
             // Servowerte und Relaisausgang initiieren und ausgeben
             if ( weicheSoll[wIx] == GERADE ) {
                 weicheS[wIx].write( Dcc.getCV( (int) &CV->Fkt[wIx].Par1 ) );
@@ -438,7 +441,8 @@ void setup() {
             }
             weicheIst[wIx] = weicheSoll[wIx];
             relaisOut[wIx] = weicheIst[wIx];
-            digitalWrite( relaisPins[wIx], relaisOut[wIx] );
+            digitalWrite( relais1Pins[wIx], relaisOut[wIx] );
+            digitalWrite( relais2Pins[wIx], !relaisOut[wIx] );
             break;
           case FCOIL:
             pinMode( coil1Pins[wIx], OUTPUT );
@@ -564,7 +568,21 @@ void loop() {
                 }
             }
             // Relaisausgänge setzen
-            digitalWrite( relaisPins[i], relaisOut[i] );
+            if ( relais2Pins[i] == NC ) {
+                // Variante mit einem Relais, wird in Bewegungsmitte umgeschaltet
+                digitalWrite( relais1Pins[i], relaisOut[i] );
+            } else {
+                // Variante mit 2 Relais, während der Bewegung beide Relais abschalten
+                if ( weicheIst[i] & MOVING ) {
+                    digitalWrite( relais1Pins[i], OFF );
+                    digitalWrite( relais2Pins[i], OFF );
+                } else {
+                    // im Stillstand des Servos entsprechend relaisout schalten
+                    digitalWrite( relais1Pins[i], relaisOut[i] );
+                    digitalWrite( relais2Pins[i], !relaisOut[i] );
+                }
+            }
+            
             break;
 
           case FCOIL: //Doppelspulenantriebe ------------------------------------------------------
@@ -753,11 +771,6 @@ void notifyCVAck ( void ) {
 //-----------------------------------------------------
 // Wird aufgerufen, nachdem ein CV-Wert verändert wurde
 void notifyCVChange( uint16_t CvAddr, uint8_t Value ) {
-    #ifdef DEBUG
-    long eeTime = micros();
-    while ( ! Dcc.isSetCVReady() );
-    DB_PRINT( "CVWrite: %ld us", (micros()-eeTime) );
-    #endif
     // Es wurde ein CV verändert. Ist dies eine aktive Servoposition, dann die Servoposition
     // entsprechend anpassen
     DB_PRINT( "neu: CV%d=%d", CvAddr, Value );
