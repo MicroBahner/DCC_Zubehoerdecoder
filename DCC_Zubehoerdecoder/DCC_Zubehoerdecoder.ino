@@ -785,6 +785,10 @@ void notifyCVChange( uint16_t CvAddr, uint8_t Value ) {
                 // Servo neu positionieren
                 //DB_PRINT( "Ausg.%d , Pos. %d neu einstellen", i, weicheSoll[i] );
                  weicheS[i].write( Value );
+            } else if ( CvAddr == (uint16_t) &CV->Fkt[i].Par1 ||
+                        CvAddr == (uint16_t) &CV->Fkt[i].Par2  ) {
+                  // ist nicht de aktuelle Position des Servos, Servo umstellen
+                  weicheSoll[i] = ! weicheSoll[i];
             } else if ( CvAddr == (uint16_t) &CV->Fkt[i].Par3 ) {
                 // die Geschwindigkeit des Servo wurde verändert
                 //DB_PRINT( "Ausg.%d , Speed. %d neu einstellen", i, Value );
