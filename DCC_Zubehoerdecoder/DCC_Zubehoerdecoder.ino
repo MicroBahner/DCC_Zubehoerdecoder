@@ -28,6 +28,9 @@
  *   Version 3.1    Wechselblinker mit Softleds, 
  *                  Zusammenfassung von Weichenadressen zur Ansteuerung von Lichtsignalen                
  *                  Weichensteuerung mit Servos und 2 Relais. Während der Bewegung sind beide Relais abgefallen
+ *   Version 3.2    Bei Softledes-Ausgägne für Lichtsgnale kann die 'Aktiv'-Stellung der Ausgänge invertiert 
+ *                  werden ( HIGH=OFF/LOW=ON ) (Bit 0 im Mode-CV des FSIGNAL2/3). Dazu werden die MobaTools ab
+ *                  V0.9 benötigt
  *   
  * Eigenschaften:
  * Bis zu 8 (aufeinanderfolgende) Zubehöradressen ansteuerbar
@@ -52,7 +55,7 @@
 
 #ifdef DEBUG
 #define DB_PRINT( x, ... ) { sprintf_P( dbgbuf, PSTR( x ), __VA_ARGS__ ) ; Serial.println( dbgbuf ); }
-static char dbgbuf[60];
+static char dbgbuf[80];
 #else
 #define DB_PRINT ;
 #endif
@@ -90,6 +93,9 @@ static char dbgbuf[60];
 #define BLKMODE 0x01    // FSTATIC: Ausgänge blinken
 #define BLKSTRT 0x02    // FSTATIC: Starten mit beide Ausgängen EIN
 #define BLKSOFT 0x04    // FSTATIC: Ausgänge als Softleds
+
+#define LEDINVERT 0x01  // FSIGNAL: SoftledAusgänge invertieren (Bit 0 des Modebyte von FSIGNAL2/3)
+
 
 const byte dccPin       =   2;
 const byte ackPin       =   4;
@@ -510,9 +516,9 @@ void setup() {
                     // Bit = 0 -> Softled
                     if ( outPin != NC ) {
                         byte att, rise, writ;
-                        att=SigLed[slIx].attach( outPin );
+                        att=SigLed[slIx].attach( outPin,getPar(wIx,Mode)&LEDINVERT );
                         SigLed[slIx].riseTime( 500 );
-                        SigLed[slIx].write( OFF, LINEAR );
+                        SigLed[slIx].write( OFF, BULB );
                         portTyp[sigO%PPF][wIx+(sigO/PPF)] = slIx++;
                         //DB_PRINT( "Softled, pin %d, Att=%d", outPin, att );
                     }

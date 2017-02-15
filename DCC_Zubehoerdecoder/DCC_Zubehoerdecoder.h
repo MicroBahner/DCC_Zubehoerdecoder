@@ -62,7 +62,7 @@
  *  
  *  FSIGNAL2 / FSIGNAL3  Signaldecoder mit 2/3 Weichenadressen 
  *          bei den Folgeadressen ist als Typ FSIGNAL0 einzutragen
- *  CV50    Signalmodus / reserviert
+ *  CV50    Signalmodus: Bit0=1 : invertiert die Softled-Ausgänge (HIGH=OFF) (MobaTools ab V0.9)
  *  CV51    Bitmuster der Ausgänge für Zustand 000
  *  CV52    Bitmuster der Ausgänge für Zustand 001
  *  CV53    Überblendzeit in 10ms-Schritten
@@ -126,10 +126,10 @@ const byte out3Pins[]   =   {       NC,         11,       NC,        8,       NC
 // für diese CV's enthalten. Der 5. Wert dient internen Zwecken und wird hier nicht initiiert
 // In der Betriebsart 'INIMode' werden Mode und Parx Werte bei jedem Start aus der folgenden Tabelle übernommen
 // Die Tabellenwerte müssen an die Typaufteilung ( iniTyp, s.o.) angepasst werden.
-const byte iniFmode[]     = { CAUTOOFF,         0,0b11110000,        0,        0,  BLKMODE|BLKSOFT };
-const byte iniPar1[]      = {       50, 0b0000010,0b00000100,        0,        0,               50 };
-const byte iniPar2[]      = {       50, 0b0000001,0b00001001,      180,      180,               50 };
-const byte iniPar3[]      = {        0,        50,         8,        8,        8,              100 };
+const byte iniFmode[]     = { CAUTOOFF, LEDINVERT, 0b11110000,        0,        0,  BLKMODE|BLKSOFT };
+const byte iniPar1[]      = {       50, 0b0000010, 0b00000100,        0,        0,               50 };
+const byte iniPar2[]      = {       50, 0b0000001, 0b00001001,      180,      180,               50 };
+const byte iniPar3[]      = {        0,        50,          8,        8,        8,              100 };
 
 //------------------------------------------------------------------------------------
 /* die folgenden Werte dienen als Beispiele für sinnvolle Einträge in der obigen Paramtertabelle. 
