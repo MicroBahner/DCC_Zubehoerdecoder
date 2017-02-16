@@ -28,9 +28,10 @@
  *   Version 3.1    Wechselblinker mit Softleds, 
  *                  Zusammenfassung von Weichenadressen zur Ansteuerung von Lichtsignalen                
  *                  Weichensteuerung mit Servos und 2 Relais. Während der Bewegung sind beide Relais abgefallen
- *   Version 3.2    Bei Softledes-Ausgägne für Lichtsgnale kann die 'Aktiv'-Stellung der Ausgänge invertiert 
- *                  werden ( HIGH=OFF/LOW=ON ) (Bit 0 im Mode-CV des FSIGNAL2/3). Dazu werden die MobaTools ab
+ *   Version 3.2    Bei Softled-Ausgägen für Lichtsgnale kann die 'ON'-Stellung der Ausgänge invertiert 
+ *                  werden ( HIGH=OFF/LOW=ON ) (Bit 7 im Mode-CV des FSIGNAL2/3). Dazu werden die MobaTools ab
  *                  V0.9 benötigt
+ *                  Lichtsignalbilder sind jetzt direkt den einzelnen Weichenbefehlen zugeordnet
  *   
  * Eigenschaften:
  * Bis zu 8 (aufeinanderfolgende) Zubehöradressen ansteuerbar
@@ -94,7 +95,7 @@ static char dbgbuf[80];
 #define BLKSTRT 0x02    // FSTATIC: Starten mit beide Ausgängen EIN
 #define BLKSOFT 0x04    // FSTATIC: Ausgänge als Softleds
 
-#define LEDINVERT 0x01  // FSIGNAL: SoftledAusgänge invertieren (Bit 0 des Modebyte von FSIGNAL2/3)
+#define LEDINVERT 0x80  // FSIGNAL: SoftledAusgänge invertieren (Bit 0 des Modebyte von FSIGNAL2/3)
 
 
 const byte dccPin       =   2;
@@ -266,25 +267,23 @@ static void setSignal ( byte wIx ) {
     byte sigZustand; // aktueller Signalzustand, abgeleitet aus den Weichenzuständen
     byte sigOutMsk;  // Bitmaske der Ausgangsports (Bit=1:Ausgang setzen, Bit=0 Ausgang rücksetzen
                      /* Diese Maske steht für jeden Signalzustand in entsprechenden CV-Paramtern:
-                     *  CV51+offs    Bitmuster der Ausgänge für Zustand 000
-                     *  CV52+offs    Bitmuster der Ausgägne für Zustand 001
-                     *  CV56+offs    Bitmuster der Ausgänge für Zustand 010
-                     *  CV57+offs    Bitmuster der Ausgänge für Zustand 011
+                     *  CV51+offs    Bitmuster der Ausgänge für Befehl 1.Adresse 0 (rot)
+                     *  CV52+offs    Bitmuster der Ausgänge für Befehl 1.Adresse 1 (grün)
+                     *  CV56+offs    Bitmuster der Ausgänge für Befehl 2.Adresse 0 (rot)
+                     *  CV57+offs    Bitmuster der Ausgänge für Befehl 2.Adresse 1 (grün)
                      *  die folgenden CV's sind nur relevant bei FSIGNAL3 (3 Adressen, 8 Zustände 6 Ausgänge)
-                     *  CV60+offs    Bitmuster der Ausgänge für Zustand 100
-                     *  CV61+offs    Bitmuster der Ausgänge für Zustand 101
-                     *  CV62+offs    Bitmuster der Ausgänge für Zustand 110
-                     *  CV63+offs    Bitmuster der Ausgänge für Zustand 111
+                     *  CV61+offs    Bitmuster der Ausgänge für Befehl 3.Adresse 0 (rot)
+                     *  CV62+offs    Bitmuster der Ausgänge für Befehl 3.Adresse 1 (grün)
                      *  offs= wIx*5
                      */
-    static int CVBaseAdr[] = { 51,52,56,57,60,61,62,63 } ;
+    static int CVBaseAdr[] = { 51,52,56,57,61,62,66,67 } ; // schon für 4 Adressen vorgesehen
     byte CVoffs = wIx*5;
     // Signalzustand bestimmen
     sigZustand = 0;
     switch ( iniTyp[wIx] ) {
       case FSIGNAL3:
       case FSIGNAL2:
-       // der Sollzustand des gesamten Signals steht in weicheIst[wIx+1] (=signalSoll[wIx])
+       // der Sollzustand des gesamten Signals steht in weicheIst[wIx+1] (=signalSoll(wIx))
         sigZustand = signalSoll(wIx);
         // Ausgangszustände entsprechend Signalzustand bestimmen (CV-Wert)
         sigOutMsk = Dcc.getCV( CVBaseAdr[sigZustand] + CVoffs );

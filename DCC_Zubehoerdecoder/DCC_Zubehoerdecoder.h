@@ -62,20 +62,20 @@
  *  
  *  FSIGNAL2 / FSIGNAL3  Signaldecoder mit 2/3 Weichenadressen 
  *          bei den Folgeadressen ist als Typ FSIGNAL0 einzutragen
- *  CV50    Signalmodus: Bit0=1 : invertiert die Softled-Ausgänge (HIGH=OFF) (MobaTools ab V0.9)
- *  CV51    Bitmuster der Ausgänge für Zustand 000
- *  CV52    Bitmuster der Ausgänge für Zustand 001
+ *  CV50    Signalmodus: Bit7=1 : invertiert die Softled-Ausgänge (HIGH=OFF) (MobaTools ab V0.9)
+ *  CV51    Bitmuster der Ausgänge für Befehl 1.Adresse 0 (rot)
+ *  CV52    Bitmuster der Ausgänge für Befehl 1.Adresse 1 (grün)
  *  CV53    Überblendzeit in 10ms-Schritten
  *  CV55    Bitmuster hard/soft gibt an, welche Ausgänge 'hart' umschalten (Bit=1)
  *          und Welche Ausgänge weich überblenden (Bit=0)
- *  CV56    Bitmuster der Ausgänge für Zustand 010
- *  CV57    Bitmuster der Ausgänge für Zustand 011
+ *  CV56    Bitmuster der Ausgänge für Befehl 2.Adresse 0 (rot)
+ *  CV57    Bitmuster der Ausgänge für Befehl 2.Adresse 1 (grün)
  *  CV58    reserved
- *  die folgenden CV's sind nur relevant bei FSIGNAL3 (3 Adressen, 8 Zustände 6 Ausgänge)
- *  CV60     Bitmuster der Ausgänge für Zustand 100
- *  CV61     Bitmuster der Ausgänge für Zustand 101
- *  CV62     Bitmuster der Ausgänge für Zustand 110
- *  CV63     Bitmuster der Ausgänge für Zustand 111
+ *  die folgenden CV's sind nur relevant bei FSIGNAL3 (3 Adressen, 6 Zustände 8 Ausgänge)
+ *  CV60     reserved
+ *  CV61     Bitmuster der Ausgänge für Befehl 3.Adresse 0 (rot)
+ *  CV62     Bitmuster der Ausgänge für Befehl 3.Adresse 1 (grün)
+ *  CV63     reserved
 */
 #define ENCODER_DOUBLE  // Eigenschaften des Drehencoders (Impulse per Raststellung)
 
