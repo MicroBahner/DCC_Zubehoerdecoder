@@ -494,12 +494,12 @@ void setup() {
             // in WeicheIst[wIx+1] steht der SollZustand des gesamten Signals.
             // in WeicheSoll[..] stehen die einzelnen empfangenen Dcc-Sollzustände der Weichenadressen
             // Signale werden immer mit dem Grundzuustand initiiert ( = HP0 oder Hp00 )
-            weicheIst[wIx+1] = weicheIst[wIx]; // Gesamt Soll = Istzustand
-            weicheSoll[wIx] = weicheIst[wIx] & 1; // EinzelSollzustände
-            weicheSoll[wIx+1] = (weicheIst[wIx]>>1) & 1;
+            weicheIst[wIx+1] = weicheIst[wIx] = 0; // Gesamt Soll = Istzustand
+            weicheSoll[wIx] = 2; // EinzelSollzustände auf 'invalid'
+            weicheSoll[wIx+1] = 2;
             byte outMax = PPF*2;                             // Zahl der zugeordneten Ausgangsports
             if ( iniTyp[wIx] == FSIGNAL3 ) {
-                weicheSoll[wIx+2] = (weicheIst[wIx]>>2) & 1;
+                weicheSoll[wIx+2] = 2;
                 outMax = min( 8, PPF*3 );                             // 6 Ports bei FSIGNAL3
             }
             // Modi der Ausgänge setzen
@@ -673,9 +673,14 @@ void loop() {
           case FSIGNAL2:
             // Sollzustand des gesamten Signals bestimmen ( wird in weicheIst[i+1] gespeichert )
             // signalIst(i) und signalSoll(i) sind synonyme für weicheIst[i] bzw weicheist[i+1]
-            signalSoll(i) = (weicheSoll[i+1] << 1) + weicheSoll[i] ;
-            if ( iniTyp[i] == FSIGNAL3 ) signalSoll(i) += weicheSoll[i+2] << 2 ;
-
+            // Damit Weichenbefehle immer erkannt werden, werden die Weichensollwerte auf einen
+            // 'ungültig'-Wert gesetzt nachdem sie in SignalSoll integriert wurden
+            if ( weicheSoll[i] < 2 ) { signalSoll(i) = weicheSoll[i]; weicheSoll[i] = 2; }
+            if ( weicheSoll[i+1] < 2 ) { signalSoll(i) = weicheSoll[i+1]+2; weicheSoll[i+1] = 2; }
+            if ( iniTyp[i] == FSIGNAL3 && weicheSoll[i+2] < 2 ) {
+                 signalSoll(i) = weicheSoll[i+1]+4;
+                 weicheSoll[i+2] = 2;
+            }
             switch ( signalIst(i) & SIG_STATE_MASK ) {
               case SIG_WAIT:  
                 // warten auf Zustandsänderung am Signal  
@@ -752,7 +757,7 @@ void notifyDccAccState( uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, u
         }
         progMode = PROGMODE;
         SET_PROGLED;
-        //DB_PRINT( "Neu: Boardaddr: %d, 1.Weichenaddr: %d", BoardAddr, weichenAddr );
+        DB_PRINT( "Neu: Boardaddr: %d, 1.Weichenaddr: %d", BoardAddr, weichenAddr );
     }
     // Testen ob eigene Weichenadresse
     //DB_PRINT( "DecAddr=%d, Weichenadresse: %d , Ausgang: %d, State: %d", BoardAddr, wAddr, OutputAddr, State );
@@ -760,7 +765,7 @@ void notifyDccAccState( uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, u
         if (  wAddr == weichenAddr+i ) {
             // ist eigene Adresse, Sollwert setzen
             weicheSoll[i] =  OutputAddr & 0x1;
-            DB_PRINT( "Weiche %d, Index %d, Soll %d, Ist %d", wAddr, i, weicheSoll[i],  weicheIst[i] );
+            //DB_PRINT( "Weiche %d, Index %d, Soll %d, Ist %d", wAddr, i, weicheSoll[i],  weicheIst[i] );
             break; // Schleifendurchlauf abbrechen, es kann nur eine Weiche sein
         }
     }
