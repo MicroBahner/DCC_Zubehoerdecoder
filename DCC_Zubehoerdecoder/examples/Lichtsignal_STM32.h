@@ -60,26 +60,47 @@
  *  CV53    1. Einschaltzeit beim Start des Blinkens
  *  CV54    aktueller Zusatnd ( nicht manuell verändern! )
  *  
- *  FSIGNAL2 / FSIGNAL3  Signaldecoder mit 2/3 Weichenadressen 
+ *  FSIGNAL2 Lichtsignalfunktion mit 1..3 Weichenadressen 
  *          bei den Folgeadressen ist als Typ FSIGNAL0 einzutragen
- *  CV50    Signalmodus / reserviert
- *  CV51    Bitmuster der Ausgänge für Zustand 000
- *  CV52    Bitmuster der Ausgänge für Zustand 001
- *  CV53    Überblendzeit in 10ms-Schritten
- *  CV55    Bitmuster hard/soft gibt an, welche Ausgänge 'hart' umschalten (Bit=1)
+ *          Lichtsignale starten beim Einschalten immer im Zustand 0 (Bitmuster CV51)
+ *  CV50    Signalmodus: Bit7=1 : invertiert die Softled-Ausgänge (HIGH=OFF) (MobaTools ab V0.9)
+ *          Bit 2..0: Bitmuster hard/soft gibt an, welche Ausgänge 'hart' umschalten (Bit=1)
+ *          und welche Ausgänge weich überblenden (Bit=0)
+ *  CV51    Bitmuster der Ausgänge für Befehl 1.Adresse 0 (rot)
+ *  CV52    Bitmuster der Ausgänge für Befehl 1.Adresse 1 (grün)
+ *  CV53    Index des Vorsignals am gleichen Mast ( 0 …. )
+ *  CV54    Bitmuster der Zustände, bei denen das Vorsignal dunkel ist:
+ *              Bit 0: Befehl 1.Adresse 0 (rot)
+ *              Bit 1: Befehl 1.Adresse 1 (grün)
+ *              Bit 2: Befehl 2.Adresse 0 (rot)
+ *              u.s.w.
+ *  FSIGNAL0 1. Folgeadresse (optional)
+ *  CV55    Bit 2.. 0 Bitmuster hard/soft gibt an, welche Ausgänge 'hart' umschalten (Bit=1)
  *          und Welche Ausgänge weich überblenden (Bit=0)
- *  CV56    Bitmuster der Ausgänge für Zustand 010
- *  CV57    Bitmuster der Ausgänge für Zustand 011
+ *  CV56    Bitmuster der Ausgänge für Befehl 2.Adresse 0 (rot)
+ *  CV57    Bitmuster der Ausgänge für Befehl 2.Adresse 1 (grün)
  *  CV58    reserved
- *  die folgenden CV's sind nur relevant bei FSIGNAL3 (3 Adressen, 8 Zustände 6 Ausgänge)
- *  CV60     Bitmuster der Ausgänge für Zustand 100
- *  CV61     Bitmuster der Ausgänge für Zustand 101
- *  CV62     Bitmuster der Ausgänge für Zustand 110
- *  CV63     Bitmuster der Ausgänge für Zustand 111
-*/
+ *  CV59    reserved
+ *  FSIGNAL0 2. Folgeadresse (optional)
+ *  CV60     Bit 2.. 0 Bitmuster hard/soft gibt an, welche Ausgänge 'hart' umschalten (Bit=1)
+ *           und Welche Ausgänge weich überblenden (Bit=0)
+ *  CV61     Bitmuster der Ausgänge für Befehl 3.Adresse 0 (rot)
+ *  CV62     Bitmuster der Ausgänge für Befehl 3.Adresse 1 (grün)
+ *  CV63     reserved
+ *  CV64     reserved
+ *  
+ *  FVORSIG Vorsignalfunktion
+ *          weitgehend wie FSIGNAL2 ausser:
+ *  CV53    low Byte der Adresse des angekündigten Hauptsignals
+ *  CV54    high Byte der Adrsse des angekündigten Hauptsignals
+  */
 #define ENCODER_DOUBLE  // Eigenschaften des Drehencoders (Impulse per Raststellung)
 
-
+///////////////////////////////////////////////////////////////////////
+//
+//        Beispiel für Maple-Mini (STM32F1 Prozessor)
+//
+///////////////////////////////////////////////////////////////////////
 // vom Anwender änderbare Parameter um den Zubehördecoder an die verwendete HW anzupassen
 
 // Beispiel für Variante mit 4 Servos + 3 statischen Ausgängen, mit Betriebsmode Led an Pin 13 (interne Led)
@@ -87,12 +108,15 @@
 //----------------------------------------------------------------
 // Hardwareabhängige Konstante ( nicht per CV änderbar)
 //----------------------------------------------------------------
+const byte dccPin       =   2;
+const byte ackPin       =   1;
+
 // Eingänge analog: ( Bei Nano und Mini - Versionen kann hier auch A7 und A6 verwendet werden, um mehr
 //                    digital nutzbare Ports freizubekommen.
 //                    beim UNO sind A7+A6 nicht vorhanden! )
-const byte betrModeP    =   A5;     // Analogeingang zur Bestimmung des Betriebsmodus. Wird nur beim
+const byte betrModeP    =   5;     // Analogeingang zur Bestimmung des Betriebsmodus. Wird nur beim
                                     // Programmstart eingelesen!
-const byte resModeP     =   A4;     // Rücksetzen CV-Werte + Mittelstellung Servos
+const byte resModeP     =   4;     // Rücksetzen CV-Werte + Mittelstellung Servos
 
 // Eingänge digital (die Ports A0-A5 lassen sich auch digital verwenden): ---------
 
@@ -100,8 +124,8 @@ const byte resModeP     =   A4;     // Rücksetzen CV-Werte + Mittelstellung Ser
 //#define ENCODER_AKTIV       // Wird diese Zeile auskommentiert, wird der Encoder nicht verwendet. 
                             // Die Encoder-Ports werden dann ignoriert, und können anderweitig 
                             // verwendet werden.
-const byte encode1P     =   A3;     // Eingang Drehencoder zur Justierung.
-const byte encode2P     =   A2;
+const byte encode1P     =   3;     // Eingang Drehencoder zur Justierung.
+const byte encode2P     =   2;
 // ............................................
 //-------------------------------------------------------------------------------------------------------
 // Betriebswerte ( per CV änderbar ) Diese Daten werden nur im Initiierungsmodus in die CV's geschrieben.
@@ -113,23 +137,43 @@ const byte iniMode          = 0x50 | AUTOADDR /*| ROCOADDR*/;  // default-Betrie
 const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV48/49 )
 
 
+//Konstante für Lichtsignalfunktion
+#define SIG_DARK_TIME   300     // Zeit zwischen Dunkelschalten und Aufblenden des neuen Signalbilds
+#define SIG_RISETIME    500     // Auf/Abblendezeit
+
 // Ausgänge:  mit NC gekennzeichnete Ausgänge werden keinem Port zugeordnet. Damit können Ports gespart werden,
 //            z.B. wenn bei einem Servo kein Polarisierungsrelais benötigt wird
-const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmierung) (Led)
-const byte iniTyp[]     =   {    FCOIL,   FSIGNAL2, FSIGNAL0,   FSERVO,   FSERVO,          FSTATIC,  FSTATIC };
-const byte out1Pins[]   =   {       A2,          9,       12,       A0,       A1,                7,        8 };  // output-pins der Funktionen
-const byte out2Pins[]   =   {       A3,         10,        5,       NC,       NC,                6,       NC };
-const byte out3Pins[]   =   {       NC,         11,       NC,       NC,       NC,               NC,       NC };
+const byte modePin      =   33;     // Anzeige Betriebszustand (Normal/Programmierung) (Led)
 
+#define MAX_LEDS 12 // default ist 16. Kann auf die tatsächlich benutzte Zahl reduziert werden, um RAM zu sparen.
+                    // Pro Softled werden 19 Byte benötigt
+const byte iniTyp[]     =   {    FCOIL,   FSIGNAL2, FSIGNAL0,   FVORSIG,  FSIGNAL0,          FSTATIC };
+const byte out1Pins[]   =   {       NC,         15,       18,       19,       22,               12 };  // output-pins der Funktionen
+const byte out2Pins[]   =   {       NC,         16,       NC,       20,       NC,               13 };
+const byte out3Pins[]   =   {       NC,         17,       NC,       21,       NC,               NC };
+ 
+const byte iniFmode[]     = { CAUTOOFF, LEDINVERT, 0b00000100,        0,        0,  BLKMODE|BLKSOFT };
+const byte iniPar1[]      = {       50, 0b0000010, 0b00000100,   0b0101,   0b1001,               50 };
+const byte iniPar2[]      = {       50, 0b0000001, 0b00001001,   0b1010,      255,               50 };
+const byte iniPar3[]      = {        0,         4,          8,        8,        9,              100 };
+const byte iniPar4[]      = {        0, 0b0000101,          0,        0,        0,                0,}; // nur für Lichtsignale!
+
+/*
+const byte iniTyp[]     =   {    FCOIL,   FSIGNAL2, FSIGNAL0,   FVORSIG,   FSERVO,          FSTATIC };
+const byte out1Pins[]   =   {       A2,          9,       12,        7,       A1,                5 };  // output-pins der Funktionen
+const byte out2Pins[]   =   {       A3,         10,       NC,        8,        3,                6 };
+const byte out3Pins[]   =   {       NC,         11,       NC,        NC,       NC,               NC };
+ 
 // Funktionsspezifische Parameter. Diese Parameter beginnen bei CV 50 und pro Funktionsausgang gibt es
 // 5 CV-Werte. Die ersten 4 Werte steuern das Verhalten und in der folgenden Tabelle sind Erstinitiierungswerte
 // für diese CV's enthalten. Der 5. Wert dient internen Zwecken und wird hier nicht initiiert
 // In der Betriebsart 'INIMode' werden Mode und Parx Werte bei jedem Start aus der folgenden Tabelle übernommen
 // Die Tabellenwerte müssen an die Typaufteilung ( iniTyp, s.o.) angepasst werden.
-const byte iniFmode[]     = { CAUTOOFF,         0,   0b10000, SAUTOOFF,        0,  BLKMODE|BLKSOFT,        0 };
-const byte iniPar1[]      = {       50,   0b00010,   0b10100,        0,        0,               50,        0 };
-const byte iniPar2[]      = {       50,   0b10001,   0b11001,      180,      180,               50,        0 };
-const byte iniPar3[]      = {        0,        50,         8,        8,        0,              100,        0 };
+const byte iniFmode[]     = { CAUTOOFF, LEDINVERT, 0b00000100,        0,        0,  BLKMODE|BLKSOFT };
+const byte iniPar1[]      = {       50, 0b0000010, 0b00000100,   0b0001,        0,               50 };
+const byte iniPar2[]      = {       50, 0b0000001, 0b00001001,   0b0010,      180,               50 };
+const byte iniPar3[]      = {        0,         4,          8,        8,        8,              100 };
+const byte iniPar4[]      = {        0, 0b0000101,          0,        0,        0,                0,}; // nur für Lichtsignale!
 
 //------------------------------------------------------------------------------------
 /* die folgenden Werte dienen als Beispiele für sinnvolle Einträge in der obigen Paramtertabelle. 

@@ -50,9 +50,9 @@
  *  So sind z.B. bei Servoausgängen die Endlagen per CV-Wert einstellbar, bei Lichtsignalen ist die 
  *  Zuordnung der Ausgangszustände zum Signalzustand frei konfigurierbar.
 */
-#define DCC_DECODER_VERSION_ID 0x31
+#define DCC_DECODER_VERSION_ID 0x40
 // für debugging ------------------------------------------------------------
-#define DEBUG ;             // Wenn dieser Wert gesetzt ist, werden Debug Ausgaben auf dem ser. Monitor ausgegeben
+//#define DEBUG ;             // Wenn dieser Wert gesetzt ist, werden Debug Ausgaben auf dem ser. Monitor ausgegeben
 
 #ifdef DEBUG
 //#define DB_PRINT( x, ... ) { sprintf_P( dbgbuf, (const char*) F( x ), __VA_ARGS__ ) ; Serial.println( dbgbuf ); }
@@ -69,6 +69,10 @@ static char dbgbuf[60];
 // die arduino digitalWrite und digitalRead Funktionen prüfen auf gültige Pin-Nummern und machen nichts
 // bei ungültigen Nummern. 0xff ist nie eine gültige Pinnummer
 
+#ifdef __STM32F1__
+#define digitalPinToInterrupt(x) x
+#endif
+#define uint_t unsigned int
 
 // Grenzwerte des Analogeingangs für die jeweiligen Betriebsmodi ( gesamter Bereich 0...1024):
 #define ISNORMAL    853         // > 853 gilt als normalbetrieb
@@ -99,8 +103,6 @@ static char dbgbuf[60];
 #define LEDINVERT 0x80  // FSIGNAL: SoftledAusgänge invertieren (Bit 0 des Modebyte von FSIGNAL2/3)
 
 
-const byte dccPin       =   2;
-const byte ackPin       =   4;
 #include "DCC_Zubehoerdecoder.h"
 
 const byte WeichenZahl = sizeof(iniTyp);
@@ -452,7 +454,7 @@ void setup() {
         CLR_PROGLED;
     } else {
         // POM Programmierung aktiv
-        Dcc.init( MAN_ID_DIY, DCC_DECODER_VERSION_ID, FLAGS_DCC_ACCESSORY_DECODER, (uint8_t)((uint16_t) &CV->PomAddrLow) );
+        Dcc.init( MAN_ID_DIY, DCC_DECODER_VERSION_ID, FLAGS_DCC_ACCESSORY_DECODER, (uint8_t)((uint_t) &CV->PomAddrLow) );
         SET_PROGLED;
     }
 
@@ -889,17 +891,17 @@ void notifyCVChange( uint16_t CvAddr, uint8_t Value ) {
         switch ( iniTyp[i] ) {
           case FSERVO:
             // gehört der veränderte CV zu diesem Servo?
-            if (  (CvAddr == (uint16_t) &CV->Fkt[i].Par1 && dccSoll[i] == GERADE) ||
-                  (CvAddr == (uint16_t) &CV->Fkt[i].Par2 && dccSoll[i] == ABZW ) ){
+            if (  (CvAddr == (uint_t) &CV->Fkt[i].Par1 && dccSoll[i] == GERADE) ||
+                  (CvAddr == (uint_t) &CV->Fkt[i].Par2 && dccSoll[i] == ABZW ) ){
                 // Es handelt sich um die aktuelle Position des Servos,
                 // Servo neu positionieren
                 //DB_PRINT( "Ausg.%d , Pos. %d neu einstellen", i, dccSoll[i] );
                  weicheS[i].write( Value );
-            } else if ( CvAddr == (uint16_t) &CV->Fkt[i].Par1 ||
-                        CvAddr == (uint16_t) &CV->Fkt[i].Par2  ) {
+            } else if ( CvAddr == (uint_t) &CV->Fkt[i].Par1 ||
+                        CvAddr == (uint_t) &CV->Fkt[i].Par2  ) {
                   // ist nicht de aktuelle Position des Servos, Servo umstellen
                   dccSoll[i] = ! dccSoll[i];
-            } else if ( CvAddr == (uint16_t) &CV->Fkt[i].Par3 ) {
+            } else if ( CvAddr == (uint_t) &CV->Fkt[i].Par3 ) {
                 // die Geschwindigkeit des Servo wurde verändert
                 //DB_PRINT( "Ausg.%d , Speed. %d neu einstellen", i, Value );
                 weicheS[i].setSpeed( Value );
@@ -1067,7 +1069,9 @@ void setWeichenAddr(void) {
 }
 //--------------------------------------------------------
 void softReset(void){
-;asm volatile ("  jmp 0");
+    #ifdef __AVR_MEGA__
+    ;asm volatile ("  jmp 0");
+    #endif
 }
 //-----------------------------------------------------------
 #ifdef DEBUG
