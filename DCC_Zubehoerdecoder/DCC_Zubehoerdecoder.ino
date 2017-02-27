@@ -28,10 +28,11 @@
  *   Version 3.1    Wechselblinker mit Softleds, 
  *                  Zusammenfassung von Weichenadressen zur Ansteuerung von Lichtsignalen                
  *                  Weichensteuerung mit Servos und 2 Relais. Während der Bewegung sind beide Relais abgefallen
- *   Version 3.2    Bei Softled-Ausgägen für Lichtsgnale kann die 'ON'-Stellung der Ausgänge invertiert 
+ *   Version 4.0    Bei Softled-Ausgägen für Lichtsgnale kann die 'ON'-Stellung der Ausgänge invertiert 
  *                  werden ( HIGH=OFF/LOW=ON ) (Bit 7 im Mode-CV des FSIGNAL2/3). Dazu werden die MobaTools ab
  *                  V0.9 benötigt
  *                  Lichtsignalbilder sind jetzt direkt den einzelnen Weichenbefehlen zugeordnet
+ *                  Vorsignale am gleichen Mast können automtisch dunkelgeschaltet werden
  *   
  * Eigenschaften:
  * Bis zu 8 (aufeinanderfolgende) Zubehöradressen ansteuerbar
@@ -52,7 +53,7 @@
 */
 #define DCC_DECODER_VERSION_ID 0x40
 // für debugging ------------------------------------------------------------
-//#define DEBUG ;             // Wenn dieser Wert gesetzt ist, werden Debug Ausgaben auf dem ser. Monitor ausgegeben
+#define DEBUG ;             // Wenn dieser Wert gesetzt ist, werden Debug Ausgaben auf dem ser. Monitor ausgegeben
 
 #ifdef DEBUG
 //#define DB_PRINT( x, ... ) { sprintf_P( dbgbuf, (const char*) F( x ), __VA_ARGS__ ) ; Serial.println( dbgbuf ); }
@@ -70,15 +71,19 @@ static char dbgbuf[60];
 // bei ungültigen Nummern. 0xff ist nie eine gültige Pinnummer
 
 #ifdef __STM32F1__
-#define digitalPinToInterrupt(x) x
+    #define digitalPinToInterrupt(x) x
+    #define MODISTEP    4096/6      // Grenzwerte am Analogeingang der Betriebsmodi
+#else
+    #define MODISTEP    1024/6
 #endif
 #define uint_t unsigned int
 
+
 // Grenzwerte des Analogeingangs für die jeweiligen Betriebsmodi ( gesamter Bereich 0...1024):
-#define ISNORMAL    853         // > 853 gilt als normalbetrieb
-#define ISPOM       512         // <853,  >512 Allway Pom
-#define ISOPEN      170         // <512, >170 IniMode: alle Funktionsparameter beim Start initiieren
-#define ISPROG      0           // <170 Programmiermodus (Adresserkennung)
+#define ISNORMAL    MODISTEP*5          // > 853 gilt als normalbetrieb
+#define ISPOM       MODISTEP*3          // <853,  >512 Allway Pom
+#define ISOPEN      MODISTEP            // <512, >170 IniMode: alle Funktionsparameter beim Start initiieren
+#define ISPROG      0                   // <170 Programmiermodus (Adresserkennung)
 
 // Mögliche Funktionstypen je Ausgang. 
 #define FOFF        0 // Funktionsausgang abgeschaltet
@@ -352,6 +357,7 @@ static void clrSignal ( byte wIx ) {
 //----------------------------------------------------------------------------------------
 
 void setup() {
+
     // Betriebsart auslesen
     int temp = analogRead( betrModeP );
     if ( temp > ISNORMAL ) {
@@ -367,7 +373,32 @@ void setup() {
         // Programmiermodus, automatische Adresserkennung
         progMode = ADDRMODE;
     }
+    pinMode( modePin, OUTPUT );
     
+    #ifdef DEBUG
+    delay(3000);
+    Serial.begin(115200); //Debugging
+    #endif
+    #ifdef DEBUG
+     DB_PRINT( "Betr:%d -> Mode=", temp );
+      switch ( progMode ) {
+        case NORMALMODE:
+          Serial.println( "Std" );
+          break;
+        case ADDRMODE:
+          Serial.println( "Addr" );
+          break;
+        case POMMODE:
+          Serial.println( "Pom" );
+          break;
+        case INIMODE:
+          Serial.println( "Ini" );
+          break;
+        default:
+          Serial.println( "??" );
+          
+      }
+    #endif
 
     
     if ( (Dcc.getCV( (int) &CV->modeVal)&0xf0) != ( iniMode&0xf0 ) || analogRead(resModeP) < 100 ) {
@@ -424,31 +455,9 @@ void setup() {
     opMode = Dcc.getCV( (int) &CV->modeVal) &0x0f;
     rocoOffs = ( opMode & ROCOADDR ) ? 4 : 0;
     
-      Serial.begin(115200); //Debugging
-    #ifdef DEBUG1
-     //DB_PRINT( "Betr:%d -> Mode=", temp );
-      switch ( progMode ) {
-        case NORMALMODE:
-          Serial.println( "Std" );
-          break;
-        case ADDRMODE:
-          Serial.println( "Addr" );
-          break;
-        case POMMODE:
-          Serial.println( "Pom" );
-          break;
-        case INIMODE:
-          Serial.println( "Ini" );
-          break;
-        default:
-          Serial.println( "??" );
-          
-      }
-    #endif
-    
     pinMode( ackPin, OUTPUT );
     Dcc.pin( digitalPinToInterrupt(dccPin), dccPin, 1); 
-    if ( progMode == NORMALMODE ) {
+    if ( progMode == NORMALMODE || progMode == INIMODE ) {
         // keine POM-Programmierung
         Dcc.init( MAN_ID_DIY, DCC_DECODER_VERSION_ID, FLAGS_DCC_ACCESSORY_DECODER, (uint8_t)((uint16_t) 0) );
         CLR_PROGLED;
@@ -743,27 +752,34 @@ void loop() {
              
             switch ( fktStatus[i] & SIG_STATE_MASK ) {
               case SIG_WAIT:  
-                // warten auf Zustandsänderung am Signal  
-                if ( ( fktStatus[i] & ~SIG_STATE_MASK ) != fSig[i].soll ) {
-                    // Sollzustand hat sich verändert, übernehmen, Flag setzen und Timer aufziehen
-                    fktStatus[i] = fSig[i].soll | SIG_DARK;
-                    pulseT[i].setTime( SIG_WAIT_TIME ) ;
-                   DB_PRINT( "Sig %d neu ist=0x%02x ", i, fktStatus[i] );
-                    // Dunkelschaltung am Vorsignal setzen
-                    if ( iniTyp[i] == FSIGNAL2  ) {
-                        byte vsIx = getPar( i, Par3 );
-                       DB_PRINT( "Vorsig=%d", vsIx );
-                        if ( vsIx > 0 && vsIx <= WeichenZahl && iniTyp[vsIx-1] == FVORSIG ) {
-                            // gültiger Verweis auf ein Vorsignal, Dunkelschaltflag bestimmen
-                            byte darkStates = getPar( i, State );
-                            if ( darkStates & ( 1<< fSig[i].soll) ) {
-                                fSig[vsIx-1].flags |= DARKMASK;
-                            } else {
-                                fSig[vsIx-1].flags &= ~DARKMASK;
+                // warten auf Zustandsänderung am Signal
+               if ( ( fktStatus[i] & ~SIG_STATE_MASK ) != fSig[i].soll ) {
+                    // Sollzustand hat sich verändert, püfen ob erlaubter Zustand
+                    if (  getSigMask( i,  fSig[i].soll) == 0xff )  {
+                        // Sollzustand hat Signalmaske 0xff -> diesen Zustand ignorieren
+                        // Sollzustand auf Istzustand zurücksetzen
+                        fSig[i].soll = fktStatus[i] & ~SIG_STATE_MASK ;
+                    } else {
+                        // Gültiger Zustand, übernehmen, Flag setzen und Timer aufziehen
+                        fktStatus[i] = fSig[i].soll | SIG_DARK;
+                        pulseT[i].setTime( SIG_WAIT_TIME ) ;
+                       DB_PRINT( "Sig %d neu ist=0x%02x ", i, fktStatus[i] );
+                        // Dunkelschaltung am Vorsignal setzen
+                        if ( iniTyp[i] == FSIGNAL2  ) {
+                            byte vsIx = getPar( i, Par3 );
+                           DB_PRINT( "Vorsig=%d", vsIx );
+                            if ( vsIx > 0 && vsIx <= WeichenZahl && iniTyp[vsIx-1] == FVORSIG ) {
+                                // gültiger Verweis auf ein Vorsignal, Dunkelschaltflag bestimmen
+                                byte darkStates = getPar( i, State );
+                                if ( darkStates & ( 1<< fSig[i].soll) ) {
+                                    fSig[vsIx-1].flags |= DARKMASK;
+                                } else {
+                                    fSig[vsIx-1].flags &= ~DARKMASK;
+                                }
+                               DB_PRINT( "darkStates=0x%02x, VorsigFlags= 0x%02x" , darkStates, fSig[vsIx-1].flags );
                             }
-                           DB_PRINT( "darkStates=0x%02x, VorsigFlags= 0x%02x" , darkStates, fSig[vsIx-1].flags );
-                        }
-                     }
+                         }
+                    }
                 } else if ( fSig[i].flags & DARKMASK ) {
                     // Signal dunkelschalten
                     DB_PRINT( "DARK-Start Ix=%d" , i );
