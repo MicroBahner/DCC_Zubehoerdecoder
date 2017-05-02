@@ -66,7 +66,7 @@ static char dbgbuf[60];
 //------------------------------------------ //
 // die NmraDcc - Library gibt es unter https://github.com/mrrwa/NmraDcc/archive/master.zip
 
-#define NC 0xff    // nicht verwendeten Funktionsausgängen kann der Port NC zugeweisen werden.
+#define NC 0xf0    // nicht verwendeten Funktionsausgängen kann der Port NC zugeweisen werden.
 // die arduino digitalWrite und digitalRead Funktionen prüfen auf gültige Pin-Nummern und machen nichts
 // bei ungültigen Nummern. 0xff ist nie eine gültige Pinnummer
 

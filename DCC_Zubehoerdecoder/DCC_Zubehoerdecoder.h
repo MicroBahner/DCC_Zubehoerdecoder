@@ -143,7 +143,7 @@ const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmi
 
 #define MAX_LEDS 12 // default ist 16. Kann auf die tatsächlich benutzte Zahl reduziert werden, um RAM zu sparen.
                     // Pro Softled werden 19 Byte benötigt
-                    
+/*                    
 const byte iniTyp[]     =   {    FCOIL,   FSIGNAL2, FSIGNAL0,   FVORSIG,  FSIGNAL0,          FSTATIC };
 const byte out1Pins[]   =   {       NC,          9,       12,        5,        8,               A0 };  // output-pins der Funktionen
 const byte out2Pins[]   =   {       NC,         10,       NC,        6,       NC,                3 };
@@ -154,7 +154,16 @@ const byte iniPar1[]      = {       50, 0b0000010, 0b00000100,   0b0101,   0b100
 const byte iniPar2[]      = {       50, 0b0000001, 0b00001001,   0b1010,      255,               50 };
 const byte iniPar3[]      = {        0,         4,          8,        8,        9,              100 };
 const byte iniPar4[]      = {        0, 0b0000101,          0,        0,        0,                0,}; // nur für Lichtsignale!
+*/
+const byte iniTyp[] = { FSTATIC, FSERVO };
+const byte out1Pins[] = { 8, 9 }; // output-pins der Funktionen
+const byte out2Pins[] = { NC, NC };
+const byte out3Pins[] = { NC, NC };
 
-
+const byte iniFmode[] = { BLKMODE|BLKSOFT, SAUTOOFF};
+const byte iniPar1[] = { 50, 70};
+const byte iniPar2[] = { 50, 110};
+const byte iniPar3[] = { 100, 8};
+const byte iniPar4[] = { 0, 0}; // nur für Lichtsignale!
 //------------------------------------------------------------------------------------
 
