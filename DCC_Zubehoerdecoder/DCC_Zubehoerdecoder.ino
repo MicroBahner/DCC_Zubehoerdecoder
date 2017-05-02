@@ -53,7 +53,7 @@
 */
 #define DCC_DECODER_VERSION_ID 0x40
 // für debugging ------------------------------------------------------------
-#define DEBUG ;             // Wenn dieser Wert gesetzt ist, werden Debug Ausgaben auf dem ser. Monitor ausgegeben
+//#define DEBUG ;             // Wenn dieser Wert gesetzt ist, werden Debug Ausgaben auf dem ser. Monitor ausgegeben
 
 #ifdef DEBUG
 #define DB_PRINT( x, ... ) { sprintf_P( dbgbuf, (const char*) F( x ), __VA_ARGS__ ) ; Serial.println( dbgbuf ); }
@@ -68,7 +68,7 @@ static char dbgbuf[60];
 
 #define NC 0xff    // nicht verwendeten Funktionsausgängen kann der Port NC zugeweisen werden.
 // Da die Prüfung auf ungültige Pin-Nummern in den Arduino-internen Implementierungen je nach Prozessor
-// unterschiedlich ist, wird im Sketch auf NC geprüft, und gegebenenfalls die Arduino Funktion nicht aufgerufen.
+// unterschiedlich ist, wird im Sketch selbst auf NC geprüft, und gegebenenfalls die Arduino Funktion nicht aufgerufen.
 
 #ifdef __STM32F1__
     #define digitalPinToInterrupt(x) x
@@ -107,9 +107,11 @@ static char dbgbuf[60];
 
 #define LEDINVERT 0x80  // FSIGNAL: SoftledAusgänge invertieren (Bit 0 des Modebyte von FSIGNAL2/3)
 
-
+#ifdef __STM32F1__
+#include "DCC_Zubehoerdecoder-STM32.h"
+#else
 #include "DCC_Zubehoerdecoder.h"
-
+#endif
 const byte WeichenZahl = sizeof(iniTyp);
 
 // CV Default-Werte der Standardadressen:
@@ -253,9 +255,13 @@ NmraDcc Dcc;
 
 //^^^^^^^^^^^^^^^^^^^^^^^^ Ende der Definitionen ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //###########################################################################
-// Ausblenden der NC-Ports
+// Ausblenden der nicht belegten (NC) Ports
+#ifdef __STM32F1__
+void _pinMode( byte port, WiringPinMode mode ) {
+#else
 void _pinMode( byte port, byte mode ) {
-    if ( port != NC ) pinMode( port, mode );
+#endif
+    if ( port != NC ) pinMode( port,  mode );
 }
 
 void _digitalWrite( byte port, byte state ) {
