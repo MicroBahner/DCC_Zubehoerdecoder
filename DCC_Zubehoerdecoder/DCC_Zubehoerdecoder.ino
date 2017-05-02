@@ -53,22 +53,22 @@
 */
 #define DCC_DECODER_VERSION_ID 0x40
 // für debugging ------------------------------------------------------------
-//#define DEBUG ;             // Wenn dieser Wert gesetzt ist, werden Debug Ausgaben auf dem ser. Monitor ausgegeben
+#define DEBUG ;             // Wenn dieser Wert gesetzt ist, werden Debug Ausgaben auf dem ser. Monitor ausgegeben
 
 #ifdef DEBUG
 #define DB_PRINT( x, ... ) { sprintf_P( dbgbuf, (const char*) F( x ), __VA_ARGS__ ) ; Serial.println( dbgbuf ); }
 //#define DB_PRINT( x, ... ) { sprintf( dbgbuf,   x , __VA_ARGS__ ) ; Serial.println( dbgbuf ); }
 static char dbgbuf[60];
 #else
-#define DB_PRINT ;
+#define DB_PRINT( x, ... ) ;
 #endif
 
 //------------------------------------------ //
 // die NmraDcc - Library gibt es unter https://github.com/mrrwa/NmraDcc/archive/master.zip
 
-#define NC 0xf0    // nicht verwendeten Funktionsausgängen kann der Port NC zugeweisen werden.
-// die arduino digitalWrite und digitalRead Funktionen prüfen auf gültige Pin-Nummern und machen nichts
-// bei ungültigen Nummern. 0xff ist nie eine gültige Pinnummer
+#define NC 0xff    // nicht verwendeten Funktionsausgängen kann der Port NC zugeweisen werden.
+// Da die Prüfung auf ungültige Pin-Nummern in den Arduino-internen Implementierungen je nach Prozessor
+// unterschiedlich ist, wird im Sketch auf NC geprüft, und gegebenenfalls die Arduino Funktion nicht aufgerufen.
 
 #ifdef __STM32F1__
     #define digitalPinToInterrupt(x) x
@@ -253,6 +253,15 @@ NmraDcc Dcc;
 
 //^^^^^^^^^^^^^^^^^^^^^^^^ Ende der Definitionen ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //###########################################################################
+// Ausblenden der NC-Ports
+void _pinMode( byte port, byte mode ) {
+    if ( port != NC ) pinMode( port, mode );
+}
+
+void _digitalWrite( byte port, byte state ) {
+    if( port != NC ) digitalWrite( port, state );
+}
+
 // Bequemlichkeitsmacros:
 #define getPar( Adr, Par ) Dcc.getCV((int)&CV->Fkt[Adr].Par )
 //----------------------------------------------------------------------------------------
@@ -283,9 +292,9 @@ static void setIoPin( byte wIx, byte pIx, byte Value ) {
         SigLed[ portTyp[pIx][wIx] ].write( Value, typ );
     } else {
         // Standard-Digitalausgang
-        if ( pIx == 0 ) { digitalWrite( out1Pins[wIx], Value ); }
-        else if ( pIx == 1 ) { digitalWrite( out2Pins[wIx], Value ); } 
-        else { digitalWrite( out3Pins[wIx], Value ); }
+        if ( pIx == 0 ) { _digitalWrite( out1Pins[wIx], Value ); }
+        else if ( pIx == 1 ) { _digitalWrite( out2Pins[wIx], Value ); } 
+        else { _digitalWrite( out3Pins[wIx], Value ); }
     }
 }
 
@@ -373,7 +382,7 @@ void setup() {
         // Programmiermodus, automatische Adresserkennung
         progMode = ADDRMODE;
     }
-    pinMode( modePin, OUTPUT );
+    _pinMode( modePin, OUTPUT );
     
     #ifdef DEBUG
     delay(3000);
@@ -455,7 +464,7 @@ void setup() {
     opMode = Dcc.getCV( (int) &CV->modeVal) &0x0f;
     rocoOffs = ( opMode & ROCOADDR ) ? 4 : 0;
     
-    pinMode( ackPin, OUTPUT );
+    _pinMode( ackPin, OUTPUT );
     Dcc.pin( digitalPinToInterrupt(dccPin), dccPin, 1); 
     if ( progMode == NORMALMODE || progMode == INIMODE ) {
         // keine POM-Programmierung
@@ -485,10 +494,12 @@ void setup() {
         portTyp[2][wIx] = -1;
         switch (iniTyp[wIx] )  {
           case FSERVO:
+            if ( servoPins[wIx] != NC ) {
             weicheS[wIx].attach( servoPins[wIx], Dcc.getCV(  (int) &CV->Fkt[wIx].Mode) & SAUTOOFF );
             weicheS[wIx].setSpeed( Dcc.getCV(  (int) &CV->Fkt[wIx].Par3 ) );
-            pinMode( relais1Pins[wIx], OUTPUT );
-            pinMode( relais2Pins[wIx], OUTPUT );
+            }
+            _pinMode( relais1Pins[wIx], OUTPUT );
+            _pinMode( relais2Pins[wIx], OUTPUT );
             // Servowerte und Relaisausgang initiieren und ausgeben
             if ( dccSoll[wIx] == GERADE ) {
                 weicheS[wIx].write( Dcc.getCV( (int) &CV->Fkt[wIx].Par1 ) );
@@ -497,15 +508,15 @@ void setup() {
             }
             fktStatus[wIx] = dccSoll[wIx];
             fServo[wIx].relaisOut = fktStatus[wIx];
-            digitalWrite( relais1Pins[wIx], fServo[wIx].relaisOut );
-            digitalWrite( relais2Pins[wIx], !fServo[wIx].relaisOut );
+            _digitalWrite( relais1Pins[wIx], fServo[wIx].relaisOut );
+            _digitalWrite( relais2Pins[wIx], !fServo[wIx].relaisOut );
             break;
           case FCOIL:
-            pinMode( coil1Pins[wIx], OUTPUT );
-            pinMode( coil2Pins[wIx], OUTPUT );
+            _pinMode( coil1Pins[wIx], OUTPUT );
+            _pinMode( coil2Pins[wIx], OUTPUT );
             fCoil[wIx].pulseON = false;
-            digitalWrite( coil1Pins[wIx], LOW );
-            digitalWrite( coil2Pins[wIx], LOW );
+            _digitalWrite( coil1Pins[wIx], LOW );
+            _digitalWrite( coil2Pins[wIx], LOW );
             break;
           case FSTATIC:
             // Modi der Ausgangsports
@@ -523,8 +534,8 @@ void setup() {
                     }
                 }
             } else {
-                pinMode( out1Pins[wIx], OUTPUT );
-                pinMode( out2Pins[wIx], OUTPUT );
+                _pinMode( out1Pins[wIx], OUTPUT );
+                _pinMode( out2Pins[wIx], OUTPUT );
             }
             // Grundstellung der Ausgangsports
             if ( GetCvPar(wIx,Mode) & BLKMODE ) {
@@ -566,7 +577,7 @@ void setup() {
                     portTyp[sigO][wIx+i] = -1; // Default ( auch für 'NC' Ports )
                     if ( sigMode & (1<<sigO) ) {
                         // Bit gesetzt -> harte Umschaltung
-                        pinMode(outPin, OUTPUT );
+                        _pinMode(outPin, OUTPUT );
                     } else {
                         // Bit = 0 -> Softled
                         if ( outPin != NC ) {
@@ -609,7 +620,7 @@ void setup() {
 
 ////////////////////////////////////////////////////////////////
 void loop() {
-    //if (digitalRead( A4)) digitalWrite(A4,LOW); else digitalWrite(A4,HIGH); // Test Zykluszeit
+    //if (digitalRead( A4)) _digitalWrite(A4,LOW); else _digitalWrite(A4,HIGH); // Test Zykluszeit
     getEncoder();    // Drehencoder auswerten und Servolage gegebenenfalls anpassen
     
     Dcc.process(); // Hier werden die empfangenen Telegramme analysiert und der Sollwert gesetzt
@@ -643,16 +654,16 @@ void loop() {
             // Relaisausgänge setzen
             if ( relais2Pins[i] == NC ) {
                 // Variante mit einem Relais, wird in Bewegungsmitte umgeschaltet
-                digitalWrite( relais1Pins[i], fServo[i].relaisOut );
+                _digitalWrite( relais1Pins[i], fServo[i].relaisOut );
             } else {
                 // Variante mit 2 Relais, während der Bewegung beide Relais abschalten
                 if ( fktStatus[i] & MOVING ) {
-                    digitalWrite( relais1Pins[i], OFF );
-                    digitalWrite( relais2Pins[i], OFF );
+                    _digitalWrite( relais1Pins[i], OFF );
+                    _digitalWrite( relais2Pins[i], OFF );
                 } else {
                     // im Stillstand des Servos entsprechend relaisout schalten
-                    digitalWrite( relais1Pins[i], fServo[i].relaisOut );
-                    digitalWrite( relais2Pins[i], !fServo[i].relaisOut );
+                    _digitalWrite( relais1Pins[i], fServo[i].relaisOut );
+                    _digitalWrite( relais2Pins[i], !fServo[i].relaisOut );
                 }
             }
             
@@ -666,13 +677,13 @@ void loop() {
                     //DB_PRINT(" i=%d, Ist=%d, Soll=%d", i, fktStatus[i], dccSoll[i] );
                     if ( fktStatus[i] ) {
                         // Out1 aktiv setzen
-                        digitalWrite( coil1Pins[i], HIGH );
-                        digitalWrite( coil2Pins[i], LOW );
+                        _digitalWrite( coil1Pins[i], HIGH );
+                        _digitalWrite( coil2Pins[i], LOW );
                         //DB_PRINT( "Pin%d HIGH, Pin%d LOW", coil1Pins[i], coil2Pins[i] );
                     } else {
                         // Out2 aktiv setzen
-                        digitalWrite( coil2Pins[i], HIGH );
-                        digitalWrite( coil1Pins[i], LOW );
+                        _digitalWrite( coil2Pins[i], HIGH );
+                        _digitalWrite( coil1Pins[i], LOW );
                         //DB_PRINT( "Pin%d LOW, Pin%d HIGH", coil1Pins[i], coil2Pins[i] );
                     }
                     fCoil[i].pulseON = true;
@@ -687,8 +698,8 @@ void loop() {
                 // prüfen ab Impuls abgeschaltet werden muss
                 // (Timer läuft nicht mehr, aber MOVING-Bit noch gesetzt)
                 if ( !pulseT[i].running() && (fktStatus[i]&MOVING) ) {
-                    digitalWrite( coil2Pins[i], LOW );
-                    digitalWrite( coil1Pins[i], LOW );
+                    _digitalWrite( coil2Pins[i], LOW );
+                    _digitalWrite( coil1Pins[i], LOW );
                     fktStatus[i]&= ~MOVING;
                     //DB_PRINT( "Pin%d LOW, Pin%d LOW", coil1Pins[i], coil2Pins[i] );
                     fCoil[i].pulseON = false;
@@ -828,7 +839,7 @@ void loop() {
 
 
     // Ackimpuls abschalten--------------------------
-    if ( !AckImpuls.running() ) digitalWrite( ackPin, LOW );
+    if ( !AckImpuls.running() ) _digitalWrite( ackPin, LOW );
 
     // Programmierled blinkt im Programmiermode bis zum Empfang einer Adresse
     if ( ! ledTimer.running() && progMode == ADDRMODE) {
@@ -894,7 +905,7 @@ void notifyCVAck ( void ) {
     // Ack-Impuls starten
     //DB_PRINT( "Ack-Pulse" );
     AckImpuls.setTime( 6 );
-    digitalWrite( ackPin, HIGH );
+    _digitalWrite( ackPin, HIGH );
 }
 //-----------------------------------------------------
 // Wird aufgerufen, nachdem ein CV-Wert verändert wurde
@@ -966,8 +977,8 @@ void notifyDccReset( uint8_t hardReset ) {
 void IniEncoder( void ) {
     #ifdef ENCODER_AKTIV
     // Encoder initiieren
-    pinMode( encode1P, INPUT_PULLUP );
-    pinMode( encode2P, INPUT_PULLUP );
+    _pinMode( encode1P, INPUT_PULLUP );
+    _pinMode( encode2P, INPUT_PULLUP );
     encoderState = IDLE;
     encoderCount  = 0;
     adjWix = WeichenZahl;
