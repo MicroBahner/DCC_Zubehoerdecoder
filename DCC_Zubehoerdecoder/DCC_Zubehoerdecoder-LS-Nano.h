@@ -1,4 +1,17 @@
 /* Universeller DCC - Zubehördecoder
+ **************************************************************************************************
+ * Beispieldatei für  L i c h t h a u p t s i g n a l e (ohne Vorsignale am gleichen Mast).  
+ * Die Pins sind für den Arduino Nano ausgelegt.
+ * Es können 3- oder 5-begriffige Hauptsignale angesteuert werden. Die Anzahl der 
+ * Ansteuerbaren Signale hängt von der Zahl der Led's ab:
+ * Ohne Zugbeeinflussungsrelais können 6 3-Begriffige (3 Leds) oder 3 4-begriffige Signale ( 5/6 Leds) angesteuert werden
+ * Es müssen nur gegebenenfalls die PinZuordnungen angepasst werden. Alle anderen Paramter können
+ * unverändert bleiben.
+ * Die Leds werden aktiv HIGH angesteuert. Für 16V ausgelegte Lichtsignale müssen über einen invertierenden
+ * ULN2803 (o.ä.) angesteuert werden
+ * Beim Lichtsignaldecoder ist kein Rückkanal für das Auslesen der CV-Werte vorgesehen
+ **************************************************************************************************
+ * 
  * 2 Ausgänge / Zubehöradresse
  * Einstellbare Funktionalität:
  *  - Servo mit Umschaltrelais zur Weichenpolarisierung
@@ -105,14 +118,14 @@
 // Hardwareabhängige Konstante ( nicht per CV änderbar)
 //----------------------------------------------------------------
 const byte dccPin       =   2;
-const byte ackPin       =   4;
+const byte ackPin       =  NC;
 
 // Eingänge analog: ( Bei Nano und Mini - Versionen kann hier auch A7 und A6 verwendet werden, um mehr
 //                    digital nutzbare Ports freizubekommen.
 //                    beim UNO sind A7+A6 nicht vorhanden! )
-const byte betrModeP    =   A5;     // Analogeingang zur Bestimmung des Betriebsmodus. Wird nur beim
+const byte betrModeP    =   A7;     // Analogeingang zur Bestimmung des Betriebsmodus. Wird nur beim
                                     // Programmstart eingelesen!
-const byte resModeP     =   A4;     // Rücksetzen CV-Werte + Mittelstellung Servos
+const byte resModeP     =   A6;     // Rücksetzen CV-Werte + Mittelstellung Servos
 
 // Eingänge digital (die Ports A0-A5 lassen sich auch digital verwenden): ---------
 
@@ -120,8 +133,8 @@ const byte resModeP     =   A4;     // Rücksetzen CV-Werte + Mittelstellung Ser
 //#define ENCODER_AKTIV       // Wird diese Zeile auskommentiert, wird der Encoder nicht verwendet. 
                             // Die Encoder-Ports werden dann ignoriert, und können anderweitig 
                             // verwendet werden.
-const byte encode1P     =   A3;     // Eingang Drehencoder zur Justierung.
-const byte encode2P     =   A2;
+const byte encode1P     =   NC;     // Eingang Drehencoder zur Justierung.
+const byte encode2P     =   NC;
 // ............................................
 //-------------------------------------------------------------------------------------------------------
 // Betriebswerte ( per CV änderbar ) Diese Daten werden nur im Initiierungsmodus in die CV's geschrieben.
@@ -141,18 +154,18 @@ const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV
 //            z.B. wenn bei einem Servo kein Polarisierungsrelais benötigt wird
 const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmierung) (Led)
 
-#define MAX_LEDS 12 // default ist 16. Kann auf die tatsächlich benutzte Zahl reduziert werden, um RAM zu sparen.
+#define MAX_LEDS 16 // default ist 16. Kann auf die tatsächlich benutzte Zahl reduziert werden, um RAM zu sparen.
                     // Pro Softled werden 19 Byte benötigt
                    
-const byte iniTyp[]     =   {    FSTATIC,   FSIGNAL2, FSIGNAL0,   FVORSIG,  FSIGNAL0,          FSTATIC };
-const byte out1Pins[]   =   {        7,          9,       12,        5,       A1,                3 };  // output-pins der Funktionen
-const byte out2Pins[]   =   {        8,         10,       NC,        6,       NC,               NC };
-const byte out3Pins[]   =   {       NC,         11,       NC,       A0,       NC,               NC };
- 
-const byte iniFmode[]     = { CAUTOOFF|BLKSOFT, LEDINVERT, 0b00000100,        0,        0,  BLKMODE|BLKSOFT };
-const byte iniPar1[]      = {       50, 0b0000010, 0b00000100,   0b0101,   0b1001,               50 };
-const byte iniPar2[]      = {       50, 0b0000001, 0b00001001,   0b1010,      255,               50 };
-const byte iniPar3[]      = {        0,         4,          8,        8,        9,              100 };
-const byte iniPar4[]      = {        0, 0b0000101,          0,        0,        0,                0,}; // nur für Lichtsignale!
+const byte iniTyp[]     =   { FSIGNAL2, FSIGNAL0, FSIGNAL2, FSIGNAL0, FSIGNAL2, FSIGNAL0, FSIGNAL2, FSIGNAL0,  FSIGNAL2, FSIGNAL0  };
+const byte out1Pins[]   =   {       A0,       NC,       A3,       NC,        3,       NC,        6,       NC,         9,       NC  }; 
+const byte out2Pins[]   =   {       A1,       NC,       A4,       NC,        4,       NC,        7,       NC,        10,       NC  };
+const byte out3Pins[]   =   {       A2,       NC,       A5,       NC,        5,       NC,        8,       NC,        11,       NC  };
+                                                                                                                                  
+const byte iniFmode[]     = {        0, 0b000100,        0, 0b000100,        0, 0b000100,        0, 0b000100,         0, 0b000100  };
+const byte iniPar1[]      = { 0b001001, 0b110001, 0b001001, 0b110001, 0b001001, 0b110001, 0b001001, 0b110001,  0b001001, 0b110001  };
+const byte iniPar2[]      = { 0b100010, 0b100110, 0b100010, 0b100110, 0b100010, 0b100110, 0b100010, 0b100110,  0b100010, 0b100110  };
+const byte iniPar3[]      = {        0,        0,        0,        0,        0,        0,        0,        0,         0,        0  };
+const byte iniPar4[]      = { 0b000101,        0, 0b000101,        0, 0b000101,        0, 0b000101,        0,  0b000101,        0  }; 
 //------------------------------------------------------------------------------------
 
