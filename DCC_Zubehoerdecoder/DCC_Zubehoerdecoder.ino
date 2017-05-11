@@ -33,6 +33,7 @@
  *                  V0.9 benötigt
  *                  Lichtsignalbilder sind jetzt direkt den einzelnen Weichenbefehlen zugeordnet
  *                  Vorsignale am gleichen Mast können automtisch dunkelgeschaltet werden
+ *   Version 4.0.3  Fehler im Zusammenhang mit NC-Pins beseitigt.
  *   
  * Eigenschaften:
  * Bis zu 8 (aufeinanderfolgende) Zubehöradressen ansteuerbar
@@ -110,7 +111,7 @@ static char dbgbuf[60];
 #ifdef __STM32F1__
 #include "DCC_Zubehoerdecoder-STM32.h"
 #else
-#include "DCC_Zubehoerdecoder.h"
+#include "DCC_Zubehoerdecoder-LS-Nano.h"
 #endif
 const byte WeichenZahl = sizeof(iniTyp);
 
@@ -619,7 +620,12 @@ void setup() {
             // hier werden gegebenenfalls Signalfolgetypen übersprungen
             ;
         } // Ende switch Funktionstypen
+        #ifdef DEBUG
+        delay(1000); // nur für Test
+        Serial.println(">>>>>>>>delay>>>>>>>");
+        #endif
     } // Ende loop über alle Funktionen
+    DB_PRINT(">>> Setup-Ende >>>>",0);
 }
 
 
