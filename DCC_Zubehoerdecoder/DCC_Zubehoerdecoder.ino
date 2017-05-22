@@ -111,7 +111,7 @@ static char dbgbuf[60];
 #ifdef __STM32F1__
 #include "DCC_Zubehoerdecoder-STM32.h"
 #else
-#include "DCC_Zubehoerdecoder-LS-Nano.h"
+#include "DCC_Zubehoerdecoder.h"
 #endif
 const byte WeichenZahl = sizeof(iniTyp);
 
@@ -166,11 +166,20 @@ byte rocoOffs;                  // 0 bei ROCO-Adressierung, 4 sonst
 byte isOutputAddr;              // Flag ob Output-Adressing
 word weichenAddr;               // Addresse der 1. Weiche (des gesamten Blocks)
 byte dccSoll[WeichenZahl];  // Solllage der Weichen ( wird vom DCC-Kommando gesetzt )
-byte fktStatus[WeichenZahl];   // Istlagen der Weichen
-#define GERADE  0x0
-#define ABZW    0x1
-#define MOVING  0x2               // nur für Servos, Bit 1 gesetzt während Umlauf
-#define BLKON   0x4               // nur für Static, blinkende Led ist EIN
+byte fktStatus[WeichenZahl];   // Ist-Zustand der Weichen/Signale
+    // Bits 0-2
+    #define GERADE  0x0             // Bit 0
+    #define ABZW    0x1             // Bit 0
+    #define MOVING  0x2             // Bit 1 nur für Servos,gesetzt während Umlauf
+    #define BLKON   0x4             // Bit 2 nur für Static, blinkende Led ist EIN
+    // für Lichtsignale, aktueller Signalzustand in Bits 4-7
+    #define SIG_STATE_MASK  0xf0
+    #define SIG_WAIT        0x00    // Warte auf Signalbefehle
+    #define SIG_CHANGED     0x10    // Signalzustand hat sich geändert, warten auf stabilen Zustand
+                                    // (da die einzelnen Sollzustände sich nur nacheinander ändern können)
+    #define SIG_DARK        0x20    // aktuelles Signalbild dunkelschalten ( nur 'soft' Ausgänge )
+    #define SIG_NEW         0x30    // neues Signalbild aufblenden
+    #define SIG_IS_DARK     0x40    // Signal ist statisch dunkelgeschaltet
 
 // Funktionsspezifische Variable. Da pro Weichenadresse nur eine Funktion aktiv sein kann, liegen die
 // funktionsspezifischen Variable in einer union übereinander
@@ -198,13 +207,6 @@ static struct {
 #define fStatic fktVar
 
 //- - - Variable für Lichtsignalsteuerung - - - - - - -
-#define SIG_STATE_MASK  0xf0
-#define SIG_WAIT        0x00    // Warte auf Signalbefehle
-#define SIG_CHANGED     0x10    // Signalzustand hat sich geändert, warten auf stabilen Zustand
-                                // (da die einzelnen Sollzustände sich nur nacheinander ändern können)
-#define SIG_DARK        0x20    // aktuelles Signalbild dunkelschalten ( nur 'soft' Ausgänge )
-#define SIG_NEW         0x30    // neues Signalbild aufblenden
-#define SIG_IS_DARK     0x40    // Signal ist statisch dunkelgeschaltet
 
 #define SIG_WAIT_TIME   500     // Wartezeit in ms nach einer Änderung am Signalstatus bis die Ausgänge gesetzt werden
 

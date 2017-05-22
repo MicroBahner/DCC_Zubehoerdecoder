@@ -159,7 +159,7 @@ const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmi
                    
 const byte iniTyp[]     =   { FSIGNAL2, FSIGNAL0, FSIGNAL2, FSIGNAL0, FSIGNAL2, FSIGNAL0, FSIGNAL2, FSIGNAL0,  FSIGNAL2, FSIGNAL0  };
 const byte out1Pins[]   =   {       A0,       NC,       A3,       NC,        3,       NC,        6,       NC,         9,       NC  }; 
-const byte out2Pins[]   =   {       A1,       NC,       A4,       NC,        4,       NC,        7,       NC,        10,       NC  };
+const byte out2Pins[]   =   {       A1,       NC,       A4,       NC,       13,       NC,        7,       NC,        10,       NC  };
 const byte out3Pins[]   =   {       A2,       NC,       A5,       NC,        5,       NC,        8,       NC,        11,       NC  };
                                                                                                                                   
 const byte iniFmode[]     = {        0, 0b000100,        0, 0b000100,        0, 0b000100,        0, 0b000100,         0, 0b000100  };
