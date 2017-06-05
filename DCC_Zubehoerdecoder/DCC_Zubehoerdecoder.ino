@@ -34,6 +34,7 @@
  *                  Lichtsignalbilder sind jetzt direkt den einzelnen Weichenbefehlen zugeordnet
  *                  Vorsignale am gleichen Mast können automtisch dunkelgeschaltet werden
  *   Version 4.0.3  Fehler im Zusammenhang mit NC-Pins beseitigt.
+ *   Version 4.0.4  Debug Interface bei STM32 wird deaktiviert ( gibt zusätzliche IO's frei )
  *   
  * Eigenschaften:
  * Bis zu 8 (aufeinanderfolgende) Zubehöradressen ansteuerbar
@@ -375,6 +376,10 @@ static void clrSignal ( byte wIx ) {
 //----------------------------------------------------------------------------------------
 
 void setup() {
+
+#ifdef __STM32F1__
+   disableDebugPorts();     // JTAG und SW Ports freigeben
+#endif
 
     // Betriebsart auslesen
     int temp = analogRead( betrModeP );
