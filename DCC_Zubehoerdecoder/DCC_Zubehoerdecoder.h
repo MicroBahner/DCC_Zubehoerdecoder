@@ -44,9 +44,10 @@
  *  CV54    aktuelle Weichenstellung ( nicht manuell verändern! )
  *  
  *  FCOIL Doppelspulenantrieb: ( derzeit nur mit automatischer Abschaltung )
- *  CV50    Bit0 = 1: Spulenausgang automatisch abschalten
- *               = 0: Spulenausgang über DCC-Befehl abschalten
- *  CV51    Einschaltdauer der Spule 1 ( in 10ms Einheiten )
+ *  CV50    Bit0 = 1: Spulenausgang nur automatisch abschalten
+ *               = 0: Spulenausgang auch über DCC-Befehl abschalten
+ *          Bit3 = 1: kein Überprüfung auf Weichenposition
+ *  CV51    Einschaltdauer der Spule  ( in 10ms Einheiten ) 0= keine automatische Abschaltung
  *  CV52    minimale Ausschaltdauer der Spule ( in 10ms Einheiten )
  *  CV53    -
  *  CV54    aktuelle Weichenstellung ( nicht manuell verändern! )
@@ -144,14 +145,14 @@ const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmi
 #define MAX_LEDS 12 // default ist 16. Kann auf die tatsächlich benutzte Zahl reduziert werden, um RAM zu sparen.
                     // Pro Softled werden 19 Byte benötigt
                    
-const byte iniTyp[]     =   {    FSTATIC,   FSIGNAL2, FSIGNAL0,   FVORSIG,  FSIGNAL0,          FSTATIC };
-const byte out1Pins[]   =   {        7,          9,       12,        5,       A1,                3 };  // output-pins der Funktionen
-const byte out2Pins[]   =   {        8,         10,       NC,        6,       NC,               NC };
+const byte iniTyp[]     =   {    FSTATIC,   FSIGNAL2, FSIGNAL0,   FVORSIG,  FSIGNAL0,          FCOIL };
+const byte out1Pins[]   =   {       A2,          9,       12,        5,       A1,                7 };  // output-pins der Funktionen
+const byte out2Pins[]   =   {       A3,         10,       NC,        6,       NC,                8 };
 const byte out3Pins[]   =   {       NC,         11,       NC,       A0,       NC,               NC };
  
-const byte iniFmode[]     = { CAUTOOFF|BLKSOFT, LEDINVERT, 0b00000100,        0,        0,  BLKMODE|BLKSOFT };
-const byte iniPar1[]      = {       50, 0b0000010, 0b00000100,   0b0101,   0b1001,               50 };
-const byte iniPar2[]      = {       50, 0b0000001, 0b00001001,   0b1010,      255,               50 };
+const byte iniFmode[]     = { CAUTOOFF|BLKSOFT, LEDINVERT, 0b00000100,        0,        0,        0 };
+const byte iniPar1[]      = {       50, 0b0000010, 0b00000100,   0b0101,   0b1001,                0 };
+const byte iniPar2[]      = {       50, 0b0000001, 0b00001001,   0b1010,      255,                0 };
 const byte iniPar3[]      = {        0,         4,          8,        8,        9,              100 };
 const byte iniPar4[]      = {        0, 0b0000101,          0,        0,        0,                0,}; // nur für Lichtsignale!
 //------------------------------------------------------------------------------------
