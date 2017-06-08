@@ -150,7 +150,7 @@ const byte out1Pins[]   =   {       A2,          9,       12,        5,       A1
 const byte out2Pins[]   =   {       A3,         10,       NC,        6,       NC,                8 };
 const byte out3Pins[]   =   {       NC,         11,       NC,       A0,       NC,               NC };
  
-const byte iniFmode[]     = { CAUTOOFF|BLKSOFT, LEDINVERT, 0b00000100,        0,        0,        0 };
+const byte iniFmode[]     = { CAUTOOFF|BLKSOFT, LEDINVERT, 0b00000100,        0,        0, NOPOSCHK };
 const byte iniPar1[]      = {       50, 0b0000010, 0b00000100,   0b0101,   0b1001,                0 };
 const byte iniPar2[]      = {       50, 0b0000001, 0b00001001,   0b1010,      255,                0 };
 const byte iniPar3[]      = {        0,         4,          8,        8,        9,              100 };

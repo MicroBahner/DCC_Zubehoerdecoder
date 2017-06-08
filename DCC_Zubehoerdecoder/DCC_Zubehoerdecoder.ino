@@ -709,7 +709,7 @@ void loop() {
                         && dccState[i] ) {
                     // Weiche soll geschaltet werden
                     DB_PRINT(" i=%d, Ist=%d, Soll=%d, State=%d", i, fktStatus[i], dccSoll[i], dccState[i] );
-                    if ( dccSoll[i]&1 ) {
+                    if ( (dccSoll[i]&1) == 0 ) {
                         // Out1 aktiv setzen
                         _digitalWrite( coil1Pins[i], HIGH );
                         _digitalWrite( coil2Pins[i], LOW );
