@@ -702,7 +702,7 @@ void loop() {
             break;
 
           case FCOIL: //Doppelspulenantriebe ------------------------------------------------------
-            
+            // Pulseausgägne einschalten
             if (  !fCoil[i].pulseON && !pulseT[i].running() &&  dccSoll[i] != SOLL_INVALID ) {
                 // Aktionen am Ausgang nur wenn kein aktiver Impuls und der Pausentimer nicht läuft
                 if ( ( fktStatus[i] != dccSoll[i] || (getPar(i,Mode) & NOPOSCHK) )
@@ -726,24 +726,28 @@ void loop() {
                     Dcc.setCV( (int) &CV->Fkt[i].State, dccSoll[i] );
                 }
                 dccSoll[i] = SOLL_INVALID; // Empfangenes Telegramm wurde bearbeitet.
-                
             }
-            // Timer für Spulenantriebe abfragen
+            
+            // Pulsausgänge ausschalten
             if ( fCoil[i].pulseON ) {
                 // prüfen ab Impuls abgeschaltet werden muss
                 if ( !(getPar(i,Mode) & CAUTOOFF) && dccSoll[i]!=SOLL_INVALID && !dccState[i] ) {
-                    // Abschalttelegramm empfangen
+                    // ein Abschalttelegramm wurde empfangen
                     fCoil[i].pulseON = false;
-                    pulseT[i].setTime( 0 );
+                    pulseT[i].setTime( 0 );     // Timer abschalten, falls er läuft
+                    dccSoll[i] = SOLL_INVALID;  // Empfangenes Telegramm wurde bearbeitet.
                 }
-                // Timerabschaltung aktiv, aber Timer läuft nicht mehr
+                // Timerabschaltung
                 if ( (getPar(i,Par1) > 0) && !pulseT[i].running()  ) {
+                    //  Timerabschaltung ist aktiv und Timer ist abgelaufen
                     //DB_PRINT( "Pin%d LOW, Pin%d LOW", coil1Pins[i], coil2Pins[i] );
                     fCoil[i].pulseON = false;
                 }
+                
                 if ( fCoil[i].pulseON == false ) {
                     _digitalWrite( coil2Pins[i], LOW );
                     _digitalWrite( coil1Pins[i], LOW );
+                    // Timer für Pulspause setzen
                     if ( getPar(i,Par2) > 0 ) pulseT[i].setTime( getPar(i,Par2) * 10 );
                 }
                 
