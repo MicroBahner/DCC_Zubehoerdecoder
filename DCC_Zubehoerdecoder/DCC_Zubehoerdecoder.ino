@@ -921,29 +921,38 @@ void notifyDccAccState( uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, u
     }
     // Testen ob eigene Weichenadresse
     DB_PRINT( "DecAddr=%d, Weichenadresse: %d , Ausgang: %d, State: %d", BoardAddr, wAddr, OutputAddr, State );
-    bool vsFlag = false;
+    // Prüfen ob Adresse im Decoderbereich
+    if ( wAddr >= weichenAddr && wAddr < (weichenAddr + WeichenZahl) ) {
+        // ist eigene Adresse, Sollwert setzen
+        byte Ix = wAddr-weichenAddr;
+        dccSoll[Ix] =  OutputAddr & 0x1;
+        dccState[Ix] = State;
+        DB_PRINT( "Weiche %d, Index %d, Soll %d, Ist %d", wAddr, Ix, dccSoll[Ix],  fktStatus[Ix] );
+        ChkAdjEncode( Ix );
+    }
+    // Prüfen ob Vorsignal über Hauptsignaladresse geschaltet werden muss
     for ( i = 0; i < WeichenZahl; i++ ) {
-        if (  wAddr == weichenAddr+i ) {
-            // ist eigene Adresse, Sollwert setzen
-            dccSoll[i] =  OutputAddr & 0x1;
-            dccState[i] = State;
-            //DB_PRINT( "Weiche %d, Index %d, Soll %d, Ist %d", wAddr, i, dccSoll[i],  fktStatus[i] );
-            break; // Schleifendurchlauf abbrechen, es kann nur eine Weiche sein
-        }
-        // Bei Vorsignalen auch alternative Adresse prüfen
-        if ( iniTyp[i] != FSIGNAL0 ) vsFlag = false;
-        if ( iniTyp[i] == FVORSIG || vsFlag ) {
-            int vsAdr = getPar(i, Par3) + 256 * getPar(i, State);
+        int vsAdr;
+        if ( iniTyp[i] == FVORSIG  ) {
+            // Adresse des zugehörigen Hauptsignals bestimmen
+            vsAdr = getPar(i, Par3) + 256 * getPar(i, State);
             if ( vsAdr == wAddr ) {
                 dccSoll[i] =  OutputAddr & 0x1;
-               //DB_PRINT( "Vorsig %d, Index %d, Soll %d, Ist %d", wAddr, i, dccSoll[i],  fktStatus[i] );
-                break; // Schleifendurchlauf abbrechen, es kann nur eine Weiche sein
+               DB_PRINT( "Vorsig0 %d, Index %d, Soll %d, Ist %d", wAddr, i, dccSoll[i],  fktStatus[i] );
+                break; // Schleifendurchlauf abbrechen, es kann nur eine Signaladresse sein
             } else {
-                vsFlag = true;
+                // Folgeadressen ( bei mehrbegriffigen Vorsignalen ) prüfen
+                while( i+1 < WeichenZahl && iniTyp[i+1] == FSIGNAL0 ) {
+                    // Folgeadresse vergleichen
+                    i++;
+                    if ( ++vsAdr == wAddr ) {
+                        dccSoll[i] =  OutputAddr & 0x1;
+                        DB_PRINT( "Vorsig1 %d, Index %d, Soll %d, Ist %d", wAddr, i, dccSoll[i],  fktStatus[i] );
+                    }
+                }
             }
         }
     }
-    ChkAdjEncode( i );
 }
 //---------------------------------------------------
 // wird aufgerufen, wenn die Zentrale ein CV ausliest. Es wird ein 60mA Stromimpuls erzeugt
