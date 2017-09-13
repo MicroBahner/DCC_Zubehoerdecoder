@@ -108,6 +108,8 @@
 //----------------------------------------------------------------
 // Hardwareabhängige Konstante ( nicht per CV änderbar)
 //----------------------------------------------------------------
+// maple mini: ( ARDUINO_MAPLE_MINI )
+#ifdef ARDUINO_MAPLE_MINI
 const byte dccPin       =   2;
 const byte ackPin       =   1;
 
@@ -126,6 +128,18 @@ const byte resModeP     =   4;     // Rücksetzen CV-Werte + Mittelstellung Serv
                             // verwendet werden.
 const byte encode1P     =   3;     // Eingang Drehencoder zur Justierung.
 const byte encode2P     =   2;
+#endif
+
+#ifdef ARDUINO_GENERIC_STM32F103C
+const byte dccPin       =   PB13;
+const byte ackPin       =   PB14;
+const byte betrModeP    =   PA0;     // Analogeingang zur Bestimmung des Betriebsmodus. 
+const byte resModeP     =   PA1;     // Rücksetzen CV-Werte + Mittelstellung Servos
+//#define ENCODER_AKTIV       // Wird diese Zeile auskommentiert, wird der Encoder nicht verwendet. 
+const byte encode1P     =   3;     // Eingang Drehencoder zur Justierung.
+const byte encode2P     =   2;
+#endif
+
 // ............................................
 //-------------------------------------------------------------------------------------------------------
 // Betriebswerte ( per CV änderbar ) Diese Daten werden nur im Initiierungsmodus in die CV's geschrieben.
@@ -147,12 +161,22 @@ const byte modePin      =   33;     // Anzeige Betriebszustand (Normal/Programmi
 
 #define MAX_LEDS 12 // default ist 16. Kann auf die tatsächlich benutzte Zahl reduziert werden, um RAM zu sparen.
                     // Pro Softled werden 19 Byte benötigt
-
+// maple mini: ( ARDUINO_MAPLE_MINI )
+#ifdef ARDUINO_MAPLE_MINI
 const byte iniTyp[]     =   {  FSTATIC,   FSIGNAL2, FSIGNAL0,   FVORSIG,  FSIGNAL0,          FSTATIC };
 const byte out1Pins[]   =   {       21,         15,       18,       28,       31,                8 };  // output-pins der Funktionen
 const byte out2Pins[]   =   {       22,         16,       NC,       29,       NC,                9 };
 const byte out3Pins[]   =   {       NC,         17,       NC,       30,       NC,               NC };
- 
+#endif
+
+// Generic STM32F102C 
+#ifdef ARDUINO_GENERIC_STM32F103C
+const byte iniTyp[]     =   {  FSTATIC,   FSIGNAL2, FSIGNAL0,   FVORSIG,  FSIGNAL0,          FSTATIC };
+const byte out1Pins[]   =   {       21,         15,       18,       28,       31,                8 };  // output-pins der Funktionen
+const byte out2Pins[]   =   {       22,         16,       NC,       29,       NC,                9 };
+const byte out3Pins[]   =   {       NC,         17,       NC,       30,       NC,               NC };
+#endif
+// Für andere Boards hier einfügen
 const byte iniFmode[]     = {     0x05, LEDINVERT, 0b00000100,LEDINVERT,        0,  BLKMODE|BLKSOFT };
 const byte iniPar1[]      = {       50, 0b0000010, 0b00000100,   0b0011,   0b0110,               50 };
 const byte iniPar2[]      = {       50, 0b0000001, 0b00001001,   0b1100,      255,               50 };
