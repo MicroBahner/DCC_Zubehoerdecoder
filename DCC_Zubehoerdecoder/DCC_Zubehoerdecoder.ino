@@ -40,7 +40,9 @@
  *                  erneut ausgegeben, wenn AUTOOFF eingestellt ist.
  *                  Bei FCOIL kann der Ausgang auch über den DCC-Befehl abgeschaltet werden. Ist auch eine
  *                  Auto-Zeit angegeben, schaltet der Ausgang beim zuerst eintretenden Ereignis ab.
- *   
+  *   Version 4.0.4  Verbesserte Drehencodererkennung
+ *                  Fehler Justierung mit Drehencoder beseitigt
+*   
  * Eigenschaften:
  * Bis zu 8 (aufeinanderfolgende) Zubehöradressen ansteuerbar
  * 1. Adresse per Programmierung einstellbar
@@ -61,6 +63,7 @@
 #define DCC_DECODER_VERSION_ID 0x40
 // für debugging ------------------------------------------------------------
 //#define DEBUG ;             // Wenn dieser Wert gesetzt ist, werden Debug Ausgaben auf dem ser. Monitor ausgegeben
+//#define Serial Serial1
 
 #ifdef DEBUG
 #define DB_PRINT( x, ... ) { sprintf_P( dbgbuf, (const char*) F( x ), __VA_ARGS__ ) ; Serial.println( dbgbuf ); }
@@ -197,7 +200,7 @@ byte fktStatus[WeichenZahl];    // Ist-Zustand der Weichen/Signale
 
 // Funktionsspezifische Variable. Da pro Weichenadresse nur eine Funktion aktiv sein kann, liegen die
 // funktionsspezifischen Variable in einer union übereinander
-static struct {
+static union {
     struct { //Variable für FSERVO
         byte relaisOut;    // Ausgabewerte für die Relais ( 0/1, entspricht Sollwert )
     } ;
@@ -246,27 +249,19 @@ byte progMode;      // Merker ob Decoder im Programmiermodus
 
 // -------- Encoderauswertung ----- Justierung der Servoendlage -----------------------------
 # ifdef ENCODER_AKTIV
-byte encoderState;
-int8_t encoderCount;
-#define IDLE    0   // Ruhezustand (keine Bewegung)
-#define UPCOUNT 1
-#define DOWNCOUNT 2
-#define ACTIVE  3   // 
 // Die zuletzt empfangene Weichenposition kann per Encoder justiert werden. 
 // Die Werte werden gespeichert, sobald eine ander Weichenposition empfangen wird.
-
 byte adjWix;       // Weichenindex, der z.Z. vom Encoder beeinflusst wird.
 byte adjPulse;      // per Encoder aktuell eingestellte Servoposition
 #define NO_ADJ 255    // Wert von adjPulse solange keine Änderung erfolgt ist
 #endif
+bool localCV;       // lokale Änderung einers CV (Callback NotifyCV wird dann nicht ausgeführt )
 //---- Library-Objekte ----
 Servo8 weicheS[WeichenZahl];
 EggTimer AckImpuls;
 EggTimer ledTimer;  // zum Blinken der Programmierled
 // Pulsetimer für Doppelspulenantriebe und Blinken
 EggTimer pulseT[WeichenZahl];
-EggTimer debounceT;   // Encoder entprellen
-const byte debTime = 4;
 NmraDcc Dcc;
 
 
@@ -640,10 +635,6 @@ void setup() {
             // hier werden gegebenenfalls Signalfolgetypen übersprungen
             ;
         } // Ende switch Funktionstypen
-        #ifdef DEBUG
-        delay(1000); // nur für Test
-        Serial.println(">>>>>>>>delay>>>>>>>");
-        #endif
     } // Ende loop über alle Funktionen
     DB_PRINT(">>> Setup-Ende >>>>",0);
 }
@@ -965,50 +956,52 @@ void notifyCVAck ( void ) {
 //-----------------------------------------------------
 // Wird aufgerufen, nachdem ein CV-Wert verändert wurde
 void notifyCVChange( uint16_t CvAddr, uint8_t Value ) {
-    // Es wurde ein CV verändert. Ist dies eine aktive Servoposition, dann die Servoposition
-    // entsprechend anpassen
-   //DB_PRINT( "neu: CV%d=%d", CvAddr, Value );
-    for ( byte i=0; i<WeichenZahl; i++ ) {
-        // prüfen ob Ausgang einen Servo ansteuert:
-        switch ( iniTyp[i] ) {
-          case FSERVO:
-            // gehört der veränderte CV zu diesem Servo?
-            if (  (CvAddr == (uint_t) &CV->Fkt[i].Par1 && dccSoll[i] == GERADE) ||
-                  (CvAddr == (uint_t) &CV->Fkt[i].Par2 && dccSoll[i] == ABZW ) ){
-                // Es handelt sich um die aktuelle Position des Servos,
-                // Servo neu positionieren
-                //DB_PRINT( "Ausg.%d , Pos. %d neu einstellen", i, dccSoll[i] );
-                 weicheS[i].write( Value );
-            } else if ( CvAddr == (uint_t) &CV->Fkt[i].Par1 ||
-                        CvAddr == (uint_t) &CV->Fkt[i].Par2  ) {
-                  // ist nicht de aktuelle Position des Servos, Servo umstellen
-                  dccSoll[i] = ! dccSoll[i];
-            } else if ( CvAddr == (uint_t) &CV->Fkt[i].Par3 ) {
-                // die Geschwindigkeit des Servo wurde verändert
-                //DB_PRINT( "Ausg.%d , Speed. %d neu einstellen", i, Value );
-                weicheS[i].setSpeed( Value );
+    if ( !localCV ) {
+        //CV wurde über nmraDCC geändert. Ist dies eine aktive Servoposition, dann die Servoposition
+        // entsprechend anpassen
+       //DB_PRINT( "neu: CV%d=%d", CvAddr, Value );
+        for ( byte i=0; i<WeichenZahl; i++ ) {
+            // prüfen ob Ausgang einen Servo ansteuert:
+            switch ( iniTyp[i] ) {
+              case FSERVO:
+                // gehört der veränderte CV zu diesem Servo?
+                if (  (CvAddr == (uint_t) &CV->Fkt[i].Par1 && dccSoll[i] == GERADE) ||
+                      (CvAddr == (uint_t) &CV->Fkt[i].Par2 && dccSoll[i] == ABZW ) ){
+                    // Es handelt sich um die aktuelle Position des Servos,
+                    // Servo neu positionieren
+                    //DB_PRINT( "Ausg.%d , Pos. %d neu einstellen", i, dccSoll[i] );
+                     weicheS[i].write( Value );
+                } else if ( CvAddr == (uint_t) &CV->Fkt[i].Par1 ||
+                            CvAddr == (uint_t) &CV->Fkt[i].Par2  ) {
+                      // ist nicht de aktuelle Position des Servos, Servo umstellen
+                      dccSoll[i] = ! dccSoll[i];
+                } else if ( CvAddr == (uint_t) &CV->Fkt[i].Par3 ) {
+                    // die Geschwindigkeit des Servo wurde verändert
+                    //DB_PRINT( "Ausg.%d , Speed. %d neu einstellen", i, Value );
+                    weicheS[i].setSpeed( Value );
+                }
             }
         }
-    }
-    #ifdef DEBUG
-        // prüfen ob die CV-Adresse HINTER den Weichenadressen verändert wurde. Wenn ja,
-        // alle CV-Werte ausgeben und Wert wieder auf 0xff setzen
-        if ( CvAddr ==  (int) &CV->Fkt[WeichenZahl].Mode && Value !=0xff ) {
-            DBprintCV();
+        #ifdef DEBUG
+            // prüfen ob die CV-Adresse HINTER den Weichenadressen verändert wurde. Wenn ja,
+            // alle CV-Werte ausgeben und Wert wieder auf 0xff setzen
+            if ( CvAddr ==  (int) &CV->Fkt[WeichenZahl].Mode && Value !=0xff ) {
+                DBprintCV();
+            }
+        #endif
+    
+        // prüfen ob die Weichenadresse verändert wurde. Dies kann durch Ändern der
+        // Adressierungsart in CV29 oder direkt durch Ändern der Decoderadresse geschehen.
+        // Wird die Decoderadresse geändert muss zuerst das MSB (CV9) verändert werden. Mit dem
+        // Ändern des LSB (CV1) wird dann die Weichenadresse neu berechnet
+        if ( CvAddr ==  29 || CvAddr ==  1 ) setWeichenAddr();
+    
+        // Prüfen ob die Betriebsart des Decoders verändert wurde
+        if ( CvAddr == (int) &CV->modeVal ) {
+            // Die Betriebsart wurde verändert -> Neustart
+            delay( 500 );
+            softReset();
         }
-    #endif
-
-    // prüfen ob die Weichenadresse verändert wurde. Dies kann durch Ändern der
-    // Adressierungsart in CV29 oder direkt durch Ändern der Decoderadresse geschehen.
-    // Wird die Decoderadresse geändert muss zuerst das MSB (CV9) verändert werden. Mit dem
-    // Ändern des LSB (CV1) wird dann die Weichenadresse neu berechnet
-    if ( CvAddr ==  29 || CvAddr ==  1 ) setWeichenAddr();
-
-    // Prüfen ob die Betriebsart des Decoders verändert wurde
-    if ( CvAddr == (int) &CV->modeVal ) {
-        // Die Betriebsart wurde verändert -> Neustart
-        delay( 500 );
-        softReset();
     }
 }    
 //-----------------------------------------------------
@@ -1034,63 +1027,70 @@ void IniEncoder( void ) {
     // Encoder initiieren
     _pinMode( encode1P, INPUT_PULLUP );
     _pinMode( encode2P, INPUT_PULLUP );
-    encoderState = IDLE;
-    encoderCount  = 0;
     adjWix = WeichenZahl;
     adjPulse = NO_ADJ;
     #endif
 }
    
-void getEncoder( void ) {
+void getEncoder(  ) {
     #ifdef ENCODER_AKTIV
+    
+    static bool dirState, taktState;
+    static int lastCnt,jogCount = 0;
+    static enum {IDLE0, TAKTHIGH, TAKTLOW } encoderState;
     // Encoder-Statemachine
-    if ( debounceT.running() ) return; // keine Abfrage während Entprellzeit läuft
-    debounceT.setTime( debTime );
     switch ( encoderState ) {
-      case IDLE: // Grundstellung, beide Eingänge sind high
-        if ( digitalRead( encode1P ) == 0 ) encoderState = UPCOUNT;
-        if ( digitalRead( encode2P ) == 0 ) encoderState = DOWNCOUNT;
-        break;
-      case UPCOUNT:
-        if ( digitalRead( encode2P )== 0 && digitalRead( encode1P )== 0  ) {
-            // beide Eingänge aktiv, hochzählen
-            encoderCount++;
-            encoderState = ACTIVE;
-        } else if ( digitalRead( encode1P ) && digitalRead( encode2P ) ) {
-            #ifdef ENCODER_DOUBLE
-            encoderCount++;
-            #endif
-            encoderState = IDLE;
+      case IDLE0: // Grundstellung, warten auf Statuswechsel an encode1P
+        if ( digitalRead( encode1P )!= dirState ) {
+            bool temp = digitalRead( encode2P );
+            if (  temp != taktState ) {
+                // Es gab eine zusätzliche Taktflanke, Richtungsumkehr!
+                //Serial.println( "++++Doppeltakt" );
+                jogCount = lastCnt;
+            }
+            // Taktinput wieder scharf
+            encoderState = digitalRead( encode2P )? TAKTHIGH : TAKTLOW;
         }
         break;
-      case DOWNCOUNT:
-        if ( digitalRead( encode1P )== 0  && digitalRead( encode2P )== 0 ) {
-            // beide Eingänge aktiv, runterzählen
-            encoderCount--;
-            encoderState = ACTIVE;
-        } else if ( digitalRead( encode2P ) && digitalRead( encode1P ) ) {
-            #ifdef ENCODER_DOUBLE
-            encoderCount--;
+      case TAKTHIGH:
+        // warte auf neg. Flanke am Taktinput
+        if ( ! digitalRead( encode2P )  ) {
+            // Bei Schaltern mit doppelter Rastung auch hier Puls erzeugen
+            taktState = LOW;
+            dirState = digitalRead( encode1P );
+            lastCnt = jogCount;
+            # ifdef ENCODER_DOUBLE
+            if ( dirState )
+                jogCount++;
+            else jogCount--;
             #endif
-            encoderState = IDLE;
-        }
+            encoderState = IDLE0;
+        } 
         break;
-      case ACTIVE: // Warten bis Ruhelage
-        if ( digitalRead( encode1P ) == 1 ) encoderState = UPCOUNT;
-        if ( digitalRead( encode2P ) == 1 ) encoderState = DOWNCOUNT;
-        break;
+      case TAKTLOW:
+        // warte auf pos. Flanke am Taktinput
+        if ( digitalRead( encode2P )  ) {
+            taktState = HIGH;
+            // Richtung bestimmen
+            dirState = digitalRead( encode1P );
+            lastCnt = jogCount;
+            if ( dirState )
+                jogCount--;
+            else jogCount++;
+            encoderState = IDLE0;
+        } 
     }
     #ifdef DEBUG
     // encoderzähler ausgeben
-    if ( encoderCount != 0 ) {
-        //DB_PRINT( "Encoder: %d", encoderCount );        
+    if ( jogCount != 0 ) {
+        DB_PRINT( "Encoder: %d", jogCount );        
     }
     #endif
 
     if ( adjWix < WeichenZahl && !(fktStatus[adjWix] & MOVING ) ) {
         // es gibt eine aktuell zu justierende Weiche, die sich nicht
         // gerade bewegt
-        if ( encoderCount != 0 ) {
+        if ( jogCount != 0 ) {
             // Drehencoder wurde bewegt 
             if ( adjPulse == NO_ADJ ) {
                 // ist erster Justierimpuls, aktuelle Position aus CV auslesen
@@ -1100,15 +1100,15 @@ void getEncoder( void ) {
                     adjPulse = Dcc.getCV( (int) &CV->Fkt[adjWix].Par2 );
                 }
             }
-            if ( (encoderCount>0 && adjPulse<180) || (encoderCount<0 && adjPulse>0) )
-                adjPulse += encoderCount; // adjPulse nur im Bereich 0...180 
+            if ( (jogCount>0 && adjPulse<180) || (jogCount<0 && adjPulse>0) )
+                adjPulse += jogCount; // adjPulse nur im Bereich 0...180 
             weicheS[adjWix].write( adjPulse );
         } else if ( analogRead( resModeP ) < 500 ) {
             // Mittelstellungstaster gedrückt
             weicheS[adjWix].write( 90 );
         }
     }
-    encoderCount = 0;
+    jogCount = 0;
     #endif
 }
 
@@ -1121,12 +1121,14 @@ void ChkAdjEncode( byte WIndex ){
         // Es wurde justiert, testen ob gespeichert werden muss (Weichenwechsel)
         if ( WIndex != adjWix || fktStatus[adjWix] != dccSoll[adjWix] ) {
             // Weiche wurde umgeschaltet, oder eine andere Weiche betätigt -> Justierung speichern
+            localCV = true; // keine Bearbeitung in Callback-Routine NotifyCvChange
             if ( fktStatus[adjWix] == GERADE ) {
                 Dcc.setCV( (int) &CV->Fkt[adjWix].Par1, adjPulse );
             } else {
                 Dcc.setCV( (int) &CV->Fkt[adjWix].Par2, adjPulse );
             }
             adjPulse = NO_ADJ;
+            localCV = false;
         }
     }
     adjWix = WIndex;
