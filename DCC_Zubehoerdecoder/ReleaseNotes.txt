@@ -1,0 +1,44 @@
+﻿ *   Version 0.1 - erstmal nur Servos
+ *   Version 0.2 - alternativ auch ohne Programmierschalter nutzbar. PoM ist dann immer aktiv,
+ *                  Addressen nur über den Sketch änderbar.
+ *                  Adressierung als Board- oder Outputadressierung je nach CV29:6 (1=Outputaddr.)
+ *                  Ansteuerung von Doppelspulenantrieben 
+ *   Version 2.1   Einstellen der Servoendlagen per Drehencoder. Wegen der 2 Encodereingänge
+ *                  können maximal 6 Weichen angesteuert werden.
+ *                  Der Drehencoder bezieht sich immer auf die zuletzt gestellte Weiche.
+ *   Version 3.0    Die Betriebsmodi und Startverhalten wird jetzt über die Analogeingänge A4/A5 eingestellt. Dazu 
+ *                  müssen dort Pullups eingebaut werden. Jenachdem wieweit die Spannung  heruntergezogen wird werden
+ *                  die Modi eingestellt:
+ *                  A5:
+ *                  5V (nur Pullup) normaler Betriebsmodus, kein PoM
+ *                  3,3V (Spannungsteiler 1:2) PoM immer aktiv, Adresse immer aus defaults
+ *                  1,6V (Spannungsteiler 2:1) IniMode: CV's werden immer auf init-Werte aus .h-Datei gesetzt
+ *                  0V Programmiermodus / PoM ( 1. Empfamgenes Telegramm bestimmt Adresse )
+ *                  A4:
+ *                  wird A4 auf 0 gezogen , wird der aktuell vom Drehencoder beeinflusste Servo in die  
+ *                  Mittellage gebracht. Sobald der Encoder wieder bewegt wird, bewegt sich das Servo wieder
+ *                  zur vorhergehenden Position.
+ *                  Ist A4 beim Programmstart auf 0, werden alle CV's auf die Defaults zurückgesetzt
+ *                  Bei Nano- und Mini-Versionen kann dies auf A6/A7 umgestellt werden, um Ports freizumachen
+ *                  (A6/7 sind beim UNO nicht vorhanden)
+ *   Version 3.1    Wechselblinker mit Softleds, 
+ *                  Zusammenfassung von Weichenadressen zur Ansteuerung von Lichtsignalen                
+ *                  Weichensteuerung mit Servos und 2 Relais. Während der Bewegung sind beide Relais abgefallen
+ *   Version 4.0    Bei Softled-Ausgägen für Lichtsgnale kann die 'ON'-Stellung der Ausgänge invertiert 
+ *                  werden ( HIGH=OFF/LOW=ON ) (Bit 7 im Mode-CV des FSIGNAL2/3). Dazu werden die MobaTools ab
+ *                  V0.9 benötigt
+ *                  Lichtsignalbilder sind jetzt direkt den einzelnen Weichenbefehlen zugeordnet
+ *                  Vorsignale am gleichen Mast können automtisch dunkelgeschaltet werden
+ *   Version 4.0.3  Fehler im Zusammenhang mit NC-Pins beseitigt.
+ *   Version 4.1.0  Debug Interface bei STM32 wird deaktiviert ( gibt zusätzliche IO's frei )
+ *                  Neues Flag in iniFmode: bei FSERVO und FCOIL kann auch auf den Befehl reagiert werden,
+ *                  wenn der Befehl mit dem aktuellen Status übereinstimmt. Bei FSERVO wird dann der Servoimpuls 
+ *                  erneut ausgegeben, wenn AUTOOFF eingestellt ist.
+ *                  Bei FCOIL kann der Ausgang auch über den DCC-Befehl abgeschaltet werden. Ist auch eine
+ *                  Auto-Zeit angegeben, schaltet der Ausgang beim zuerst eintretenden Ereignis ab.
+ *                  Verbesserte Drehencodererkennung
+ *                  Fehler Justierung mit Drehencoder beseitigt
+ *                  Fehler bei Vorsignaladressierung beseitigt
+ *                  Betriebsmode auch über #define fest einstellbar
+ *                  Reset auf Default-Einstellung per Factory-Reset ( DCC CV-Schreiben auf Adr 8 )
+ *                  

@@ -1,4 +1,4 @@
-/* Universeller DCC - Zubehördecoder
+﻿/* Universeller DCC - Zubehördecoder
  * 2 Ausgänge / Zubehöradresse
  * Einstellbare Funktionalität:
  *  - Servo mit Umschaltrelais zur Weichenpolarisierung
@@ -182,4 +182,5 @@ const byte iniPar1[]      = {       50, 0b0000010, 0b00000100,   0b0011,   0b011
 const byte iniPar2[]      = {       50, 0b0000001, 0b00001001,   0b1100,      255,               50 };
 const byte iniPar3[]      = {      100,         4,          8,        8,        9,              100 };
 const byte iniPar4[]      = {        0, 0b0000101,          0,        0,        0,                0,}; // nur für Lichtsignale!
+
 

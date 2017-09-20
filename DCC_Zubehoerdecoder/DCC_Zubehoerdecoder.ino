@@ -2,46 +2,6 @@
 #include <MobaTools.h>
 
 /* Universeller DCC-Decoder für Weichen und (Licht-)Signale
- *   Version 0.1 - erstmal nur Servos
- *   Version 0.2 - alternativ auch ohne Programmierschalter nutzbar. PoM ist dann immer aktiv,
- *                  Addressen nur über den Sketch änderbar.
- *                  Adressierung als Board- oder Outputadressierung je nach CV29:6 (1=Outputaddr.)
- *                  Ansteuerung von Doppelspulenantrieben 
- *   Version 2.1   Einstellen der Servoendlagen per Drehencoder. Wegen der 2 Encodereingänge
- *                  können maximal 6 Weichen angesteuert werden.
- *                  Der Drehencoder bezieht sich immer auf die zuletzt gestellte Weiche.
- *   Version 3.0    Die Betriebsmodi und Startverhalten wird jetzt über die Analogeingänge A4/A5 eingestellt. Dazu 
- *                  müssen dort Pullups eingebaut werden. Jenachdem wieweit die Spannung  heruntergezogen wird werden
- *                  die Modi eingestellt:
- *                  A5:
- *                  5V (nur Pullup) normaler Betriebsmodus, kein PoM
- *                  3,3V (Spannungsteiler 1:2) PoM immer aktiv, Adresse immer aus defaults
- *                  1,6V (Spannungsteiler 2:1) IniMode: CV's werden immer auf init-Werte aus .h-Datei gesetzt
- *                  0V Programmiermodus / PoM ( 1. Empfamgenes Telegramm bestimmt Adresse )
- *                  A4:
- *                  wird A4 auf 0 gezogen , wird der aktuell vom Drehencoder beeinflusste Servo in die  
- *                  Mittellage gebracht. Sobald der Encoder wieder bewegt wird, bewegt sich das Servo wieder
- *                  zur vorhergehenden Position.
- *                  Ist A4 beim Programmstart auf 0, werden alle CV's auf die Defaults zurückgesetzt
- *                  Bei Nano- und Mini-Versionen kann dies auf A6/A7 umgestellt werden, um Ports freizumachen
- *                  (A6/7 sind beim UNO nicht vorhanden)
- *   Version 3.1    Wechselblinker mit Softleds, 
- *                  Zusammenfassung von Weichenadressen zur Ansteuerung von Lichtsignalen                
- *                  Weichensteuerung mit Servos und 2 Relais. Während der Bewegung sind beide Relais abgefallen
- *   Version 4.0    Bei Softled-Ausgägen für Lichtsgnale kann die 'ON'-Stellung der Ausgänge invertiert 
- *                  werden ( HIGH=OFF/LOW=ON ) (Bit 7 im Mode-CV des FSIGNAL2/3). Dazu werden die MobaTools ab
- *                  V0.9 benötigt
- *                  Lichtsignalbilder sind jetzt direkt den einzelnen Weichenbefehlen zugeordnet
- *                  Vorsignale am gleichen Mast können automtisch dunkelgeschaltet werden
- *   Version 4.0.3  Fehler im Zusammenhang mit NC-Pins beseitigt.
- *   Version 4.0.4  Debug Interface bei STM32 wird deaktiviert ( gibt zusätzliche IO's frei )
- *                  Neues Flag in iniFmode: bei FSERVO und FCOIL kann auch auf den Befehl reagiert werden,
- *                  wenn der Befehl mit dem aktuellen Status übereinstimmt. Bei FSERVO wird dann der Servoimpuls 
- *                  erneut ausgegeben, wenn AUTOOFF eingestellt ist.
- *                  Bei FCOIL kann der Ausgang auch über den DCC-Befehl abgeschaltet werden. Ist auch eine
- *                  Auto-Zeit angegeben, schaltet der Ausgang beim zuerst eintretenden Ereignis ab.
-  *   Version 4.0.4  Verbesserte Drehencodererkennung
- *                  Fehler Justierung mit Drehencoder beseitigt
 *   
  * Eigenschaften:
  * Bis zu 8 (aufeinanderfolgende) Zubehöradressen ansteuerbar
@@ -115,7 +75,7 @@ static char dbgbuf[60];
 #define SAUTOOFF 0x01   // FSERVO: Impulse werden nach erreichen der Endlage abgeschaltet
 #define CAUTOOFF 0x01   // FCOIL: Die Impulsdauer wird intern begrenzt
 #define SDIRECT  0x02   // FSERVO: Der Servo reagiert auch während der Bewegung auf einen Umschaltbefehl
-#define NOPOSCHK 0x08   // FSERV/FCOIL: Die Ausgänge reagieren auf auf einen Befehl, wenn die aktuelle
+#define NOPOSCHK 0x08   // FSERV/FCOIL: Die Ausgänge reagieren auch auf einen Befehl, wenn die aktuelle
                         // Postion nicht verändert wird.
 #define BLKMODE 0x01    // FSTATIC: Ausgänge blinken
 #define BLKSTRT 0x02    // FSTATIC: Starten mit beide Ausgängen EIN
@@ -125,7 +85,9 @@ static char dbgbuf[60];
 //-------------------------------------------
 #ifdef __STM32F1__
 #include "DCC_Zubehoerdecoder-STM32.h"
+//#include "TestKonf/DCC_Zubehoerdecoder-LS-STM32.h"
 #else
+//#include "TestKonf\DCC_Zubehoerdecoder-LS-Nano.h"
 #include "DCC_Zubehoerdecoder.h"
 #endif
 const byte WeichenZahl = sizeof(iniTyp);
@@ -388,7 +350,10 @@ void setup() {
 #ifdef __STM32F1__
    disableDebugPorts();     // JTAG und SW Ports freigeben
 #endif
-
+    #ifdef FIXMODE
+    progMode = FIXMODE;
+    int temp = -1;
+    #else
     // Betriebsart auslesen
     int temp = analogRead( betrModeP );
     if ( temp > ISNORMAL ) {
@@ -404,14 +369,21 @@ void setup() {
         // Programmiermodus, automatische Adresserkennung
         progMode = ADDRMODE;
     }
+    #endif
+    
     _pinMode( modePin, OUTPUT );
     
     #ifdef DEBUG
-    delay(3000);
     Serial.begin(115200); //Debugging
+        #ifdef __STM32F1__
+        // auf STM32: warten bis USB aktiv (maximal 6sec)
+        {  unsigned long wait=millis()+6000;
+           while ( !Serial() && (millis()<wait) );
+        }
+        #endif
     #endif
     #ifdef DEBUG
-     DB_PRINT( "Betr:%d -> Mode=", temp );
+     Serial.print( "Betr:" ); Serial.print(temp);Serial.print(" -> Mode=" );
       switch ( progMode ) {
         case NORMALMODE:
           Serial.println( "Std" );
@@ -996,19 +968,15 @@ void notifyCVChange( uint16_t CvAddr, uint8_t Value ) {
         // Ändern des LSB (CV1) wird dann die Weichenadresse neu berechnet
         if ( CvAddr ==  29 || CvAddr ==  1 ) setWeichenAddr();
     
-        // Prüfen ob die Betriebsart des Decoders verändert wurde
-        if ( CvAddr == (int) &CV->modeVal ) {
-            // Die Betriebsart wurde verändert -> Neustart
-            delay( 500 );
-            softReset();
-        }
     }
 }    
 //-----------------------------------------------------
 void notifyCVResetFactoryDefault(void) {
     // Auf Standardwerte zurücksetzen und Neustart
     Dcc.setCV( (int) &CV->modeVal, 255 );
-    delay( 500 );
+    delay( 20 );
+    DB_PRINT( "Reset: modeVal=0x%2x", Dcc.getCV( (int) &CV->modeVal ) );
+    delay(500);
     softReset();
 }
 //------------------------------------------------------
@@ -1153,8 +1121,13 @@ void setWeichenAddr(void) {
 }
 //--------------------------------------------------------
 void softReset(void){
+    DB_PRINT( "RESET", 0 );
+    delay(1000);
     #ifdef __AVR_MEGA__
-    ;asm volatile ("  jmp 0");
+    asm volatile ("  jmp 0");
+    #endif
+    #ifdef __STM32F1__
+    nvic_sys_reset();   //System-Reset der STM32-CPU
     #endif
 }
 //-----------------------------------------------------------

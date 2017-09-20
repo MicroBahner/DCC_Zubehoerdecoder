@@ -111,6 +111,9 @@ const byte ackPin       =   4;
 // Eingänge analog: ( Bei Nano und Mini - Versionen kann hier auch A7 und A6 verwendet werden, um mehr
 //                    digital nutzbare Ports freizubekommen.
 //                    beim UNO sind A7+A6 nicht vorhanden! )
+// #define FIXMODE NORMALMODE    // Ist dieses define aktiv, wird der Betriebsmode fest gesetzt, betrModeP wird dann
+                        // nicht gelesen und ignoriert. Mögliche Werte:
+                        // NORMALMODE, POMMODE, INIMODE, ADDRMODE
 const byte betrModeP    =   A5;     // Analogeingang zur Bestimmung des Betriebsmodus. Wird nur beim
                                     // Programmstart eingelesen!
 const byte resModeP     =   A4;     // Rücksetzen CV-Werte + Mittelstellung Servos
@@ -129,7 +132,7 @@ const byte encode2P     =   A2;
 // Der Initiierungsmodus lässt sich per Mode-Eingang aktivieren oder er ist automatisch aktiv, wenn keine
 // sinnvollen Werte im CV47 stehen.
 //-------------------------------------------------------------------------------------------------------
-const byte DccAddr          =  17;    // DCC-Decoderadresse
+const byte DccAddr          =  20;    // DCC-Decoderadresse
 const byte iniMode          = 0x50 | AUTOADDR /*| ROCOADDR*/;  // default-Betriebsmodus ( CV47 )
 const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV48/49 )
 
@@ -156,4 +159,5 @@ const byte iniPar2[]      = {       50, 0b0000001, 0b00001001,   0b1010,      25
 const byte iniPar3[]      = {        0,         4,          8,        8,        9,              100 };
 const byte iniPar4[]      = {        0, 0b0000101,          0,        0,        0,                0,}; // nur für Lichtsignale!
 //------------------------------------------------------------------------------------
+
 
