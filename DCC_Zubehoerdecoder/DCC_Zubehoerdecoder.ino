@@ -2,7 +2,7 @@
 #include <MobaTools.h>
 
 /* Universeller DCC-Decoder für Weichen und (Licht-)Signale
-*   
+*  Version 4.1 
  * Eigenschaften:
  * Bis zu 8 (aufeinanderfolgende) Zubehöradressen ansteuerbar
  * 1. Adresse per Programmierung einstellbar
@@ -20,7 +20,7 @@
  *  So sind z.B. bei Servoausgängen die Endlagen per CV-Wert einstellbar, bei Lichtsignalen ist die 
  *  Zuordnung der Ausgangszustände zum Signalzustand frei konfigurierbar.
 */
-#define DCC_DECODER_VERSION_ID 0x40
+#define DCC_DECODER_VERSION_ID 0x41
 // für debugging ------------------------------------------------------------
 //#define DEBUG ;             // Wenn dieser Wert gesetzt ist, werden Debug Ausgaben auf dem ser. Monitor ausgegeben
 //#define Serial Serial1
@@ -102,7 +102,7 @@ CVPair FactoryDefaultCVs [] =
   {CV_ACCESSORY_DECODER_ADDRESS_LSB, DccAddr%256},
   {CV_ACCESSORY_DECODER_ADDRESS_MSB, DccAddr/256},
   {CV_VERSION_ID, DCC_DECODER_VERSION_ID},
-  {CV_MANUFACTURER_ID, MAN_ID_DIY},
+  /*{CV_MANUFACTURER_ID, MAN_ID_DIY},*/
   {CV_29_CONFIG, CV29_ACCESSORY_DECODER | CV29_OUTPUT_ADDRESS_MODE},
 };
 
@@ -378,7 +378,7 @@ void setup() {
         #ifdef __STM32F1__
         // auf STM32: warten bis USB aktiv (maximal 6sec)
         {  unsigned long wait=millis()+6000;
-           while ( !Serial() && (millis()<wait) );
+           while ( !Serial && (millis()<wait) );
         }
         #endif
     #endif
@@ -403,7 +403,22 @@ void setup() {
       }
     #endif
 
-    
+    _pinMode( ackPin, OUTPUT );
+    //-----------------------------------
+    // nmra-Dcc Lib initiieren
+    Dcc.pin( digitalPinToInterrupt(dccPin), dccPin, 1); 
+    if ( progMode == NORMALMODE || progMode == INIMODE ) {
+        // keine POM-Programmierung
+        Dcc.init( MAN_ID_DIY, DCC_DECODER_VERSION_ID, FLAGS_DCC_ACCESSORY_DECODER, (uint8_t)((uint16_t) 0) );
+        CLR_PROGLED;
+    } else {
+        // POM Programmierung aktiv
+        Dcc.init( MAN_ID_DIY, DCC_DECODER_VERSION_ID, FLAGS_DCC_ACCESSORY_DECODER, (uint8_t)((uint_t) &CV->PomAddrLow) );
+        SET_PROGLED;
+    }
+
+    //-------------------------------------
+    // CV's initiieren
     if ( (Dcc.getCV( (int) &CV->modeVal)&0xf0) != ( iniMode&0xf0 ) || analogRead(resModeP) < 100 ) {
         // In modeVal steht kein sinnvoller Wert ( oder resModeP ist auf 0 ),
         // alles initiieren mit den Defaultwerten
@@ -458,17 +473,6 @@ void setup() {
     opMode = Dcc.getCV( (int) &CV->modeVal) &0x0f;
     rocoOffs = ( opMode & ROCOADDR ) ? 4 : 0;
     
-    _pinMode( ackPin, OUTPUT );
-    Dcc.pin( digitalPinToInterrupt(dccPin), dccPin, 1); 
-    if ( progMode == NORMALMODE || progMode == INIMODE ) {
-        // keine POM-Programmierung
-        Dcc.init( MAN_ID_DIY, DCC_DECODER_VERSION_ID, FLAGS_DCC_ACCESSORY_DECODER, (uint8_t)((uint16_t) 0) );
-        CLR_PROGLED;
-    } else {
-        // POM Programmierung aktiv
-        Dcc.init( MAN_ID_DIY, DCC_DECODER_VERSION_ID, FLAGS_DCC_ACCESSORY_DECODER, (uint8_t)((uint_t) &CV->PomAddrLow) );
-        SET_PROGLED;
-    }
 
     // Encoder-Init
     IniEncoder();

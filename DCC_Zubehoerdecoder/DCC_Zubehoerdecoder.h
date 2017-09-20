@@ -69,7 +69,7 @@
  *          und welche Ausgänge weich überblenden (Bit=0)
  *  CV51    Bitmuster der Ausgänge für Befehl 1.Adresse 0 (rot)
  *  CV52    Bitmuster der Ausgänge für Befehl 1.Adresse 1 (grün)
- *  CV53    Index des Vorsignals am gleichen Mast ( 0 …. )
+ *  CV53    Index des Vorsignals am gleichen Mast ( 1 …. )
  *  CV54    Bitmuster der Zustände, bei denen das Vorsignal dunkel ist:
  *              Bit 0: Befehl 1.Adresse 0 (rot)
  *              Bit 1: Befehl 1.Adresse 1 (grün)
@@ -101,6 +101,7 @@
 // vom Anwender änderbare Parameter um den Zubehördecoder an die verwendete HW anzupassen
 
 // Beispiel für Variante mit Licht-Ausfahrsignal mit Vorsignal, mit Betriebsmode Led an Pin 13 (interne Led)
+// für Arduino Nano
 
 //----------------------------------------------------------------
 // Hardwareabhängige Konstante ( nicht per CV änderbar)
@@ -114,18 +115,18 @@ const byte ackPin       =   4;
 // #define FIXMODE NORMALMODE    // Ist dieses define aktiv, wird der Betriebsmode fest gesetzt, betrModeP wird dann
                         // nicht gelesen und ignoriert. Mögliche Werte:
                         // NORMALMODE, POMMODE, INIMODE, ADDRMODE
-const byte betrModeP    =   A5;     // Analogeingang zur Bestimmung des Betriebsmodus. Wird nur beim
+const byte betrModeP    =   A7;     // Analogeingang zur Bestimmung des Betriebsmodus. Wird nur beim
                                     // Programmstart eingelesen!
-const byte resModeP     =   A4;     // Rücksetzen CV-Werte + Mittelstellung Servos
+const byte resModeP     =   A6;     // Rücksetzen CV-Werte + Mittelstellung Servos
 
 // Eingänge digital (die Ports A0-A5 lassen sich auch digital verwenden): ---------
 
 // Drehencoder zur Servojustierung ...........
-//#define ENCODER_AKTIV       // Wird diese Zeile auskommentiert, wird der Encoder nicht verwendet. 
+#define ENCODER_AKTIV       // Wird diese Zeile auskommentiert, wird der Encoder nicht verwendet. 
                             // Die Encoder-Ports werden dann ignoriert, und können anderweitig 
                             // verwendet werden.
-const byte encode1P     =   A3;     // Eingang Drehencoder zur Justierung.
-const byte encode2P     =   A2;
+const byte encode1P     =   A5;     // Eingang Drehencoder zur Justierung.
+const byte encode2P     =   A4;
 // ............................................
 //-------------------------------------------------------------------------------------------------------
 // Betriebswerte ( per CV änderbar ) Diese Daten werden nur im Initiierungsmodus in die CV's geschrieben.
@@ -147,17 +148,17 @@ const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmi
 
 #define MAX_LEDS 12 // default ist 16. Kann auf die tatsächlich benutzte Zahl reduziert werden, um RAM zu sparen.
                     // Pro Softled werden 19 Byte benötigt
-                   
-const byte iniTyp[]     =   {    FSTATIC,   FSIGNAL2, FSIGNAL0,   FVORSIG,  FSIGNAL0,          FCOIL };
-const byte out1Pins[]   =   {       A2,          9,       12,        5,       A1,                7 };  // output-pins der Funktionen
-const byte out2Pins[]   =   {       A3,         10,       NC,        6,       NC,                8 };
-const byte out3Pins[]   =   {       NC,         11,       NC,       A0,       NC,               NC };
+#define STATICMOD    CAUTOOFF|BLKSOFT|BLKSTRT    // Wechselblinker mit beiden Leds an beim Start            
+const byte iniTyp[]     =   {    FSTATIC,  FSERVO,   FSIGNAL2,   FSIGNAL0,   FVORSIG,   FCOIL };
+const byte out1Pins[]   =   {       A2,         3,   /*rt*/ 9,   /*rt*/10,  /*ge*/12,       A0 };  // output-pins der Funktionen
+const byte out2Pins[]   =   {       A3,         5,   /*gn*/11,   /*ws*/ 8,  /*gn*/13,       A1 };
+const byte out3Pins[]   =   {       NC,         6,   /*ge*/ 7,         NC,        NC,       NC };
  
-const byte iniFmode[]     = { CAUTOOFF|BLKSOFT, LEDINVERT, 0b00000100,        0,        0, NOPOSCHK };
-const byte iniPar1[]      = {       50, 0b0000010, 0b00000100,   0b0101,   0b1001,                0 };
-const byte iniPar2[]      = {       50, 0b0000001, 0b00001001,   0b1010,      255,                0 };
-const byte iniPar3[]      = {        0,         4,          8,        8,        9,              100 };
-const byte iniPar4[]      = {        0, 0b0000101,          0,        0,        0,                0,}; // nur für Lichtsignale!
+const byte iniFmode[]     = {STATICMOD,  SAUTOOFF,          0,          0,         0, NOPOSCHK };
+const byte iniPar1[]      = {       50,        30,    0b01001,    0b10001,      0b01,       20 };
+const byte iniPar2[]      = {       50,       150,    0b00010,    0b00110,      0b10,       50 };
+const byte iniPar3[]      = {       30,         8,          5,          0,        19,        0 };
+const byte iniPar4[]      = {        0,         0,    0b00101,          0,         0,        0,}; // nur für Lichtsignale!
 //------------------------------------------------------------------------------------
 
 

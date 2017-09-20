@@ -110,34 +110,34 @@
 //----------------------------------------------------------------
 // maple mini: ( ARDUINO_MAPLE_MINI )
 #ifdef ARDUINO_MAPLE_MINI
-const byte dccPin       =   2;
-const byte ackPin       =   1;
+const byte dccPin       =   3;
+const byte ackPin       =   18;
 
 // Eingänge analog: ( Bei Nano und Mini - Versionen kann hier auch A7 und A6 verwendet werden, um mehr
 //                    digital nutzbare Ports freizubekommen.
 //                    beim UNO sind A7+A6 nicht vorhanden! )
-const byte betrModeP    =   5;     // Analogeingang zur Bestimmung des Betriebsmodus. Wird nur beim
+const byte betrModeP    =   4;     // Analogeingang zur Bestimmung des Betriebsmodus. Wird nur beim
                                     // Programmstart eingelesen!
-const byte resModeP     =   4;     // Rücksetzen CV-Werte + Mittelstellung Servos
+const byte resModeP     =   5;     // Rücksetzen CV-Werte + Mittelstellung Servos
 
-// Eingänge digital (die Ports A0-A5 lassen sich auch digital verwenden): ---------
+// Eingänge digital  ---------
 
 // Drehencoder zur Servojustierung ...........
-//#define ENCODER_AKTIV       // Wird diese Zeile auskommentiert, wird der Encoder nicht verwendet. 
+#define ENCODER_AKTIV       // Wird diese Zeile auskommentiert, wird der Encoder nicht verwendet. 
                             // Die Encoder-Ports werden dann ignoriert, und können anderweitig 
                             // verwendet werden.
-const byte encode1P     =   3;     // Eingang Drehencoder zur Justierung.
-const byte encode2P     =   2;
+const byte encode1P     =   6;     // Eingang Drehencoder zur Justierung.
+const byte encode2P     =   7;
 #endif
 
 #ifdef ARDUINO_GENERIC_STM32F103C
-const byte dccPin       =   PB13;
-const byte ackPin       =   PB14;
-const byte betrModeP    =   PA0;     // Analogeingang zur Bestimmung des Betriebsmodus. 
-const byte resModeP     =   PA1;     // Rücksetzen CV-Werte + Mittelstellung Servos
+const byte dccPin       =   PB0;
+const byte ackPin       =   PB4;
+const byte betrModeP    =   PA7;     // Analogeingang zur Bestimmung des Betriebsmodus. 
+const byte resModeP     =   PA6;     // Rücksetzen CV-Werte + Mittelstellung Servos
 //#define ENCODER_AKTIV       // Wird diese Zeile auskommentiert, wird der Encoder nicht verwendet. 
-const byte encode1P     =   3;     // Eingang Drehencoder zur Justierung.
-const byte encode2P     =   2;
+const byte encode1P     =   PA5;     // Eingang Drehencoder zur Justierung.
+const byte encode2P     =   PA4;
 #endif
 
 // ............................................
@@ -146,7 +146,7 @@ const byte encode2P     =   2;
 // Der Initiierungsmodus lässt sich per Mode-Eingang aktivieren oder er ist automatisch aktiv, wenn keine
 // sinnvollen Werte im CV47 stehen.
 //-------------------------------------------------------------------------------------------------------
-const byte DccAddr          =  17;    // DCC-Decoderadresse
+const byte DccAddr          =  20;    // DCC-Decoderadresse
 const byte iniMode          = 0x50 | AUTOADDR /*| ROCOADDR*/;  // default-Betriebsmodus ( CV47 )
 const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV48/49 )
 
@@ -157,30 +157,32 @@ const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV
 
 // Ausgänge:  mit NC gekennzeichnete Ausgänge werden keinem Port zugeordnet. Damit können Ports gespart werden,
 //            z.B. wenn bei einem Servo kein Polarisierungsrelais benötigt wird
-const byte modePin      =   33;     // Anzeige Betriebszustand (Normal/Programmierung) (Led)
+const byte modePin      =   LED_BUILTIN;     // Anzeige Betriebszustand (Normal/Programmierung) (Led)
 
 #define MAX_LEDS 12 // default ist 16. Kann auf die tatsächlich benutzte Zahl reduziert werden, um RAM zu sparen.
                     // Pro Softled werden 19 Byte benötigt
 // maple mini: ( ARDUINO_MAPLE_MINI )
 #ifdef ARDUINO_MAPLE_MINI
-const byte iniTyp[]     =   {  FSTATIC,   FSIGNAL2, FSIGNAL0,   FVORSIG,  FSIGNAL0,          FSTATIC };
-const byte out1Pins[]   =   {       21,         15,       18,       28,       31,                8 };  // output-pins der Funktionen
-const byte out2Pins[]   =   {       22,         16,       NC,       29,       NC,                9 };
-const byte out3Pins[]   =   {       NC,         17,       NC,       30,       NC,               NC };
+const byte iniTyp[]     =   {    FSTATIC,  FSERVO,   FSIGNAL2,   FSIGNAL0,   FVORSIG,   FCOIL };
+const byte out1Pins[]   =   {        9,        19,   /*rt*/26,   /*rt*/25,  /*ge*/13,       11 };  // output-pins der Funktionen
+const byte out2Pins[]   =   {        8,        17,   /*gn*/14,   /*ws*/27,  /*gn*/12,       10 };
+const byte out3Pins[]   =   {       NC,        16,   /*ge*/15,         NC,        NC,       NC };
 #endif
 
-// Generic STM32F102C 
+// Generic STM32F103C 
 #ifdef ARDUINO_GENERIC_STM32F103C
-const byte iniTyp[]     =   {  FSTATIC,   FSIGNAL2, FSIGNAL0,   FVORSIG,  FSIGNAL0,          FSTATIC };
-const byte out1Pins[]   =   {       21,         15,       18,       28,       31,                8 };  // output-pins der Funktionen
-const byte out2Pins[]   =   {       22,         16,       NC,       29,       NC,                9 };
-const byte out3Pins[]   =   {       NC,         17,       NC,       30,       NC,               NC };
+const byte iniTyp[]     =   {    FSTATIC,  FSERVO,   FSIGNAL2,   FSIGNAL0,    FVORSIG,   FCOIL };
+const byte out1Pins[]   =   {      PA2,       PB3,  /*rt*/PA9, /*rt*/PA10, /*ge*/PC14,     PA0 };  // output-pins der Funktionen
+const byte out2Pins[]   =   {      PA3,       PB5, /*gn*/PC13,  /*ws*/PA8, /*gn*/PC15,     PA1 };
+const byte out3Pins[]   =   {       NC,       PB6,  /*ge*/PB7,         NC,         NC,      NC };
 #endif
 // Für andere Boards hier einfügen
-const byte iniFmode[]     = {     0x05, LEDINVERT, 0b00000100,LEDINVERT,        0,  BLKMODE|BLKSOFT };
-const byte iniPar1[]      = {       50, 0b0000010, 0b00000100,   0b0011,   0b0110,               50 };
-const byte iniPar2[]      = {       50, 0b0000001, 0b00001001,   0b1100,      255,               50 };
-const byte iniPar3[]      = {      100,         4,          8,        8,        9,              100 };
-const byte iniPar4[]      = {        0, 0b0000101,          0,        0,        0,                0,}; // nur für Lichtsignale!
+
+#define STATICMOD    CAUTOOFF|BLKSOFT|BLKSTRT    // Wechselblinker mit beiden Leds an beim Start            
+const byte iniFmode[]     = {STATICMOD,  SAUTOOFF,          0,          0,         0, NOPOSCHK };
+const byte iniPar1[]      = {       50,        30,    0b01001,    0b10001,      0b01,       20 };
+const byte iniPar2[]      = {       50,       150,    0b00010,    0b00110,      0b10,       50 };
+const byte iniPar3[]      = {       30,         8,          5,          0,        19,        0 };
+const byte iniPar4[]      = {        0,         0,    0b00101,          0,         0,        0,}; // nur für Lichtsignale!
 
 
