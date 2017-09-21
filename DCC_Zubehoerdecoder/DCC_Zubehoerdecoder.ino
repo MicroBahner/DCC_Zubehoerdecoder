@@ -634,15 +634,28 @@ void loop() {
           case FSERVO: // Servoausgänge ansteuern ----------------------------------------------
             if ( fktStatus[i] & MOVING ) {
                 // Weiche wird gerade ungestellt, Schaltpunkt Relais und Bewegungsende überwachen
+                if ( dccSoll[i] != (fktStatus[i] & 0x01) && (getPar(i,Mode) & SDIRECT) ) {
+                    // Es wurde die Servoposition umgeschalten und das Flag SDIRECT ist
+                    // gesetzt: Bewegung abbrechen und Moving-Bit löschen.
+                    // Im nächsten loop-Durchlauf wird dann auf die neue Position reagiert
+                    weicheS[i].write( weicheS[i].read() );
+                    fktStatus[i] &= 0x1; 
+                }
                 if ( weicheS[i].moving() < 50 ) fServo[i].relaisOut = fktStatus[i]& 0x1;
                 if ( weicheS[i].moving() == 0 ) {
                     // Bewegung abgeschlossen, 'MOVING'-Bit löschen und Lage in CV speichern
                     fktStatus[i] &= 0x1; 
                     Dcc.setCV( (int) &CV->Fkt[i].State, fktStatus[i] );
+                    if ( getPar(i,Mode) & NOPOSCHK ) {
+                        // Soll auf 'ungültig' stellen, damit auch neue Telegramme mit gleicher
+                        // Position erkannt werden (ausser es wurde schon verändert )
+                        if ( dccSoll[i] == fktStatus[i] ) dccSoll[i] = SOLL_INVALID;
+                        DB_PRINT( "dccSoll=%d", dccSoll[i] );
+                    }
                 }
-            } else if ( dccSoll[i] != fktStatus[i] ) {
+            } else if ( dccSoll[i] != SOLL_INVALID  && (dccSoll[i] != fktStatus[i] || (getPar(i,Mode) & NOPOSCHK))  ) {
                 // Weiche muss umgestellt werden
-                //DB_PRINT( "WeicheIx=%d stellen, Ist=%d,Soll=%d", i, fktStatus[i], dccSoll[i] );
+                DB_PRINT( "WeicheIx=%d stellen, Ist=%d,Soll=%d", i, fktStatus[i], dccSoll[i] );
                 fktStatus[i] = dccSoll[i] | MOVING; // Istwert auf Sollwert und MOVING-Bit setzen.
                 if ( dccSoll[i] == GERADE ) {
                     weicheS[i].write( Dcc.getCV( (int) &CV->Fkt[i].Par1 ) );
@@ -887,14 +900,14 @@ void notifyDccAccState( uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, u
        //DB_PRINT( "Neu: Boardaddr: %d, 1.Weichenaddr: %d", BoardAddr, weichenAddr );
     }
     // Testen ob eigene Weichenadresse
-    DB_PRINT( "DecAddr=%d, Weichenadresse: %d , Ausgang: %d, State: %d", BoardAddr, wAddr, OutputAddr, State );
+    //DB_PRINT( "DecAddr=%d, Weichenadresse: %d , Ausgang: %d, State: %d", BoardAddr, wAddr, OutputAddr, State );
     // Prüfen ob Adresse im Decoderbereich
     if ( wAddr >= weichenAddr && wAddr < (weichenAddr + WeichenZahl) ) {
         // ist eigene Adresse, Sollwert setzen
         byte Ix = wAddr-weichenAddr;
         dccSoll[Ix] =  OutputAddr & 0x1;
         dccState[Ix] = State;
-        DB_PRINT( "Weiche %d, Index %d, Soll %d, Ist %d", wAddr, Ix, dccSoll[Ix],  fktStatus[Ix] );
+        //DB_PRINT( "Weiche %d, Index %d, Soll %d, Ist %d", wAddr, Ix, dccSoll[Ix],  fktStatus[Ix] );
         ChkAdjEncode( Ix );
     }
     // Prüfen ob Vorsignal über Hauptsignaladresse geschaltet werden muss

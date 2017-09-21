@@ -38,6 +38,10 @@
  *  Bedeutung der CV's bei den verschiedenen Funktione (CV-Nummern für 1. Weichenadresse)
  *  FSERVO Servo:
  *  CV50    Bit0 = 1: AutoOff der Servoimpulse bei Stillstand des Servo
+ *          Bit1 = 1: 'Direct-Mode' auch während der Servobewegung wird auf einen erneuten
+ *                    Stellbefehl reagiert, und gegebenenfalls sofort die Drehrichtung geändert
+ *          Bit3 = 1: kein Überprüfung auf Servoposition bei Empfang eines DCC-Befehls
+ *                    bei AUTOOFF und gleicher Position werden wieder Impulse ausgegeben
  *  CV51    Position des Servo für Weichenstellung '0' ( in Grad, 0...180 )
  *  CV52    Position des Servo für Weichenstellung '1' ( in Grad, 0...180 )
  *  CV53    Geschwindigkeit des Servo
@@ -46,6 +50,8 @@
  *  FCOIL Doppelspulenantrieb: ( derzeit nur mit automatischer Abschaltung )
  *  CV50    Bit0 = 1: Spulenausgang automatisch abschalten
  *               = 0: Spulenausgang über DCC-Befehl abschalten
+ *          Bit3 = 1: kein Überprüfung auf Weichenposition. Gegebenenfalls wird auch an gleichen
+ *                    Anschluss wiederholt ein Puls ausgegeben
  *  CV51    Einschaltdauer der Spule 1 ( in 10ms Einheiten )
  *  CV52    minimale Ausschaltdauer der Spule ( in 10ms Einheiten )
  *  CV53    -
@@ -174,7 +180,7 @@ const byte out3Pins[]   =   {       NC,        16,   /*ge*/15,         NC,      
 const byte iniTyp[]     =   {    FSTATIC,  FSERVO,   FSIGNAL2,   FSIGNAL0,    FVORSIG,   FCOIL };
 const byte out1Pins[]   =   {      PA2,       PB3,  /*rt*/PA9, /*rt*/PA10, /*ge*/PC14,     PA0 };  // output-pins der Funktionen
 const byte out2Pins[]   =   {      PA3,       PB5, /*gn*/PC13,  /*ws*/PA8, /*gn*/PC15,     PA1 };
-const byte out3Pins[]   =   {       NC,       PB6,  /*ge*/PB7,         NC,         NC,      NC };
+const byte out3Pins[]   =   {       NC,        NC,  /*ge*/PB7,         NC,         NC,      NC };
 #endif
 // Für andere Boards hier einfügen
 
