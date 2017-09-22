@@ -19,7 +19,7 @@
 */
 #define DCC_DECODER_VERSION_ID 0x41
 // für debugging ------------------------------------------------------------
-#define DEBUG ;             // Wenn dieser Wert gesetzt ist, werden Debug Ausgaben auf dem ser. Monitor ausgegeben
+//#define DEBUG ;             // Wenn dieser Wert gesetzt ist, werden Debug Ausgaben auf dem ser. Monitor ausgegeben
 //#define Serial Serial1
 #include "src/Globals.h"
 #include "src/FuncClasses.h"
@@ -65,9 +65,8 @@ char dbgbuf[60];
 //-----------------------------------------
 // Flags für iniFmode:
 #define SAUTOOFF 0x01   // FSERVO: Impulse werden nach erreichen der Endlage abgeschaltet
-#define CAUTOOFF 0x01   // FCOIL: Die Impulsdauer wird intern begrenzt
 #define SDIRECT  0x02   // FSERVO: Der Servo reagiert auch während der Bewegung auf einen Umschaltbefehl
-#define NOPOSCHK 0x08   // FSERV/FCOIL: Die Ausgänge reagieren auch auf einen Befehl, wenn die aktuelle
+#define NOPOSCHK 0x08   // FSERV: Die Ausgänge reagieren auch auf einen Befehl, wenn die aktuelle
                         // Postion nicht verändert wird.
 #define LEDINVERT 0x80  // FSIGNAL: SoftledAusgänge invertieren (Bit 0 des Modebyte von FSIGNAL2/3)
 //-------------------------------------------
@@ -98,8 +97,6 @@ CVPair FactoryDefaultCVs [] =
 #define servoPins out1Pins  // Portnamen fürs Servofunktion
 #define relais1Pins out2Pins
 #define relais2Pins out3Pins
-#define coil1Pins out1Pins  // Portnamen für Magnetartikelfunktion
-#define coil2Pins out2Pins
 
 
 //-------------------------------Definition der CV-Adressen ---------------------------------------
@@ -132,7 +129,6 @@ byte isOutputAddr;              // Flag ob Output-Adressing
 word weichenAddr;               // Addresse der 1. Weiche (des gesamten Blocks)
 byte dccState[WeichenZahl];     // Ausgangsstatus im DCC-Telegramm ( für FCOIL )
 byte dccSoll[WeichenZahl];      // Solllage der Weichen ( wird vom DCC-Kommando gesetzt )
-#define SOLL_INVALID    0xff    //
 byte fktStatus[WeichenZahl];    // Ist-Zustand der Weichen/Signale
     // Bits 0-2
     #define GERADE  0x0             // Bit 0
@@ -171,6 +167,7 @@ static union {
 #define fCoil  fktVar
 #define fSig   fktVar
 #define fStatic fktVar
+
 void *Fptr[WeichenZahl];    // Pointer auf das Funktionsobjekt
 
 //- - - Variable für Lichtsignalsteuerung - - - - - - -
@@ -182,7 +179,7 @@ void *Fptr[WeichenZahl];    // Pointer auf das Funktionsobjekt
 int8_t portTyp[PPF][WeichenZahl];   // -1 = Standardport
                                   // >=0 Softled-Objekt
 byte slIx;                        // Zählindex für die Vergabe der Softled-Objekte bei der Initiierung
-SoftLed SigLed[ MAX_LEDS ];
+SoftLed SigLed[ SOFTLEDS ];
 
 
 
@@ -498,14 +495,10 @@ void setup() {
             _digitalWrite( relais2Pins[wIx], !fServo[wIx].relaisOut );
             break;
           case FCOIL:
-            _pinMode( coil1Pins[wIx], OUTPUT );
-            _pinMode( coil2Pins[wIx], OUTPUT );
-            fCoil[wIx].pulseON = false;
-            _digitalWrite( coil1Pins[wIx], LOW );
-            _digitalWrite( coil2Pins[wIx], LOW );
+            Fptr[wIx] = new Fcoil( ( int ) &CV->Fkt[wIx].Mode , out1Pins[wIx], out2Pins[wIx] );
             break;
           case FSTATIC:
-            Fptr[wIx] = new Fstatic( ( uint16_t) &CV->Fkt[wIx].Mode , out1Pins[wIx], out2Pins[wIx] );
+            Fptr[wIx] = new Fstatic( ( int ) &CV->Fkt[wIx].Mode , out1Pins[wIx], out2Pins[wIx] );
             break;
           case FSIGNAL2:
           case FVORSIG: {
@@ -643,56 +636,8 @@ void loop() {
             break;
 
           case FCOIL: //Doppelspulenantriebe ------------------------------------------------------
-            // Pulseausgägne einschalten
-            if (  !fCoil[i].pulseON && !pulseT[i].running() &&  dccSoll[i] != SOLL_INVALID ) {
-                // Aktionen am Ausgang nur wenn kein aktiver Impuls und der Pausentimer nicht läuft
-                if ( ( fktStatus[i] != dccSoll[i] || (getPar(i,Mode) & NOPOSCHK) )
-                        && dccState[i] ) {
-                    // Weiche soll geschaltet werden
-                    DB_PRINT(" i=%d, Ist=%d, Soll=%d, State=%d", i, fktStatus[i], dccSoll[i], dccState[i] );
-                    if ( (dccSoll[i]&1) == 0 ) {
-                        // Out1 aktiv setzen
-                        _digitalWrite( coil1Pins[i], HIGH );
-                        _digitalWrite( coil2Pins[i], LOW );
-                        //DB_PRINT( "Pin%d HIGH, Pin%d LOW", coil1Pins[i], coil2Pins[i] );
-                    } else {
-                        // Out2 aktiv setzen
-                        _digitalWrite( coil2Pins[i], HIGH );
-                        _digitalWrite( coil1Pins[i], LOW );
-                        //DB_PRINT( "Pin%d LOW, Pin%d HIGH", coil1Pins[i], coil2Pins[i] );
-                    }
-                    fCoil[i].pulseON = true;
-                    if ( getPar(i,Par1) > 0 ) pulseT[i].setTime( getPar(i,Par1) * 10 );
-                    fktStatus[i] = dccSoll[i];
-                    Dcc.setCV( (int) &CV->Fkt[i].State, dccSoll[i] );
-                }
-                dccSoll[i] = SOLL_INVALID; // Empfangenes Telegramm wurde bearbeitet.
-            }
-            
-            // Pulsausgänge ausschalten
-            if ( fCoil[i].pulseON ) {
-                // prüfen ab Impuls abgeschaltet werden muss
-                if ( !(getPar(i,Mode) & CAUTOOFF) && dccSoll[i]!=SOLL_INVALID && !dccState[i] ) {
-                    // ein Abschalttelegramm wurde empfangen
-                    fCoil[i].pulseON = false;
-                    pulseT[i].setTime( 0 );     // Timer abschalten, falls er läuft
-                    dccSoll[i] = SOLL_INVALID;  // Empfangenes Telegramm wurde bearbeitet.
-                }
-                // Timerabschaltung
-                if ( (getPar(i,Par1) > 0) && !pulseT[i].running()  ) {
-                    //  Timerabschaltung ist aktiv und Timer ist abgelaufen
-                    //DB_PRINT( "Pin%d LOW, Pin%d LOW", coil1Pins[i], coil2Pins[i] );
-                    fCoil[i].pulseON = false;
-                }
-                
-                if ( fCoil[i].pulseON == false ) {
-                    _digitalWrite( coil2Pins[i], LOW );
-                    _digitalWrite( coil1Pins[i], LOW );
-                    // Timer für Pulspause setzen
-                    if ( getPar(i,Par2) > 0 ) pulseT[i].setTime( getPar(i,Par2) * 10 );
-                }
-                
-            }
+           //if ( dccSoll[i] != SOLL_INVALID ) DB_PRINT( "SollCoil=%d", dccSoll[i] );
+           ( ( Fcoil * )Fptr[i])->chkState(&dccSoll[i],dccState[i]);
             break;
           case FSTATIC: // Ausgang statisch ein/ausschalten ------------------------------------
            ( ( Fstatic * )Fptr[i])->chkState(dccSoll[i]);
@@ -832,7 +777,7 @@ void notifyDccAccState( uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, u
         byte Ix = wAddr-weichenAddr;
         dccSoll[Ix] =  OutputAddr & 0x1;
         dccState[Ix] = State;
-        DB_PRINT( "Weiche %d, Index %d, Soll %d, Ist %d", wAddr, Ix, dccSoll[Ix],  fktStatus[Ix] );
+        //DB_PRINT( "Weiche %d, Index %d, Soll %d, Ist %d", wAddr, Ix, dccSoll[Ix],  fktStatus[Ix] );
         ChkAdjEncode( Ix );
     }
     // Prüfen ob Vorsignal über Hauptsignaladresse geschaltet werden muss
