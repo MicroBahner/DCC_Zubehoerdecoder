@@ -1,6 +1,3 @@
-#include <NmraDcc.h>
-#include <MobaTools.h>
-
 /* Universeller DCC-Decoder für Weichen und (Licht-)Signale
 *  Version 4.1 
  * Eigenschaften:
@@ -22,23 +19,18 @@
 */
 #define DCC_DECODER_VERSION_ID 0x41
 // für debugging ------------------------------------------------------------
-//#define DEBUG ;             // Wenn dieser Wert gesetzt ist, werden Debug Ausgaben auf dem ser. Monitor ausgegeben
+#define DEBUG ;             // Wenn dieser Wert gesetzt ist, werden Debug Ausgaben auf dem ser. Monitor ausgegeben
 //#define Serial Serial1
+#include "src/Globals.h"
+#include "src/FuncClasses.h"
 
 #ifdef DEBUG
-#define DB_PRINT( x, ... ) { sprintf_P( dbgbuf, (const char*) F( x ), __VA_ARGS__ ) ; Serial.println( dbgbuf ); }
-//#define DB_PRINT( x, ... ) { sprintf( dbgbuf,   x , __VA_ARGS__ ) ; Serial.println( dbgbuf ); }
-static char dbgbuf[60];
-#else
-#define DB_PRINT( x, ... ) ;
+char dbgbuf[60];
 #endif
 
 //------------------------------------------ //
 // die NmraDcc - Library gibt es unter https://github.com/mrrwa/NmraDcc/archive/master.zip
 
-#define NC 0xff    // nicht verwendeten Funktionsausgängen kann der Port NC zugeweisen werden.
-// Da die Prüfung auf ungültige Pin-Nummern in den Arduino-internen Implementierungen je nach Prozessor
-// unterschiedlich ist, wird im Sketch selbst auf NC geprüft, und gegebenenfalls die Arduino Funktion nicht aufgerufen.
 
 #ifdef __STM32F1__
     #define digitalPinToInterrupt(x) x
@@ -77,10 +69,6 @@ static char dbgbuf[60];
 #define SDIRECT  0x02   // FSERVO: Der Servo reagiert auch während der Bewegung auf einen Umschaltbefehl
 #define NOPOSCHK 0x08   // FSERV/FCOIL: Die Ausgänge reagieren auch auf einen Befehl, wenn die aktuelle
                         // Postion nicht verändert wird.
-#define BLKMODE 0x01    // FSTATIC: Ausgänge blinken
-#define BLKSTRT 0x02    // FSTATIC: Starten mit beide Ausgängen EIN
-#define BLKSOFT 0x04    // FSTATIC: Ausgänge als Softleds
-
 #define LEDINVERT 0x80  // FSIGNAL: SoftledAusgänge invertieren (Bit 0 des Modebyte von FSIGNAL2/3)
 //-------------------------------------------
 #ifdef __STM32F1__
@@ -150,7 +138,6 @@ byte fktStatus[WeichenZahl];    // Ist-Zustand der Weichen/Signale
     #define GERADE  0x0             // Bit 0
     #define ABZW    0x1             // Bit 0
     #define MOVING  0x2             // Bit 1 nur für Servos,gesetzt während Umlauf
-    #define BLKON   0x4             // Bit 2 nur für Static, blinkende Led ist EIN
     // für Lichtsignale, aktueller Signalzustand in Bits 4-7
     #define SIG_STATE_MASK  0xf0
     #define SIG_WAIT        0x00    // Warte auf Signalbefehle
@@ -184,6 +171,7 @@ static union {
 #define fCoil  fktVar
 #define fSig   fktVar
 #define fStatic fktVar
+void *Fptr[WeichenZahl];    // Pointer auf das Funktionsobjekt
 
 //- - - Variable für Lichtsignalsteuerung - - - - - - -
 
@@ -517,34 +505,7 @@ void setup() {
             _digitalWrite( coil2Pins[wIx], LOW );
             break;
           case FSTATIC:
-            // Modi der Ausgangsports
-            if ( GetCvPar(wIx,Mode) & BLKSOFT ) {
-                // Ausgangsports als Softleds einrichten
-                for ( byte i=0; i<2; i++ ) {
-                    byte outPin = getIoPin( wIx, i );
-                    if ( outPin != NC ) {
-                        byte att, rise, writ;
-                        att=SigLed[slIx].attach( outPin );
-                        SigLed[slIx].riseTime( 500 );
-                        SigLed[slIx].write( OFF, LINEAR );
-                        portTyp[i][wIx] = slIx++;
-                       //DB_PRINT( "Softled, pin %d, Att=%d", outPin, att );
-                    }
-                }
-            } else {
-                _pinMode( out1Pins[wIx], OUTPUT );
-                _pinMode( out2Pins[wIx], OUTPUT );
-            }
-            // Grundstellung der Ausgangsports
-            if ( GetCvPar(wIx,Mode) & BLKMODE ) {
-                // aktuellen Blinkstatus berücksichtigen
-                setIoPin( wIx, 0, LOW );
-                setIoPin( wIx, 1, LOW );
-            } else {
-                // statische Ausgabe
-                setIoPin( wIx, 0, fktStatus[wIx] & 0x1 );
-                setIoPin( wIx, 1, !(fktStatus[wIx] & 0x1  ) );
-            }
+            Fptr[wIx] = new Fstatic( ( uint16_t) &CV->Fkt[wIx].Mode , out1Pins[wIx], out2Pins[wIx] );
             break;
           case FSIGNAL2:
           case FVORSIG: {
@@ -734,43 +695,7 @@ void loop() {
             }
             break;
           case FSTATIC: // Ausgang statisch ein/ausschalten ------------------------------------
-            // muss Ausgang umgeschaltet werden?
-            if ( (dccSoll[i]&1) != (fktStatus[i]&1) ) {
-                setIoPin( i,0, dccSoll[i] );
-                if ( GetCvPar(i,Mode) & BLKMODE ) {
-                    setIoPin( i,1, (GetCvPar(i,Mode) & BLKSTRT)&& (dccSoll[i]&1) ); 
-                } else {                   
-                    setIoPin( i,1, !dccSoll[i] );                    
-                }
-                //DB_PRINT( "Soll=%d, Ist=%d", dccSoll[i], fktStatus[i] );
-                fktStatus[i] = dccSoll[i];
-                Dcc.setCV( (int) &CV->Fkt[i].State, fktStatus[i] );
-                if ( fktStatus[i] && ( Dcc.getCV( (int) &CV->Fkt[i].Mode ) & BLKMODE ) ) {
-                    // Funktion wird eingeschaltet und Blinkmode ist aktiv -> Timer setzen
-                    pulseT[i].setTime( GetCvPar(i,Par3)*10 );
-                    //DB_PRINT( "BlkEin %d/%d, Strt=%x", GetCvPar(i,Par1) , GetCvPar(i,Par2), (GetCvPar(i,Mode) & BLKSTRT)  );
-                    fktStatus[i] |= BLKON;
-                }
-            }
-            if ( fktStatus[i] && ( Dcc.getCV( (int) &CV->Fkt[i].Mode ) & BLKMODE ) ) {
-                // bei aktivem Blinken die Timer abfragen/setzen
-                if ( !pulseT[i].running() ) {
-                    // Timer abgelaufen, Led-Status wechseln
-                    if ( fktStatus[i] & BLKON ) {
-                        // Led ausschalten
-                        setIoPin( i,0, LOW );
-                        setIoPin( i,1, HIGH );
-                        fktStatus[i] &= ~BLKON;
-                        pulseT[i].setTime( Dcc.getCV( (int) &CV->Fkt[i].Par2 )*10 );
-                    } else {
-                        // Led einschalten
-                        setIoPin( i,0, HIGH );
-                        setIoPin( i,1, LOW );
-                        fktStatus[i] |= BLKON;
-                        pulseT[i].setTime( Dcc.getCV( (int) &CV->Fkt[i].Par1 )*10 );
-                    }
-                }
-            }
+           ( ( Fstatic * )Fptr[i])->chkState(dccSoll[i]);
             break;
           case FVORSIG:
           case FSIGNAL2:
@@ -907,7 +832,7 @@ void notifyDccAccState( uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, u
         byte Ix = wAddr-weichenAddr;
         dccSoll[Ix] =  OutputAddr & 0x1;
         dccState[Ix] = State;
-        //DB_PRINT( "Weiche %d, Index %d, Soll %d, Ist %d", wAddr, Ix, dccSoll[Ix],  fktStatus[Ix] );
+        DB_PRINT( "Weiche %d, Index %d, Soll %d, Ist %d", wAddr, Ix, dccSoll[Ix],  fktStatus[Ix] );
         ChkAdjEncode( Ix );
     }
     // Prüfen ob Vorsignal über Hauptsignaladresse geschaltet werden muss
