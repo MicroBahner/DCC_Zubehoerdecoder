@@ -5,14 +5,25 @@
  * Die Instanziierung muss im setup() mit 'new' erfolgen.
  */
 #include "Globals.h"
-// Offset bei den Funktionsspezifschen CV-Werten
+// Offset der CV-Adresse bei den Funktionsspezifschen CV-Werten
 const byte MODE=0, PAR1=1, PAR2=2, PAR3=3, STATE=4 ;
 
+//======================  allgemeine Hilfsfunktionen ==================================
+// Ausblenden der nicht belegten (NC) Ports
+#ifdef __STM32F1__
+void _pinMode( byte port, WiringPinMode mode );
+#else
+void _pinMode( byte port, byte mode );
+#endif
+
+void _digitalWrite( byte port, byte state ) ;
+
+//========================= Funktionsklassen  =========================================
 class Fservo {
  
  };
 //---------------------- FCOIL -------------------------------------------
-// Flags für iniFmode:
+// Flags für CV 'MODE'
 #define CAUTOOFF 0x01   // Die Impulsdauer wird intern begrenzt
 #define NOPOSCHK 0x08   // Die Ausgänge reagieren auch auf einen Befehl, wenn die aktuelle
                         // Postion nicht verändert wird.
@@ -35,7 +46,7 @@ class Fservo {
  };
 
 //------------------------FSTATIC -------------------------------------------- 
-// Flags für iniFmode:
+// Flags für CV 'MODE':
 #define BLKMODE 0x01    // Ausgänge blinken
 #define BLKSTRT 0x02    // Starten mit beide Ausgängen EIN
 #define BLKSOFT 0x04    // Ausgänge als Softleds

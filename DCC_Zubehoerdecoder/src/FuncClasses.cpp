@@ -4,6 +4,22 @@
 extern NmraDcc Dcc;
 
 #define GetCvPar(par) Dcc.getCV(cvAdr+par)
+
+//---------------allgemeine Hilfsfunktionen -------------------------------
+// Ausblenden der nicht belegten (NC) Ports
+#ifdef __STM32F1__
+void _pinMode( byte port, WiringPinMode mode ) {
+#else
+void _pinMode( byte port, byte mode ) {
+#endif
+    if ( port != NC ) pinMode( port,  mode );
+}
+
+void _digitalWrite( byte port, byte state ) {
+    if( port != NC ) digitalWrite( port, state );
+}
+
+
 //----------------------- FCOIL ---------------------------------------------
 
 Fcoil::Fcoil( int cvAdr, uint8_t out1P, uint8_t out2P ) {

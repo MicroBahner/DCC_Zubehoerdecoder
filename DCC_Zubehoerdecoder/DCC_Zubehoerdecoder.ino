@@ -164,11 +164,9 @@ static union {
     } ; 
 } fktVar[WeichenZahl];
 #define fServo fktVar
-#define fCoil  fktVar
 #define fSig   fktVar
-#define fStatic fktVar
 
-void *Fptr[WeichenZahl];    // Pointer auf das Funktionsobjekt
+void *Fptr[WeichenZahl];    // Pointer auf das Funktionsobjekte
 
 //- - - Variable für Lichtsignalsteuerung - - - - - - -
 
@@ -214,19 +212,6 @@ NmraDcc Dcc;
 
 //^^^^^^^^^^^^^^^^^^^^^^^^ Ende der Definitionen ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //###########################################################################
-// Ausblenden der nicht belegten (NC) Ports
-#ifdef __STM32F1__
-void _pinMode( byte port, WiringPinMode mode ) {
-#else
-void _pinMode( byte port, byte mode ) {
-#endif
-    if ( port != NC ) pinMode( port,  mode );
-}
-
-void _digitalWrite( byte port, byte state ) {
-    if( port != NC ) digitalWrite( port, state );
-}
-
 // Bequemlichkeitsmacros:
 #define getPar( Adr, Par ) Dcc.getCV((int)&CV->Fkt[Adr].Par )
 //----------------------------------------------------------------------------------------
