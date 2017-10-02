@@ -1,0 +1,10 @@
+ClassVersion:
+in diesem Branch sollen alle Funktionen als Klassen realisiert werden:
+FServo, FCoil, FStatic, FSignal
+Klassenobjekte werden erst im Setup entsprechend der Konfiguration erstellt.
+Damit werden auch die notwendigen Objekte der MobaTools erst im Konstruktor der
+Funktionsklassen instanziiert. Die Anzahl der Objekte entspricht dann genau der
+Anzahl der aufgrund der Konfiguration notwendigen Instanzen.
+Die Funktionsklassen erhalten bei der Intanziierung im Konstruktor die notwendigen
+Informationen ( CV-Adresse, IO Pins ) und greifen nicht selbst auf die Konfigurationsdaten
+im .h-File zu.

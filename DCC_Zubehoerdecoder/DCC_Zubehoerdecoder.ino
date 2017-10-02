@@ -1,5 +1,7 @@
 /* Universeller DCC-Decoder für Weichen und (Licht-)Signale
-*  Version 4.1 
+*  Version 5.0Beta - Die Funktionalitäten sind als Klassen definiert 
+*  Die Klassenobjekte werden erst im Setup je nach Konfiguration instanziiert
+*  
  * Eigenschaften:
  * Bis zu 8 (aufeinanderfolgende) Zubehöradressen ansteuerbar
  * 1. Adresse per Programmierung einstellbar
@@ -21,6 +23,7 @@
 // für debugging ------------------------------------------------------------
 //#define DEBUG ;             // Wenn dieser Wert gesetzt ist, werden Debug Ausgaben auf dem ser. Monitor ausgegeben
 //#define Serial Serial1
+
 #include "src/Globals.h"
 #include "src/FuncClasses.h"
 
@@ -63,12 +66,6 @@ char dbgbuf[60];
 #define ROCOADDR    2   // 0: Outputadresse 4 ist Weichenadress 1
                         // 1: Outputadresse 0 ist Weichenadress 1
 //-----------------------------------------
-// Flags für iniFmode:
-#define SAUTOOFF 0x01   // FSERVO: Impulse werden nach erreichen der Endlage abgeschaltet
-#define SDIRECT  0x02   // FSERVO: Der Servo reagiert auch während der Bewegung auf einen Umschaltbefehl
-#define NOPOSCHK 0x08   // FSERV: Die Ausgänge reagieren auch auf einen Befehl, wenn die aktuelle
-                        // Postion nicht verändert wird.
-#define LEDINVERT 0x80  // FSIGNAL: SoftledAusgänge invertieren (Bit 0 des Modebyte von FSIGNAL2/3)
 //-------------------------------------------
 #ifdef __STM32F1__
 #include "DCC_Zubehoerdecoder-STM32.h"
@@ -93,35 +90,6 @@ CVPair FactoryDefaultCVs [] =
   {CV_29_CONFIG, CV29_ACCESSORY_DECODER | CV29_OUTPUT_ADDRESS_MODE},
 };
 
-// allgemeine defines ---------------------------------------------------------
-#define servoPins out1Pins  // Portnamen fürs Servofunktion
-#define relais1Pins out2Pins
-#define relais2Pins out3Pins
-
-
-//-------------------------------Definition der CV-Adressen ---------------------------------------
-#define CV_START    47  // Startadresse des Decoderspezifischen CV-Blocks
-typedef struct {        // Definition der Struktur des decoderspezifischen CV-Blocks
-    byte modeVal;       // =0x5? wenn die CV-Werte initiiert sind. Bits 0..3 für Betriebsarten
-    byte PomAddrLow;      // Adresse für die POM-Programmierung
-    byte PomAddrHigh;
-    struct {
-        byte Mode;    // Funktionalität des Ausgangs
-        byte Par1;    // Servo: Position AUS ( 0...180 Grad )
-                      // DoppelspuleAuto: Einschaltzeit ( 10ms-Schritte )
-                      // FSTATIC:        Einschaltphase des Blinkens ( 10ms Schritte )
-        byte Par2;    // Servo: Position EIN ( 0...180 Grad )
-                      // DoppelspuleAuto: Einschaltzeit Ausgang 2 ( 10ms-Schritte ) 255=Dauerein
-                      // FSTATIC:        Ausschaltphase des Blinkens ( 10ms Schritte )
-        byte Par3;    // Servo: Speed
-        byte State;   // aktueller Status des Ausgangs (Ein/Aus)
-                      // Nach einem Neustart werden die Funktionsausgänge entsprechend eingestellt.
-    } Fkt [WeichenZahl];
-} CvVar_t;
-
-const CvVar_t *CV = (CvVar_t *) CV_START; //Pointer auf die decoderspezifischen CV-Werte im EEProm
-#define GetCvPar(ix,par) Dcc.getCV((int)&CV->Fkt[ix].par)
-
 // ----------------------- Variable ---------------------------------------------------
 byte opMode;                    // Bit 0..3 aus modeVal
 byte rocoOffs;                  // 0 bei ROCO-Adressierung, 4 sonst
@@ -129,56 +97,18 @@ byte isOutputAddr;              // Flag ob Output-Adressing
 word weichenAddr;               // Addresse der 1. Weiche (des gesamten Blocks)
 byte dccState[WeichenZahl];     // Ausgangsstatus im DCC-Telegramm ( für FCOIL )
 byte dccSoll[WeichenZahl];      // Solllage der Weichen ( wird vom DCC-Kommando gesetzt )
-byte fktStatus[WeichenZahl];    // Ist-Zustand der Weichen/Signale
-    // Bits 0-2
-    #define GERADE  0x0             // Bit 0
-    #define ABZW    0x1             // Bit 0
-    #define MOVING  0x2             // Bit 1 nur für Servos,gesetzt während Umlauf
-    // für Lichtsignale, aktueller Signalzustand in Bits 4-7
-    #define SIG_STATE_MASK  0xf0
-    #define SIG_WAIT        0x00    // Warte auf Signalbefehle
-    #define SIG_CHANGED     0x10    // Signalzustand hat sich geändert, warten auf stabilen Zustand
-                                    // (da die einzelnen Sollzustände sich nur nacheinander ändern können)
-    #define SIG_DARK        0x20    // aktuelles Signalbild dunkelschalten ( nur 'soft' Ausgänge )
-    #define SIG_NEW         0x30    // neues Signalbild aufblenden
-    #define SIG_IS_DARK     0x40    // Signal ist statisch dunkelgeschaltet
+                                // Nach Bearbeitung in den jeweiligen Funktionsobjekten wird der
+                                // Sollwert wieder auf SOLL_INVALID gesetzt
+byte ioPins[PPWA*WeichenZahl];  // alle definierten IO's in einem linearen Array
 
-// Funktionsspezifische Variable. Da pro Weichenadresse nur eine Funktion aktiv sein kann, liegen die
-// funktionsspezifischen Variable in einer union übereinander
-static union {
-    struct { //Variable für FSERVO
-        byte relaisOut;    // Ausgabewerte für die Relais ( 0/1, entspricht Sollwert )
-    } ;
-    struct { // Variable für FCOIL
-        byte pulseON;    // Flag ob Pausentimer läuft
-    } ;
-    struct { // Variable für FSIGNAL
-        byte soll;      // Sollstellung des Signals
-        byte flags;     // Bit 1,0 : Zahl der belegten Folgeadressen (0-3)
-                        // Bit 7: Signal ist dunkelgeschaltet (für Vorsignale)
-        #define SIGMASK  0x03
-        #define DARKMASK 0x80
-    } ;
-    struct { // Variable für FSTATIC
-        byte ist;       // IstStellung des Ausgangs und Flag ob Blinken ist EIN
-    } ; 
-} fktVar[WeichenZahl];
-#define fServo fktVar
-#define fSig   fktVar
-
-void *Fptr[WeichenZahl];    // Pointer auf das Funktionsobjekte
-
-//- - - Variable für Lichtsignalsteuerung - - - - - - -
-
-#define SIG_WAIT_TIME   500     // Wartezeit in ms nach einer Änderung am Signalstatus bis die Ausgänge gesetzt werden
-
-// Zuordnung der Softleds zu den Ausgangsports
-#define PPF 3       // Outputports pro Funktion
-int8_t portTyp[PPF][WeichenZahl];   // -1 = Standardport
-                                  // >=0 Softled-Objekt
-byte slIx;                        // Zählindex für die Vergabe der Softled-Objekte bei der Initiierung
-SoftLed SigLed[ SOFTLEDS ];
-
+// Pointer auf die Funktionsobjekte
+union { // für jede Klasse gibt es ein Array, die aber übereinanderliegen, da pro Weichenadresse
+        // nur ein Objekt möglich ist
+    Fservo  *servo[WeichenZahl];
+    Fcoil   *coil[WeichenZahl];    
+    Fstatic *stat[WeichenZahl];   
+    Fsignal *sig[WeichenZahl];
+}Fptr;    
 
 
 byte progMode;      // Merker ob Decoder im Programmiermodus
@@ -200,120 +130,15 @@ byte adjWix;       // Weichenindex, der z.Z. vom Encoder beeinflusst wird.
 byte adjPulse;      // per Encoder aktuell eingestellte Servoposition
 #define NO_ADJ 255    // Wert von adjPulse solange keine Änderung erfolgt ist
 #endif
-bool localCV;       // lokale Änderung einers CV (Callback NotifyCV wird dann nicht ausgeführt )
+bool localCV;       // lokale Änderung eines CV (Callback NotifyCV wird dann nicht ausgeführt )
 //---- Library-Objekte ----
-Servo8 weicheS[WeichenZahl];
 EggTimer AckImpuls;
 EggTimer ledTimer;  // zum Blinken der Programmierled
-// Pulsetimer für Doppelspulenantriebe und Blinken
-EggTimer pulseT[WeichenZahl];
 NmraDcc Dcc;
 
 
 //^^^^^^^^^^^^^^^^^^^^^^^^ Ende der Definitionen ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //###########################################################################
-// Bequemlichkeitsmacros:
-#define getPar( Adr, Par ) Dcc.getCV((int)&CV->Fkt[Adr].Par )
-//----------------------------------------------------------------------------------------
-static byte getIoPin(byte wIx,byte pIx) {
-    // Portadresse für Signalpins bestimmen.
-    // wIx: Weichenindex (Grundadresse des Signals)
-    // pIx: Signalinterner Portindex ( 0...5 )
-    if ( ( pIx % PPF ) == 0 ) return out1Pins[wIx+pIx/PPF];
-    else if ( ( pIx % PPF ) == 1 ) return out2Pins[wIx+pIx/PPF];
-    else  return out3Pins[wIx+pIx/PPF];
-}
-
-//----------------------------------------------------------------------------------------
-static void setIoPin( byte wIx, byte pIx, byte Value ) {
-    // setzen/Rücksetzen eines Ausgangsport. Je nach Konfiguration wird
-    // direkt oder per sofLed geschaltet
-    // wIx: Weichenindex (Grundadresse des Signals)
-    // pIx: Signalinterner Portindex ( 0...5 )
-    // Value: HIGH oder LOW, ON oder OFF
-    
-    // Falls es ein Port der Folgeadresse ist (Signal!)
-    wIx += ( pIx / PPF );
-    pIx = pIx % PPF;
-   //DB_PRINT( "set port Typ %d, pIx %d,  wIx %d, pin  %d, Wert=%d ", portTyp[pIx][wIx], pIx, wIx, getIoPin(wIx,pIx), Value ); 
-    if ( portTyp[pIx][wIx] >=0 ) {
-        // Es ist ein Softled-Ausgang
-        byte typ = Value? LINEAR : BULB;
-        SigLed[ portTyp[pIx][wIx] ].write( Value, typ );
-    } else {
-        // Standard-Digitalausgang
-        if ( pIx == 0 ) { _digitalWrite( out1Pins[wIx], Value ); }
-        else if ( pIx == 1 ) { _digitalWrite( out2Pins[wIx], Value ); } 
-        else { _digitalWrite( out3Pins[wIx], Value ); }
-    }
-}
-
-//----------------------------------------------------------------------------------------
-byte getSigMask( byte sIx, byte sState ) {
-    // Ausgangsmaske für Zustand sState am Signal sIx bestimmen
-    // sIx; Grundindex des Signals
-    // sState: Signalzustand
-    static int CVBaseAdr[] = { 51,52,56,57,61,62,66,67 } ; // schon für 4 Adressen vorgesehen
-    byte CVoffs = sIx*5;
-    return Dcc.getCV( CVBaseAdr[sState] + CVoffs );
-}
-
-//----------------------------------------------------------------------------------------
-static void setSignal ( byte wIx ) {
-    // alle einem Signal zugeordneten Ausgänge entsprechend dem derzeitigen Signalzustand setzen
-    // wIx: Grundindex des Signals
-    //byte sigZustand; // aktueller Signalzustand, abgeleitet aus den Weichenzuständen
-    byte sigOutMsk;  // Bitmaske der Ausgangsports (Bit=1:Ausgang setzen, Bit=0 Ausgang rücksetzen
-                     /* Diese Maske steht für jeden Signalzustand in entsprechenden CV-Paramtern:
-                     *  CV51+offs    Bitmuster der Ausgänge für Befehl 1.Adresse 0 (rot)
-                     *  CV52+offs    Bitmuster der Ausgänge für Befehl 1.Adresse 1 (grün)
-                     *  CV56+offs    Bitmuster der Ausgänge für Befehl 2.Adresse 0 (rot)
-                     *  CV57+offs    Bitmuster der Ausgänge für Befehl 2.Adresse 1 (grün)
-                     *  die folgenden CV's sind nur relevant bei FSIGNAL3 (3 Adressen, 8 Zustände 6 Ausgänge)
-                     *  CV61+offs    Bitmuster der Ausgänge für Befehl 3.Adresse 0 (rot)
-                     *  CV62+offs    Bitmuster der Ausgänge für Befehl 3.Adresse 1 (grün)
-                     *  offs= wIx*5
-                     */
-    DB_PRINT( "Sig %d EIN (%d)", wIx, fSig[wIx].soll );
-    switch ( iniTyp[wIx] ) {
-      case FVORSIG:
-      case FSIGNAL2:
-        // der Sollzustand des gesamten Signals steht in fSig[wIx].soll)
-        // Ausgangszustände entsprechend Signalzustand bestimmen (CV-Wert)
-        sigOutMsk = getSigMask( wIx, fSig[wIx].soll ) ;
-        for ( byte i=0; i< PPF*((fSig[wIx].flags & 0x3) + 1) ; i++ ) {
-            setIoPin( wIx, i, sigOutMsk&1 );
-            sigOutMsk = sigOutMsk >> 1;
-        }
-        break;
-      default:
-        // sollte hier nie hinkommen, keine Reaktion wenn kein Signaltyp
-        break;
-    }
-    //DB_PRINT( " Signal %d, Status=0x%02x, Ausgänge: 0x%02x ", wIx, sigZustand, Dcc.getCV( CVBaseAdr[sigZustand] + CVoffs)  );
-}
-//----------------------------------------------------------------------------------------
-static void clrSignal ( byte wIx ) {
-    // alle 'Soft'Leds des Signals ausschalten
-    // wIx: Grundindex des Signals
-    switch ( iniTyp[wIx] ) {
-      case FVORSIG:
-      case FSIGNAL2:
-        DB_PRINT( "Sig %d AUS", wIx );
-        // nur 'soft' Ausgangszustände löschen
-        for ( byte pIx=0; pIx< PPF*((fSig[wIx].flags & 0x3) + 1) ; pIx++ ) {
-            if ( portTyp[pIx%PPF][wIx+(pIx/PPF)] >=0 ) {
-                // Es ist ein Softled-Ausgang
-                setIoPin( wIx, pIx, OFF );
-            }
-        }
-        break;
-      default:
-        // sollte hier nie hinkommen, keine Reaktion wenn kein Signaltyp
-        break;
-    }
-}
-//----------------------------------------------------------------------------------------
 
 void setup() {
 
@@ -383,13 +208,13 @@ void setup() {
         CLR_PROGLED;
     } else {
         // POM Programmierung aktiv
-        Dcc.init( MAN_ID_DIY, DCC_DECODER_VERSION_ID, FLAGS_DCC_ACCESSORY_DECODER, (uint8_t)((uint_t) &CV->PomAddrLow) );
+        Dcc.init( MAN_ID_DIY, DCC_DECODER_VERSION_ID, FLAGS_DCC_ACCESSORY_DECODER, (uint8_t)(CV_POMLOW) );
         SET_PROGLED;
     }
 
     //-------------------------------------
     // CV's initiieren
-    if ( (Dcc.getCV( (int) &CV->modeVal)&0xf0) != ( iniMode&0xf0 ) || analogRead(resModeP) < 100 ) {
+    if ( (Dcc.getCV( CV_MODEVAL )&0xf0) != ( iniMode&0xf0 ) || analogRead(resModeP) < 100 ) {
         // In modeVal steht kein sinnvoller Wert ( oder resModeP ist auf 0 ),
         // alles initiieren mit den Defaultwerten
         // Wird über DCC ein 'factory-Reset' empfangen wird modeVal zurückgesetzt, was beim nächsten
@@ -400,37 +225,37 @@ void setup() {
                 Dcc.setCV( FactoryDefaultCVs[i].CV, FactoryDefaultCVs[i].Value);
         }
         // Decoderspezifische CV's
-        Dcc.setCV( (int) &CV->PomAddrLow, PomAddr%256 );
-        Dcc.setCV( (int) &CV->PomAddrHigh, PomAddr/256 );
-        Dcc.setCV( (int) &CV->modeVal, iniMode );
+        Dcc.setCV( (int) CV_POMLOW, PomAddr%256 );
+        Dcc.setCV( (int) CV_POMHIGH, PomAddr/256 );
+        Dcc.setCV( (int) CV_MODEVAL, iniMode );
         for ( byte i = 0; i<WeichenZahl; i++ ) {
-            Dcc.setCV( (int) &CV->Fkt[i].Mode, iniFmode[i] );
-            Dcc.setCV( (int) &CV->Fkt[i].Par1, iniPar1[i] );
-            Dcc.setCV( (int) &CV->Fkt[i].Par2, iniPar2[i] );
-            Dcc.setCV( (int) &CV->Fkt[i].Par3, iniPar3[i] );
-            Dcc.setCV( (int) &CV->Fkt[i].State, iniPar4[i] );
+            Dcc.setCV( cvAdr(i,MODE), iniFmode[i] );
+            Dcc.setCV( cvAdr(i,PAR1), iniPar1[i] );
+            Dcc.setCV( cvAdr(i,PAR2), iniPar2[i] );
+            Dcc.setCV( cvAdr(i,PAR3), iniPar3[i] );
+            Dcc.setCV( cvAdr(i,STATE), iniPar4[i] );
         }
     } else if ( progMode == INIMODE ) {
         // Standard-CV's immer initiieren
         for ( byte i=0; i<(sizeof(FactoryDefaultCVs) / sizeof(CVPair)); i++ ) {
                 Dcc.setCV( FactoryDefaultCVs[i].CV, FactoryDefaultCVs[i].Value);
         }
-        Dcc.setCV( (int) &CV->PomAddrLow, PomAddr%256 );
-        Dcc.setCV( (int) &CV->PomAddrHigh, PomAddr/256 );
-        Dcc.setCV( (int) &CV->modeVal, iniMode );
+        Dcc.setCV( (int) CV_POMLOW, PomAddr%256 );
+        Dcc.setCV( (int) CV_POMHIGH, PomAddr/256 );
+        Dcc.setCV( (int) CV_MODEVAL, iniMode );
         
         // Funktionsspezifische Parameter aus INI-Tabelle laden
         for ( byte i = 0; i<WeichenZahl; i++ ) {
-            Dcc.setCV( (int) &CV->Fkt[i].Mode, iniFmode[i] );
-            Dcc.setCV( (int) &CV->Fkt[i].Par1, iniPar1[i] );
-            Dcc.setCV( (int) &CV->Fkt[i].Par2, iniPar2[i] );
-            Dcc.setCV( (int) &CV->Fkt[i].Par3, iniPar3[i] );
+            Dcc.setCV( cvAdr(i,MODE), iniFmode[i] );
+            Dcc.setCV( cvAdr(i,PAR1), iniPar1[i] );
+            Dcc.setCV( cvAdr(i,PAR2), iniPar2[i] );
+            Dcc.setCV( cvAdr(i,PAR3), iniPar3[i] );
             switch ( iniTyp[i] ) {
               case FSIGNAL2:
               case FVORSIG:
               case FSIGNAL0:
                 // bei den Signaltypen auch den 5. CV-Wert als Parameter laden
-                Dcc.setCV( (int) &CV->Fkt[i].State, iniPar4[i] );
+                Dcc.setCV( cvAdr(i,STATE), iniPar4[i] );
                 break;
               default:
                 ;
@@ -440,7 +265,7 @@ void setup() {
     }
     
     // Betriebsart auslesen
-    opMode = Dcc.getCV( (int) &CV->modeVal) &0x0f;
+    opMode = Dcc.getCV( CV_MODEVAL) &0x0f;
     rocoOffs = ( opMode & ROCOADDR ) ? 4 : 0;
     
 
@@ -448,102 +273,55 @@ void setup() {
     IniEncoder();
 
     //--- Ende Grundinitiierung ---------------------------------
-
+    
     setWeichenAddr(); // 1. Weichenadresse berechnen
         
     DBprintCV(); // im Debug-Mode alle CV-Werte ausgeben
     
+    //--- Die definierten Io's in einem linearen Array speichern. Der entsprechende Array-Abschnitt
+    // wird den Funktionsobjekten als Pointer übergeben, die damit ein Array mit 'ihren' Pin-Nummern
+    // erhalten
+    for ( byte wIx = 0; wIx<WeichenZahl; wIx++ ){
+        ioPins[wIx*PPWA] = out1Pins[ wIx ];
+        ioPins[wIx*PPWA+1] = out2Pins[ wIx ];
+        ioPins[wIx*PPWA+2] = out3Pins[ wIx ];
+    }
+    //--- Funktionsobjekte entsprechend der Konfiguration instanziieren ------------------
     for ( byte wIx=0; wIx<WeichenZahl; wIx++ ) {
-        // Funktionen initiieren
-        fktStatus[wIx] = Dcc.getCV( (int) &CV->Fkt[wIx].State );
-        dccSoll[wIx] = fktStatus[wIx];
-        portTyp[0][wIx] = -1; // Standardport ist digital IO (kein Softled)
-        portTyp[1][wIx] = -1;
-        portTyp[2][wIx] = -1;
+        // Funktionsobjekte instanziieren und initiieren
+        dccSoll[wIx] = SOLL_INVALID;
+        byte vsIx = 0;  // Vorsignalindex am Mast auf 0 (kein Vorsignal) vorbesetzen
         switch (iniTyp[wIx] )  {
           case FSERVO:
-            if ( servoPins[wIx] != NC ) {
-            weicheS[wIx].attach( servoPins[wIx], Dcc.getCV(  (int) &CV->Fkt[wIx].Mode) & SAUTOOFF );
-            weicheS[wIx].setSpeed( Dcc.getCV(  (int) &CV->Fkt[wIx].Par3 ) );
-            }
-            _pinMode( relais1Pins[wIx], OUTPUT );
-            _pinMode( relais2Pins[wIx], OUTPUT );
-            // Servowerte und Relaisausgang initiieren und ausgeben
-            if ( dccSoll[wIx] == GERADE ) {
-                weicheS[wIx].write( Dcc.getCV( (int) &CV->Fkt[wIx].Par1 ) );
-            } else {
-                weicheS[wIx].write( Dcc.getCV( (int) &CV->Fkt[wIx].Par2 ) );
-            }
-            fktStatus[wIx] = dccSoll[wIx];
-            fServo[wIx].relaisOut = fktStatus[wIx];
-            _digitalWrite( relais1Pins[wIx], fServo[wIx].relaisOut );
-            _digitalWrite( relais2Pins[wIx], !fServo[wIx].relaisOut );
+            Fptr.servo[wIx] = new Fservo( cvAdr(wIx,0) , &ioPins[wIx*PPWA] );
             break;
           case FCOIL:
-            Fptr[wIx] = new Fcoil( ( int ) &CV->Fkt[wIx].Mode , out1Pins[wIx], out2Pins[wIx] );
+            Fptr.coil[wIx] = new Fcoil( cvAdr(wIx,0) , &ioPins[wIx*PPWA] );
             break;
           case FSTATIC:
-            Fptr[wIx] = new Fstatic( ( int ) &CV->Fkt[wIx].Mode , out1Pins[wIx], out2Pins[wIx] );
+            Fptr.stat[wIx] = new Fstatic( cvAdr(wIx,0) , &ioPins[wIx*PPWA] );
             break;
           case FSIGNAL2:
-          case FVORSIG: {
-            // Signaldecoder mit 2 oder 3 Adressen
-            // Bei Signalen steht Gesamtzustand des Signals in fSig[i].soll
-            // in dccSoll[..] stehen die einzelnen empfangenen Dcc-Sollzustände der Weichenadressen
-            // Signale werden immer mit dem Grundzustand initiiert ( = HP0 oder Hp00 )
-            fSig[wIx].soll = 0;
-            
-            // Bestimmen der Zahl der Folgeadressen
-            fSig[wIx].flags &= DARKMASK;   // Dunkelschaltbit kann bereits gesetzt sein, nicht löschen
-            for( byte i=1; iniTyp[wIx+i] == FSIGNAL0 ; i++  ) { fSig[wIx].flags++; }
-            // Zahl der zugeordneten Ausgangsports (maximal 8 genutzt)
-            byte outMax = min( 8, PPF * (fSig[wIx].flags + 1) );   
-            DB_PRINT( "Sig %d, flags=0x%02x, soll %d", wIx, fSig[wIx].flags, fSig[wIx].soll );
-            
-            // Ist- und Sollzustände, Modi der Ausgänge setzen
-            for ( byte i=0; i<= (fSig[wIx].flags&SIGMASK) ; i++ ) {
-                fktStatus[wIx+i] = 0;   // Istzustände
-                dccSoll[wIx+i] = 2;     // EinzelSollzustände auf 'invalid'
-                
-                // Modi der Ausgänge setzen
-                byte sigMode = getPar(wIx+i , Mode); // Bitcodierung harte/weiche Ledumschaltung
-                for ( byte sigO = 0; sigO < 3 ; sigO++ ) {
-                    // sigMode enthält bitcodiert die Info ob harte/weiche Umschaltung
-                    byte outPin = getIoPin( wIx+i, sigO );
-                   //DB_PRINT( "SigMode=%02x, Index= %d, pin=%d, ", sigMode, sigO,outPin);
-                    portTyp[sigO][wIx+i] = -1; // Default ( auch für 'NC' Ports )
-                    if ( sigMode & (1<<sigO) ) {
-                        // Bit gesetzt -> harte Umschaltung
-                        _pinMode(outPin, OUTPUT );
-                    } else {
-                        // Bit = 0 -> Softled
-                        if ( outPin != NC ) {
-                            byte att, rise, writ;
-                            att=SigLed[slIx].attach( outPin , getPar(wIx,Mode)&LEDINVERT );
-                            SigLed[slIx].riseTime( SIG_RISETIME );
-                            SigLed[slIx].write( OFF, BULB );
-                            portTyp[sigO][wIx+i] = slIx++;
-                           //DB_PRINT( "Softled, pin %d, Att=%d", outPin, att );
-                        }
-                    }
-                    //DB_PRINT( "portTyp[%d][%d] = %d" , sigO&1, wIx+(sigO>>1), portTyp[sigO&1][wIx+(sigO>>1)] );
-                }
-            } // Ende for über die Signal-Subadressen
-            
-            DB_PRINT( "Sig %d, flags=0x%02x, soll %d", wIx, fSig[wIx].flags, fSig[wIx].soll );
-            setSignal(wIx); // Signalausgänge setzen
-            // prüfen ob Vorsignal dunkelgeschaltet werden muss
-            if ( iniTyp[wIx] == FSIGNAL2  ) {
-                byte vsIx = getPar( wIx, Par3 );
-                DB_PRINT( "Vorsig=%d", vsIx );
-                if ( vsIx > 0 && vsIx <= WeichenZahl && iniTyp[vsIx-1] == FVORSIG ) {
-                    // gültiger Verweis auf ein Vorsignal, Dunkelschaltflag setzen
-                    fSig[vsIx-1].flags |= DARKMASK;
-                }
+            // Prüfen ob ein Vorsignal am Mast Dunkelgeschaltet werden muss
+            vsIx = getCvPar(wIx,PAR3);
+            if( !(vsIx > 1 && vsIx <= WeichenZahl) ) {
+                // kein gültiger Vorsignalindex gefunden
+                vsIx = 0;
             }
-            // Folgeadressen bei der Initiierung überspringen
-            //DB_PRINT( "Ini: wIx=%d, flags=%d", wIx, fSig[wIx].flags );
-            wIx += (fSig[wIx].flags & 0x3);
+            // die restliche Bearbeitung ist bei Signalen und Vorsignalen gleich
+          case FVORSIG:
+            {// Zahl der Folgeadressen bestimmen
+            byte adrZahl = 1; 
+            if ( wIx+1<WeichenZahl && iniTyp[wIx+1] == FSIGNAL0 ) adrZahl++;
+            if ( wIx+2<WeichenZahl && iniTyp[wIx+2] == FSIGNAL0 ) adrZahl++;
+            DB_PRINT("Vorsignalindex: %d", vsIx );
+            if ( vsIx == 0 ) {
+                Fptr.sig[wIx] = new Fsignal( cvAdr(wIx,0) , &ioPins[wIx*PPWA], adrZahl, NULL );
+            } else {
+                Fptr.sig[wIx] = new Fsignal( cvAdr(wIx,0) , &ioPins[wIx*PPWA], adrZahl, &Fptr.sig[vsIx-1] );
+            }
+            dccSoll[wIx] = 0; //Signale starten im Zustand 0;
+            wIx = wIx + adrZahl-1;  // Folgeadressen überspringen
             }
             break;
           default: // auch FSIGNAL0
@@ -551,165 +329,54 @@ void setup() {
             ;
         } // Ende switch Funktionstypen
     } // Ende loop über alle Funktionen
-    DB_PRINT(">>> Setup-Ende >>>>",0);
+
+    // Für Test Speicherbelegung ausgeben ( beim Heap sind die Adressen auf das RAM bezogen
+    // der Offset von 256 Byte IO-Adressen im ATMEga 328 wird abgezogen
+    DB_PRINT(">> Setup-Ende >> Heap: Start=0x%x (%d), End=0x%x (%d)", (int)&__heap_start-256, (int)__malloc_heap_start-256, (int)__brkval-256,(int)__brkval-256);
 }
 
 
 
 ////////////////////////////////////////////////////////////////
 void loop() {
-    //if (digitalRead( A4)) _digitalWrite(A4,LOW); else _digitalWrite(A4,HIGH); // Test Zykluszeit
-    getEncoder();    // Drehencoder auswerten und Servolage gegebenenfalls anpassen
+    #ifdef DEBUG
+    /*static unsigned long startMicros = micros();;
+    static int loopCnt = 0;
+    loopCnt++;
+    if ( micros() - startMicros > 1000000L ) {
+        // jede Sekunde Loopdauer ausgeben
+        Serial.print( "Loopdauer(µs):"); Serial.println( 1000000L/(long)loopCnt );
+        startMicros = micros();
+        loopCnt = 0;
+    }*/
+    dccSim();       // Simulation von DCC-Telegrammen
+    #endif
     
-    Dcc.process(); // Hier werden die empfangenen Telegramme analysiert und der Sollwert gesetzt
+    getEncoder();   // Drehencoder auswerten und Servolage gegebenenfalls anpassen
+    Dcc.process();  // Hier werden die empfangenen Telegramme analysiert und der Sollwert gesetzt
     #ifdef DEBUG
     // Merker CV für CV-Ausgabe rücksetzen (MerkerCV ist 1.CV hinter dem CV-Block für die ausgangskonfiguration)
-    Dcc.setCV( (int) &CV->Fkt[WeichenZahl].Mode , 0xff );
+    Dcc.setCV( cvAdr(WeichenZahl,MODE) , 0xff );
     #endif
     
     // Ausgänge ansteuern
     for ( byte i=0; i<WeichenZahl; i++ ) {
         switch ( iniTyp[i]  ) {
           case FSERVO: // Servoausgänge ansteuern ----------------------------------------------
-            if ( fktStatus[i] & MOVING ) {
-                // Weiche wird gerade ungestellt, Schaltpunkt Relais und Bewegungsende überwachen
-                if ( dccSoll[i] != (fktStatus[i] & 0x01) && (getPar(i,Mode) & SDIRECT) ) {
-                    // Es wurde die Servoposition umgeschalten und das Flag SDIRECT ist
-                    // gesetzt: Bewegung abbrechen und Moving-Bit löschen.
-                    // Im nächsten loop-Durchlauf wird dann auf die neue Position reagiert
-                    weicheS[i].write( weicheS[i].read() );
-                    fktStatus[i] &= 0x1; 
-                }
-                if ( weicheS[i].moving() < 50 ) fServo[i].relaisOut = fktStatus[i]& 0x1;
-                if ( weicheS[i].moving() == 0 ) {
-                    // Bewegung abgeschlossen, 'MOVING'-Bit löschen und Lage in CV speichern
-                    fktStatus[i] &= 0x1; 
-                    Dcc.setCV( (int) &CV->Fkt[i].State, fktStatus[i] );
-                    if ( getPar(i,Mode) & NOPOSCHK ) {
-                        // Soll auf 'ungültig' stellen, damit auch neue Telegramme mit gleicher
-                        // Position erkannt werden (ausser es wurde schon verändert )
-                        if ( dccSoll[i] == fktStatus[i] ) dccSoll[i] = SOLL_INVALID;
-                        DB_PRINT( "dccSoll=%d", dccSoll[i] );
-                    }
-                }
-            } else if ( dccSoll[i] != SOLL_INVALID  && (dccSoll[i] != fktStatus[i] || (getPar(i,Mode) & NOPOSCHK))  ) {
-                // Weiche muss umgestellt werden
-                DB_PRINT( "WeicheIx=%d stellen, Ist=%d,Soll=%d", i, fktStatus[i], dccSoll[i] );
-                fktStatus[i] = dccSoll[i] | MOVING; // Istwert auf Sollwert und MOVING-Bit setzen.
-                if ( dccSoll[i] == GERADE ) {
-                    weicheS[i].write( Dcc.getCV( (int) &CV->Fkt[i].Par1 ) );
-                } else {
-                    weicheS[i].write( Dcc.getCV( (int) &CV->Fkt[i].Par2 ) );
-                }
-            }
-            // Relaisausgänge setzen
-            if ( relais2Pins[i] == NC ) {
-                // Variante mit einem Relais, wird in Bewegungsmitte umgeschaltet
-                _digitalWrite( relais1Pins[i], fServo[i].relaisOut );
-            } else {
-                // Variante mit 2 Relais, während der Bewegung beide Relais abschalten
-                if ( fktStatus[i] & MOVING ) {
-                    _digitalWrite( relais1Pins[i], OFF );
-                    _digitalWrite( relais2Pins[i], OFF );
-                } else {
-                    // im Stillstand des Servos entsprechend relaisout schalten
-                    _digitalWrite( relais1Pins[i], fServo[i].relaisOut );
-                    _digitalWrite( relais2Pins[i], !fServo[i].relaisOut );
-                }
-            }
-            
+            Fptr.servo[i]->chkState(&dccSoll[i]);
             break;
 
           case FCOIL: //Doppelspulenantriebe ------------------------------------------------------
            //if ( dccSoll[i] != SOLL_INVALID ) DB_PRINT( "SollCoil=%d", dccSoll[i] );
-           ( ( Fcoil * )Fptr[i])->chkState(&dccSoll[i],dccState[i]);
+           Fptr.coil[i]->chkState(&dccSoll[i],dccState[i]);
             break;
           case FSTATIC: // Ausgang statisch ein/ausschalten ------------------------------------
-           ( ( Fstatic * )Fptr[i])->chkState(dccSoll[i]);
+            Fptr.stat[i]->chkState(&dccSoll[i]);
             break;
           case FVORSIG:
           case FSIGNAL2:
-            // Sollzustand des gesamten Signals bestimmen ( wird in fSig[i].soll gespeichert )
-            // Damit Weichenbefehle immer erkannt werden, werden die Weichensollwerte auf einen
-            // 'ungültig'-Wert gesetzt nachdem sie in fSig[i].soll integriert wurden
-            
-            for ( byte j=0; j<= (fSig[i].flags&SIGMASK) ; j++ ) {
-                // Schleife über die Signal-Sub-Adressen
-                if ( dccSoll[i+j] < 2 ) { 
-                    fSig[i].soll = dccSoll[i+j]+2*j; dccSoll[i+j] = 2; 
-                }
-            }
-
-             
-            switch ( fktStatus[i] & SIG_STATE_MASK ) {
-              case SIG_WAIT:  
-                // warten auf Zustandsänderung am Signal
-               if ( ( fktStatus[i] & ~SIG_STATE_MASK ) != fSig[i].soll ) {
-                    // Sollzustand hat sich verändert, püfen ob erlaubter Zustand
-                    if (  getSigMask( i,  fSig[i].soll) == 0xff )  {
-                        // Sollzustand hat Signalmaske 0xff -> diesen Zustand ignorieren
-                        // Sollzustand auf Istzustand zurücksetzen
-                        fSig[i].soll = fktStatus[i] & ~SIG_STATE_MASK ;
-                    } else {
-                        // Gültiger Zustand, übernehmen, Flag setzen und Timer aufziehen
-                        fktStatus[i] = fSig[i].soll | SIG_DARK;
-                        pulseT[i].setTime( SIG_WAIT_TIME ) ;
-                       DB_PRINT( "Sig %d neu ist=0x%02x ", i, fktStatus[i] );
-                        // Dunkelschaltung am Vorsignal setzen
-                        if ( iniTyp[i] == FSIGNAL2  ) {
-                            byte vsIx = getPar( i, Par3 );
-                           DB_PRINT( "Vorsig=%d", vsIx );
-                            if ( vsIx > 0 && vsIx <= WeichenZahl && iniTyp[vsIx-1] == FVORSIG ) {
-                                // gültiger Verweis auf ein Vorsignal, Dunkelschaltflag bestimmen
-                                byte darkStates = getPar( i, State );
-                                if ( darkStates & ( 1<< fSig[i].soll) ) {
-                                    fSig[vsIx-1].flags |= DARKMASK;
-                                } else {
-                                    fSig[vsIx-1].flags &= ~DARKMASK;
-                                }
-                               DB_PRINT( "darkStates=0x%02x, VorsigFlags= 0x%02x" , darkStates, fSig[vsIx-1].flags );
-                            }
-                         }
-                    }
-                } else if ( fSig[i].flags & DARKMASK ) {
-                    // Signal dunkelschalten
-                    DB_PRINT( "DARK-Start Ix=%d" , i );
-                    clrSignal(i);
-                    fktStatus[i] &= ~SIG_STATE_MASK; 
-                    fktStatus[i] |= SIG_IS_DARK;
-                }
-                break;
-              case SIG_IS_DARK:
-                // Signal ist dauerhaft dunkelgeschaltet, warten bis DARK-Flag gelöscht wird.
-                //DB_PRINT( "SIG_IS_DARK Ix=%d" , i );
-                 if ( ! (fSig[i].flags & DARKMASK) ) {
-                    DB_PRINT( "DARK-End Ix=%d" , i );
-                    fktStatus[i] = fSig[i].soll+1;  // ist != soll -> Signalbild wird aufgeschaltet
-                    fktStatus[i] |= SIG_WAIT;
-                }
-                break;
-              case SIG_DARK:
-                // wenn Timer abgelaufen, Signalbild dunkelschalten
-                if ( ! pulseT[i].running() ) {
-                    // ist abgelaufen: Soft-Ausgänge zurücksetzen
-                    clrSignal(i); // Signalbild dunkelschalten
-                    pulseT[i].setTime( SIG_DARK_TIME );
-                    fktStatus[i] &= ~SIG_STATE_MASK; 
-                    fktStatus[i] |= SIG_NEW;
-                }
-                break;
-              case SIG_NEW:
-                // Wenn Timer abgelaufen, neues Signalbild aufschalten
-                if ( ! pulseT[i].running() ) {
-                    // ist abgelaufen: neues Signalbild
-                    fktStatus[i] = SIG_WAIT | fSig[i].soll; // = aktueller sollwert, der gesetzt wird
-                    setSignal(i); // Signalbild einschalten
-                }
-                break;
-                default:
-                ;
-            }
-           break;
+            Fptr.sig[i]->chkState(&dccSoll[i]);
+            break;
           case FSIGNAL0:
             // Signalfolgetypen überspringen
             ;
@@ -763,17 +430,31 @@ void notifyDccAccState( uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, u
         dccSoll[Ix] =  OutputAddr & 0x1;
         dccState[Ix] = State;
         //DB_PRINT( "Weiche %d, Index %d, Soll %d, Ist %d", wAddr, Ix, dccSoll[Ix],  fktStatus[Ix] );
-        ChkAdjEncode( Ix );
+        // Bei Signaladressen muss der Sollzustand gegebenenfalls angepasst werden: Bei der ersten
+        // Folgeadresse von 0/1 auf 2/3, bei der 2. Folgeadresse auf 4/5 ( Signale können bis zu 6
+        // Sollzustände haben ). Ausserdem muss dieser geänderte Sollzustand bei der Signalgrundadresse
+        // eingetragen werden.
+        if ( iniTyp[Ix] == FSIGNAL0 ) {
+            // es ist eine Signalfolgeadresse
+            dccSoll[Ix-1] = dccSoll[Ix] + 2;
+            if ( iniTyp[Ix-1] == FSIGNAL0 ) {
+                // ist 2. Folgeadresse
+                 dccSoll[Ix-2] = dccSoll[Ix] + 4;
+            }
+        } else if ( iniTyp[Ix] == FSERVO ) {
+            // bei Servos prüfen ob gerade Endlagenjustierung aktiv ist
+            ChkAdjEncode( Ix );
+        }
     }
     // Prüfen ob Vorsignal über Hauptsignaladresse geschaltet werden muss
     for ( i = 0; i < WeichenZahl; i++ ) {
         int vsAdr;
         if ( iniTyp[i] == FVORSIG  ) {
             // Adresse des zugehörigen Hauptsignals bestimmen
-            vsAdr = getPar(i, Par3) + 256 * getPar(i, State);
+            vsAdr = getCvPar(i, PAR3) + 256 * getCvPar(i, STATE);
             if ( vsAdr == wAddr ) {
                 dccSoll[i] =  OutputAddr & 0x1;
-               DB_PRINT( "Vorsig0 %d, Index %d, Soll %d, Ist %d", wAddr, i, dccSoll[i],  fktStatus[i] );
+               DB_PRINT( "Vorsig0 %d, Index %d, Soll %d, Ist %d", wAddr, i, dccSoll[i] );
                 break; // Schleifendurchlauf abbrechen, es kann nur eine Signaladresse sein
             } else {
                 // Folgeadressen ( bei mehrbegriffigen Vorsignalen ) prüfen
@@ -782,7 +463,7 @@ void notifyDccAccState( uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, u
                     i++;
                     if ( ++vsAdr == wAddr ) {
                         dccSoll[i] =  OutputAddr & 0x1;
-                        DB_PRINT( "Vorsig1 %d, Index %d, Soll %d, Ist %d", wAddr, i, dccSoll[i],  fktStatus[i] );
+                        DB_PRINT( "Vorsig1 %d, Index %d, Soll %d, Ist %d", wAddr, i, dccSoll[i] );
                     }
                 }
             }
@@ -809,27 +490,27 @@ void notifyCVChange( uint16_t CvAddr, uint8_t Value ) {
             switch ( iniTyp[i] ) {
               case FSERVO:
                 // gehört der veränderte CV zu diesem Servo?
-                if (  (CvAddr == (uint_t) &CV->Fkt[i].Par1 && dccSoll[i] == GERADE) ||
-                      (CvAddr == (uint_t) &CV->Fkt[i].Par2 && dccSoll[i] == ABZW ) ){
+                if (  (CvAddr == cvAdr(i,PAR1) && Fptr.servo[i]->getPos() == GERADE) ||
+                      (CvAddr == cvAdr(i,PAR2) && Fptr.servo[i]->getPos() == ABZW ) ){
                     // Es handelt sich um die aktuelle Position des Servos,
                     // Servo neu positionieren
                     //DB_PRINT( "Ausg.%d , Pos. %d neu einstellen", i, dccSoll[i] );
-                     weicheS[i].write( Value );
-                } else if ( CvAddr == (uint_t) &CV->Fkt[i].Par1 ||
-                            CvAddr == (uint_t) &CV->Fkt[i].Par2  ) {
+                     Fptr.servo[i]->adjust( ADJPOS, Value );
+                } else if ( CvAddr == cvAdr(i,PAR1) ||
+                            CvAddr == cvAdr(i,PAR2)  ) {
                       // ist nicht de aktuelle Position des Servos, Servo umstellen
-                      dccSoll[i] = ! dccSoll[i];
-                } else if ( CvAddr == (uint_t) &CV->Fkt[i].Par3 ) {
+                      dccSoll[i] = ! Fptr.servo[i]->getPos();
+                } else if ( CvAddr == cvAdr(i,PAR3) ) {
                     // die Geschwindigkeit des Servo wurde verändert
                     //DB_PRINT( "Ausg.%d , Speed. %d neu einstellen", i, Value );
-                    weicheS[i].setSpeed( Value );
+                    Fptr.servo[i]->adjust( ADJSPEED, Value );
                 }
             }
         }
         #ifdef DEBUG
             // prüfen ob die CV-Adresse HINTER den Weichenadressen verändert wurde. Wenn ja,
             // alle CV-Werte ausgeben und Wert wieder auf 0xff setzen
-            if ( CvAddr ==  (int) &CV->Fkt[WeichenZahl].Mode && Value !=0xff ) {
+            if ( CvAddr ==  cvAdr(WeichenZahl,MODE) && Value !=0xff ) {
                 DBprintCV();
             }
         #endif
@@ -845,9 +526,9 @@ void notifyCVChange( uint16_t CvAddr, uint8_t Value ) {
 //-----------------------------------------------------
 void notifyCVResetFactoryDefault(void) {
     // Auf Standardwerte zurücksetzen und Neustart
-    Dcc.setCV( (int) &CV->modeVal, 255 );
+    Dcc.setCV( CV_MODEVAL, 255 );
     delay( 20 );
-    DB_PRINT( "Reset: modeVal=0x%2x", Dcc.getCV( (int) &CV->modeVal ) );
+    DB_PRINT( "Reset: modeVal=0x%2x", Dcc.getCV( CV_MODEVAL ) );
     delay(500);
     softReset();
 }
@@ -927,7 +608,7 @@ void getEncoder(  ) {
     }
     #endif
 
-    if ( adjWix < WeichenZahl && !(fktStatus[adjWix] & MOVING ) ) {
+    if ( adjWix < WeichenZahl && !Fptr.servo[adjWix]->isMoving() ) {
         // es gibt eine aktuell zu justierende Weiche, die sich nicht
         // gerade bewegt
         if ( jogCount != 0 ) {
@@ -935,17 +616,17 @@ void getEncoder(  ) {
             if ( adjPulse == NO_ADJ ) {
                 // ist erster Justierimpuls, aktuelle Position aus CV auslesen
                 if ( dccSoll[adjWix] == GERADE ) {
-                    adjPulse = Dcc.getCV( (int) &CV->Fkt[adjWix].Par1 );
+                    adjPulse = Dcc.getCV( cvAdr(adjWix,PAR1) );
                 } else {
-                    adjPulse = Dcc.getCV( (int) &CV->Fkt[adjWix].Par2 );
+                    adjPulse = Dcc.getCV( cvAdr(adjWix,PAR2) );
                 }
             }
             if ( (jogCount>0 && adjPulse<180) || (jogCount<0 && adjPulse>0) )
                 adjPulse += jogCount; // adjPulse nur im Bereich 0...180 
-            weicheS[adjWix].write( adjPulse );
+            Fptr.servo[adjWix]->adjust( ADJPOS, adjPulse );
         } else if ( analogRead( resModeP ) < 500 ) {
             // Mittelstellungstaster gedrückt
-            weicheS[adjWix].write( 90 );
+            Fptr.servo[adjWix]->center(ABSOLUT);
         }
     }
     jogCount = 0;
@@ -959,14 +640,10 @@ void ChkAdjEncode( byte WIndex ){
     // Servoantrieb handelt.
     if ( adjPulse != NO_ADJ ) {
         // Es wurde justiert, testen ob gespeichert werden muss (Weichenwechsel)
-        if ( WIndex != adjWix || fktStatus[adjWix] != dccSoll[adjWix] ) {
+        if ( WIndex != adjWix || Fptr.servo[adjWix]->getPos() != dccSoll[adjWix] ) {
             // Weiche wurde umgeschaltet, oder eine andere Weiche betätigt -> Justierung speichern
             localCV = true; // keine Bearbeitung in Callback-Routine NotifyCvChange
-            if ( fktStatus[adjWix] == GERADE ) {
-                Dcc.setCV( (int) &CV->Fkt[adjWix].Par1, adjPulse );
-            } else {
-                Dcc.setCV( (int) &CV->Fkt[adjWix].Par2, adjPulse );
-            }
+            Fptr.servo[adjWix]->adjust(ADJPOSEND,adjPulse);
             adjPulse = NO_ADJ;
             localCV = false;
         }
@@ -975,6 +652,8 @@ void ChkAdjEncode( byte WIndex ){
     if ( adjWix < WeichenZahl ) 
         if ( iniTyp[ adjWix ] != FSERVO ) adjWix = WeichenZahl;
     #endif
+    DB_PRINT("chkAdj-Freemem %d", freeMemory() );
+
 }
 
 
@@ -1004,6 +683,54 @@ void softReset(void){
 }
 //-----------------------------------------------------------
 #ifdef DEBUG
+/* Simulation der DCC-Befehle per serieller Schnittstelle
+
+"ac 14 1 0"  > Zubehöradresse 14, sollwert 1 stat 0
+"cr 50"      > Cv-Adresse 50 lesen
+"cw 50 3"    > Cv Adresse 50 mit Wert 3 beschreiben
+
+Es werden die gleichen Callbacks wie von der nmraDCC Lib aufgerufen
+*/
+char rcvBuf[20];
+byte rcvIx=0;       // Index im Empfangspuffer
+void dccSim ( void ) {
+    // Wenn Daten verfügbar, diese in den receive-Buffer lesen. Endezeichen ist LF oder CR
+    char *token;
+    int adr =0; // empfagnee Adresse
+    byte soll,state;
+    byte dataAnz = Serial.available();
+    if ( dataAnz > 0 ) {
+        Serial.readBytes( &rcvBuf[rcvIx], dataAnz );
+        rcvIx += dataAnz;
+        if ( rcvBuf[rcvIx-1] == 10 || rcvBuf[rcvIx-1] == 13 ) {
+            rcvBuf[rcvIx] = 0;
+            // komplette Zeile empfangen -> auswerten
+            token = strtok( rcvBuf, " ,");
+            if ( strcmp( token, "ac" ) == 0 ) {
+                // Zubehörbefehl
+                adr = atoi( strtok( NULL, " ," ) );
+                soll = atoi( strtok( NULL, " ," ) );
+                state = atoi( strtok(NULL, " ,") );
+                DB_PRINT("Sim: AC,%d,%d,%d",adr,soll,state);
+                notifyDccAccState( adr, adr/4, soll, state );           }
+        // Empfangspuffer rücksetzen
+        rcvIx = 0;
+        }
+    }
+}
+
+int freeMemory() {
+    // die Adressen des RAM beginnen bei 256 (0x100). Darunter liegen die
+    // IO-Adressen.
+    int free_memory;
+    //DB_PRINT( "&fremem=%d, &heapstrt=%d, heapStrt=%d, brkVal=%d",&free_memory, &__heap_start, __heap_start, __brkval);
+    if ((int)__brkval == 0) {
+        free_memory = ((int)&free_memory) - ((int)&__heap_start);
+    } else {
+        free_memory = ((int)&free_memory) - ((int)__brkval);
+    }
+    return free_memory;
+}
 
 void DBprintCV(void) {
     // für Debug-Zwecke den gesamten genutzten CV-Speicher ausgeben
@@ -1015,19 +742,19 @@ void DBprintCV(void) {
    DB_PRINT( "1.Weichenaddresse: %d", weichenAddr );
     
     // Decoder-Konfiguration global
-   DB_PRINT( "Initierungswert: 0x%x (%d) ", Dcc.getCV( (int) &CV->modeVal ), Dcc.getCV( (int) &CV->modeVal ) );
-   DB_PRINT( "PoM-Adresse    : %d"   , Dcc.getCV( (int) &CV->PomAddrLow) + 256* Dcc.getCV( (int) &CV->PomAddrHigh ) );
+   DB_PRINT( "Initierungswert: 0x%x (%d) ", Dcc.getCV( CV_MODEVAL ), Dcc.getCV( CV_MODEVAL ) );
+   DB_PRINT( "PoM-Adresse    : %d"   , Dcc.getCV( CV_POMLOW) + 256* Dcc.getCV( CV_POMHIGH ) );
     
     // Output-Konfiguration
    DB_PRINT( "Wadr | Typ | CV's  | Mode | Par1 | Par2 | Par3 | Status |",0 );
     for( byte i=0; i<WeichenZahl; i++ ) {
        DB_PRINT( "%4d |%4d | %2d-%2d | %4d | %4d | %4d | %4d | %3d " , weichenAddr+i, iniTyp[i],
-                                                                 &CV->Fkt[i].Mode,  &CV->Fkt[i].State,
-                                                                 Dcc.getCV( (int)  &CV->Fkt[i].Mode ),
-                                                                 Dcc.getCV( (int)  &CV->Fkt[i].Par1 ),
-                                                                 Dcc.getCV( (int)  &CV->Fkt[i].Par2 ),
-                                                                 Dcc.getCV( (int)  &CV->Fkt[i].Par3 ),
-                                                                 Dcc.getCV( (int)  &CV->Fkt[i].State ) );
+                                                                 cvAdr(i,MODE),  cvAdr(i,STATE),
+                                                                 getCvPar(i,MODE),
+                                                                 getCvPar(i,PAR1),
+                                                                 getCvPar(i,PAR2),
+                                                                 getCvPar(i,PAR3),
+                                                                 getCvPar(i,STATE) );
     }
     
 }

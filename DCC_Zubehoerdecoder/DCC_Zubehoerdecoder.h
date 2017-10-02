@@ -1,9 +1,10 @@
 /* Universeller DCC - Zubehördecoder
- * 2 Ausgänge / Zubehöradresse
+ * 3 Ausgänge / Zubehöradresse
  * Einstellbare Funktionalität:
  *  - Servo mit Umschaltrelais zur Weichenpolarisierung
  *  - Doppelspulenantriebe
- *  - statische/blinkende Ausgänge  
+ *  - statische/blinkende Ausgänge 
+ *  - Lichtsignale 
  *  - Einstellen der Servoendlagen per Drehencoder. 
  *    Der Drehencoder bezieht sich immer auf die zuletzt gestellte Weichenposition .
  *  - Die Betriebsmodi und Startverhalten wird über die Analogeingänge A4/A5 (parametrierbar) eingestellt. Dazu 
@@ -143,9 +144,6 @@ const byte iniMode          = 0x50 | AUTOADDR /*| ROCOADDR*/;  // default-Betrie
 const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV48/49 )
 
 
-//Konstante für Lichtsignalfunktion
-#define SIG_DARK_TIME   300     // Zeit zwischen Dunkelschalten und Aufblenden des neuen Signalbilds
-#define SIG_RISETIME    500     // Auf/Abblendezeit
 
 // Ausgänge:  mit NC gekennzeichnete Ausgänge werden keinem Port zugeordnet. Damit können Ports gespart werden,
 //            z.B. wenn bei einem Servo kein Polarisierungsrelais benötigt wird
@@ -160,9 +158,9 @@ const byte out2Pins[]   =   {       A3,         5,   /*gn*/11,   /*ws*/ 8,  /*gn
 const byte out3Pins[]   =   {       NC,         6,   /*ge*/ 7,         NC,        NC,       NC };
  
 const byte iniFmode[]     = {STATICMOD,  SAUTOOFF,          0,          0,         0, NOPOSCHK };
-const byte iniPar1[]      = {       50,        30,    0b01001,    0b10001,      0b01,       20 };
-const byte iniPar2[]      = {       50,       150,    0b00010,    0b00110,      0b10,       50 };
-const byte iniPar3[]      = {       30,         8,          5,          0,        19,        0 };
+const byte iniPar1[]      = {       90,        30,    0b01001,    0b10001,      0b01,       20 };
+const byte iniPar2[]      = {       90,       150,    0b00010,    0b00110,      0b10,       50 };
+const byte iniPar3[]      = {       50,         8,          5,          0,        19,        0 };
 const byte iniPar4[]      = {        0,         0,    0b00101,          0,         0,        0,}; // nur für Lichtsignale!
 //------------------------------------------------------------------------------------
 
