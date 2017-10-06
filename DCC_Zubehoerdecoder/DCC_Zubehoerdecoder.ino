@@ -6,7 +6,7 @@
  * Bis zu 8 (aufeinanderfolgende) Zubehöradressen ansteuerbar
  * 1. Adresse per Programmierung einstellbar
  * 
- * 2 Ausgänge / Zubehöradresse
+ * 3 Ausgänge / Zubehöradresse
  * Einstellbare Funktionalität:
  *  - Servo mit Umschaltrelais zur Weichenpolarisierung
  *  - Doppelspulenantriebe
@@ -71,8 +71,8 @@ char dbgbuf[60];
 #include "DCC_Zubehoerdecoder-STM32.h"
 //#include "TestKonf/DCC_Zubehoerdecoder-LS-STM32.h"
 #else
-//#include "TestKonf\DCC_Zubehoerdecoder-LS-Nano.h"
-#include "DCC_Zubehoerdecoder.h"
+#include "TestKonf\DCC_Zubehoerdecoder-LS-Nano.h"
+//#include "DCC_Zubehoerdecoder.h"
 #endif
 const byte WeichenZahl = sizeof(iniTyp);
 
@@ -95,10 +95,6 @@ byte opMode;                    // Bit 0..3 aus modeVal
 byte rocoOffs;                  // 0 bei ROCO-Adressierung, 4 sonst
 byte isOutputAddr;              // Flag ob Output-Adressing
 word weichenAddr;               // Addresse der 1. Weiche (des gesamten Blocks)
-byte dccState[WeichenZahl];     // Ausgangsstatus im DCC-Telegramm ( für FCOIL )
-byte dccSoll[WeichenZahl];      // Solllage der Weichen ( wird vom DCC-Kommando gesetzt )
-                                // Nach Bearbeitung in den jeweiligen Funktionsobjekten wird der
-                                // Sollwert wieder auf SOLL_INVALID gesetzt
 byte ioPins[PPWA*WeichenZahl];  // alle definierten IO's in einem linearen Array
 
 // Pointer auf die Funktionsobjekte
@@ -289,7 +285,6 @@ void setup() {
     //--- Funktionsobjekte entsprechend der Konfiguration instanziieren ------------------
     for ( byte wIx=0; wIx<WeichenZahl; wIx++ ) {
         // Funktionsobjekte instanziieren und initiieren
-        dccSoll[wIx] = SOLL_INVALID;
         byte vsIx = 0;  // Vorsignalindex am Mast auf 0 (kein Vorsignal) vorbesetzen
         switch (iniTyp[wIx] )  {
           case FSERVO:
@@ -310,18 +305,18 @@ void setup() {
             }
             // die restliche Bearbeitung ist bei Signalen und Vorsignalen gleich
           case FVORSIG:
-            {// Zahl der Folgeadressen bestimmen
-            byte adrZahl = 1; 
-            if ( wIx+1<WeichenZahl && iniTyp[wIx+1] == FSIGNAL0 ) adrZahl++;
-            if ( wIx+2<WeichenZahl && iniTyp[wIx+2] == FSIGNAL0 ) adrZahl++;
-            DB_PRINT("Vorsignalindex: %d", vsIx );
-            if ( vsIx == 0 ) {
-                Fptr.sig[wIx] = new Fsignal( cvAdr(wIx,0) , &ioPins[wIx*PPWA], adrZahl, NULL );
-            } else {
-                Fptr.sig[wIx] = new Fsignal( cvAdr(wIx,0) , &ioPins[wIx*PPWA], adrZahl, &Fptr.sig[vsIx-1] );
-            }
-            dccSoll[wIx] = 0; //Signale starten im Zustand 0;
-            wIx = wIx + adrZahl-1;  // Folgeadressen überspringen
+            {   // Zahl der Ausgangspins (PPWA*Folgeadressen) bestimmen
+                byte pinZahl = PPWA; 
+                if ( wIx+1<WeichenZahl && iniTyp[wIx+1] == FSIGNAL0 ){
+                    pinZahl+=PPWA;
+                    if ( wIx+2<WeichenZahl && iniTyp[wIx+2] == FSIGNAL0 ) pinZahl+=PPWA;
+                }
+                DB_PRINT("Signal %d, PinMax=%d, Vsindex: %d",wIx+1, pinZahl, vsIx );
+                if ( vsIx == 0 ) {
+                    Fptr.sig[wIx] = new Fsignal( cvAdr(wIx,0) , &ioPins[wIx*PPWA], pinZahl, NULL );
+                } else {
+                    Fptr.sig[wIx] = new Fsignal( cvAdr(wIx,0) , &ioPins[wIx*PPWA], pinZahl, &Fptr.sig[vsIx-1] );
+                }
             }
             break;
           default: // auch FSIGNAL0
@@ -330,9 +325,11 @@ void setup() {
         } // Ende switch Funktionstypen
     } // Ende loop über alle Funktionen
 
+#ifdef __AVR_MEGA__
     // Für Test Speicherbelegung ausgeben ( beim Heap sind die Adressen auf das RAM bezogen
     // der Offset von 256 Byte IO-Adressen im ATMEga 328 wird abgezogen
     DB_PRINT(">> Setup-Ende >> Heap: Start=0x%x (%d), End=0x%x (%d)", (int)&__heap_start-256, (int)__malloc_heap_start-256, (int)__brkval-256,(int)__brkval-256);
+#endif
 }
 
 
@@ -363,19 +360,19 @@ void loop() {
     for ( byte i=0; i<WeichenZahl; i++ ) {
         switch ( iniTyp[i]  ) {
           case FSERVO: // Servoausgänge ansteuern ----------------------------------------------
-            Fptr.servo[i]->chkState(&dccSoll[i]);
+            Fptr.servo[i]->process();
             break;
 
           case FCOIL: //Doppelspulenantriebe ------------------------------------------------------
            //if ( dccSoll[i] != SOLL_INVALID ) DB_PRINT( "SollCoil=%d", dccSoll[i] );
-           Fptr.coil[i]->chkState(&dccSoll[i],dccState[i]);
+           Fptr.coil[i]->process();
             break;
           case FSTATIC: // Ausgang statisch ein/ausschalten ------------------------------------
-            Fptr.stat[i]->chkState(&dccSoll[i]);
+            Fptr.stat[i]->process();
             break;
           case FVORSIG:
           case FSIGNAL2:
-            Fptr.sig[i]->chkState(&dccSoll[i]);
+            Fptr.sig[i]->process();
             break;
           case FSIGNAL0:
             // Signalfolgetypen überspringen
@@ -396,6 +393,33 @@ void loop() {
         else
             SET_PROGLED;
     }
+} // Ende loop
+
+
+//-------------- Setzen der Funktionssollwerte ------------------------
+// Dieses Unterprogramm wird aufgerufen, wenn ein Funktionsobjekt umgeschaltet
+// werden soll. z.B. Signalbild am Lichtsignal, oder Weiche umschalten.
+void setPosition( byte wIx, byte sollWert, byte state = 0 ) {
+    // bei den meisten Funktionen ist für den Sollwert nur 0/1 sinnvoll. Bei Lichtsignalen
+    // mit mehreren Signalbildern sind auch höhere Werte sinnvoll ( bis zu 0...5 bei 6
+    // Signalbildern)
+    // state wird nur von FCOIL ausgewertet
+    DB_PRINT("Set wIx=%d, soll=%d, state=%d", wIx, sollWert, state);
+    switch ( iniTyp[wIx] ) {
+        case FSERVO:
+          Fptr.servo[wIx]->set( sollWert );
+          break;
+        case FSTATIC:
+          Fptr.stat[wIx]->set( sollWert );
+          break;
+        case FCOIL:
+          Fptr.coil[wIx]->set( sollWert, state );
+          break;
+        case FSIGNAL2:
+        case FVORSIG:
+          Fptr.sig[wIx]->set( sollWert );
+          break;
+    }
 }
 //////////////////////////////////////////////////////////////
 // Unterprogramme, die von der DCC Library aufgerufen werden:
@@ -403,7 +427,7 @@ void loop() {
 // Die folgende Funktion wird von Dcc.process() aufgerufen, wenn ein Weichentelegramm empfangen wurde
 void notifyDccAccState( uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, uint8_t State ){
     // Weichenadresse berechnen
-    byte i;
+    byte i,dccSoll,dccState;
     word wAddr = Addr+rocoOffs; // Roco zählt ab 0, alle anderen lassen die ersten 4 Weichenadressen frei
     // Im Programmiermodus bestimmt das erste empfangene Programm die erste Weichenadresse
     if ( progMode == ADDRMODE ) {
@@ -427,8 +451,8 @@ void notifyDccAccState( uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, u
     if ( wAddr >= weichenAddr && wAddr < (weichenAddr + WeichenZahl) ) {
         // ist eigene Adresse, Sollwert setzen
         byte Ix = wAddr-weichenAddr;
-        dccSoll[Ix] =  OutputAddr & 0x1;
-        dccState[Ix] = State;
+        dccSoll =  OutputAddr & 0x1;
+        dccState = State;
         //DB_PRINT( "Weiche %d, Index %d, Soll %d, Ist %d", wAddr, Ix, dccSoll[Ix],  fktStatus[Ix] );
         // Bei Signaladressen muss der Sollzustand gegebenenfalls angepasst werden: Bei der ersten
         // Folgeadresse von 0/1 auf 2/3, bei der 2. Folgeadresse auf 4/5 ( Signale können bis zu 6
@@ -436,15 +460,18 @@ void notifyDccAccState( uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, u
         // eingetragen werden.
         if ( iniTyp[Ix] == FSIGNAL0 ) {
             // es ist eine Signalfolgeadresse
-            dccSoll[Ix-1] = dccSoll[Ix] + 2;
-            if ( iniTyp[Ix-1] == FSIGNAL0 ) {
+            dccSoll = dccSoll + 2;
+            Ix--;
+            if ( iniTyp[Ix] == FSIGNAL0 ) {
                 // ist 2. Folgeadresse
-                 dccSoll[Ix-2] = dccSoll[Ix] + 4;
+                 dccSoll = dccSoll + 4;
+                 Ix--;
             }
         } else if ( iniTyp[Ix] == FSERVO ) {
             // bei Servos prüfen ob gerade Endlagenjustierung aktiv ist
-            ChkAdjEncode( Ix );
+            ChkAdjEncode( Ix, dccSoll );
         }
+        setPosition( Ix, dccSoll, dccState );
     }
     // Prüfen ob Vorsignal über Hauptsignaladresse geschaltet werden muss
     for ( i = 0; i < WeichenZahl; i++ ) {
@@ -453,17 +480,17 @@ void notifyDccAccState( uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, u
             // Adresse des zugehörigen Hauptsignals bestimmen
             vsAdr = getCvPar(i, PAR3) + 256 * getCvPar(i, STATE);
             if ( vsAdr == wAddr ) {
-                dccSoll[i] =  OutputAddr & 0x1;
-               DB_PRINT( "Vorsig0 %d, Index %d, Soll %d, Ist %d", wAddr, i, dccSoll[i] );
+                DB_PRINT( "Vorsig0 %d, Index %d, Soll %d", wAddr, i, OutputAddr & 0x1 );
+                setPosition( i, OutputAddr & 0x1 );
                 break; // Schleifendurchlauf abbrechen, es kann nur eine Signaladresse sein
             } else {
-                // Folgeadressen ( bei mehrbegriffigen Vorsignalen ) prüfen
-                while( i+1 < WeichenZahl && iniTyp[i+1] == FSIGNAL0 ) {
+                // Folgeadresse ( bei mehrbegriffigen Vorsignalen ) prüfen
+                if ( i+1 < WeichenZahl && iniTyp[i+1] == FSIGNAL0 ) {
                     // Folgeadresse vergleichen
-                    i++;
-                    if ( ++vsAdr == wAddr ) {
-                        dccSoll[i] =  OutputAddr & 0x1;
-                        DB_PRINT( "Vorsig1 %d, Index %d, Soll %d, Ist %d", wAddr, i, dccSoll[i] );
+                    if ( vsAdr+1 == wAddr ) { 
+                        // Übereinstimmung gefunden, neues Signalbild setzen
+                        DB_PRINT( "Vorsig1 %d, Index %d, Soll %d", wAddr, i, (OutputAddr & 0x1)+2  );
+                        setPosition( i, (OutputAddr & 0x1)+2 );
                     }
                 }
             }
@@ -499,7 +526,7 @@ void notifyCVChange( uint16_t CvAddr, uint8_t Value ) {
                 } else if ( CvAddr == cvAdr(i,PAR1) ||
                             CvAddr == cvAdr(i,PAR2)  ) {
                       // ist nicht de aktuelle Position des Servos, Servo umstellen
-                      dccSoll[i] = ! Fptr.servo[i]->getPos();
+                      Fptr.servo[i]->set( ! Fptr.servo[i]->getPos() );
                 } else if ( CvAddr == cvAdr(i,PAR3) ) {
                     // die Geschwindigkeit des Servo wurde verändert
                     //DB_PRINT( "Ausg.%d , Speed. %d neu einstellen", i, Value );
@@ -615,7 +642,7 @@ void getEncoder(  ) {
             // Drehencoder wurde bewegt 
             if ( adjPulse == NO_ADJ ) {
                 // ist erster Justierimpuls, aktuelle Position aus CV auslesen
-                if ( dccSoll[adjWix] == GERADE ) {
+                if ( Fptr.servo[adjWix]->getPos() == GERADE ) {
                     adjPulse = Dcc.getCV( cvAdr(adjWix,PAR1) );
                 } else {
                     adjPulse = Dcc.getCV( cvAdr(adjWix,PAR2) );
@@ -633,14 +660,14 @@ void getEncoder(  ) {
     #endif
 }
 
-void ChkAdjEncode( byte WIndex ){
+void ChkAdjEncode( byte WIndex, byte dccSoll ){
     #ifdef ENCODER_AKTIV
     // nach dem Empfang einer Weichenadresse wird geprüft, ob eine vorherige Justierung gespeichert werden
     // muss. Die empfangene Weichenadresse wird als neue Justieradresse gespeichert wenn es sich um einen
     // Servoantrieb handelt.
     if ( adjPulse != NO_ADJ ) {
         // Es wurde justiert, testen ob gespeichert werden muss (Weichenwechsel)
-        if ( WIndex != adjWix || Fptr.servo[adjWix]->getPos() != dccSoll[adjWix] ) {
+        if ( WIndex != adjWix || Fptr.servo[adjWix]->getPos() != dccSoll ) {
             // Weiche wurde umgeschaltet, oder eine andere Weiche betätigt -> Justierung speichern
             localCV = true; // keine Bearbeitung in Callback-Routine NotifyCvChange
             Fptr.servo[adjWix]->adjust(ADJPOSEND,adjPulse);
@@ -719,6 +746,7 @@ void dccSim ( void ) {
     }
 }
 
+#ifdef __AVR_MEGA__
 int freeMemory() {
     // die Adressen des RAM beginnen bei 256 (0x100). Darunter liegen die
     // IO-Adressen.
@@ -731,6 +759,11 @@ int freeMemory() {
     }
     return free_memory;
 }
+#else
+int freeMemory() {
+    return 0;
+}
+#endif
 
 void DBprintCV(void) {
     // für Debug-Zwecke den gesamten genutzten CV-Speicher ausgeben

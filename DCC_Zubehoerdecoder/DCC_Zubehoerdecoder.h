@@ -158,8 +158,8 @@ const byte out2Pins[]   =   {       A3,         5,   /*gn*/11,   /*ws*/ 8,  /*gn
 const byte out3Pins[]   =   {       NC,         6,   /*ge*/ 7,         NC,        NC,       NC };
  
 const byte iniFmode[]     = {STATICMOD,  SAUTOOFF,          0,          0,         0, NOPOSCHK };
-const byte iniPar1[]      = {       90,        30,    0b01001,    0b10001,      0b01,       20 };
-const byte iniPar2[]      = {       90,       150,    0b00010,    0b00110,      0b10,       50 };
+const byte iniPar1[]      = {       50,        30,    0b01001,    0b10001,      0b01,       50 };
+const byte iniPar2[]      = {       50,       150,    0b00010,    0b00110,      0b10,       50 };
 const byte iniPar3[]      = {       50,         8,          5,          0,        19,        0 };
 const byte iniPar4[]      = {        0,         0,    0b00101,          0,         0,        0,}; // nur für Lichtsignale!
 //------------------------------------------------------------------------------------

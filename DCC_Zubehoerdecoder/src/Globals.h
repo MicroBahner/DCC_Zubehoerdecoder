@@ -8,21 +8,21 @@
 // Da die Prüfung auf ungültige Pin-Nummern in den Arduino-internen Implementierungen je nach Prozessor
 // unterschiedlich ist, wird im Sketch selbst auf NC geprüft, und gegebenenfalls die Arduino Funktion nicht aufgerufen.
 
-#define PPWA 3            // Zahl der Pins je Weichenadresse
-
-#define SOLL_INVALID    0xff    // dcc-Sollwert ungültig
+#define PPWA 3                  // Zahl der Pins je Weichenadresse
 
 #define DEBUG
 #ifdef DEBUG
-#define DB_PRINT( x, ... ) { sprintf_P( dbgbuf, (const char*) F( x ), __VA_ARGS__ ) ; Serial.println( dbgbuf ); }
-//#define DB_PRINT( x, ... ) { sprintf( dbgbuf,   x , __VA_ARGS__ ) ; Serial.println( dbgbuf ); }
-extern char dbgbuf[60];
-extern unsigned int __heap_start;
-extern char *__malloc_heap_start;
-extern char *__brkval;
-int freeMemory();
+    #define DB_PRINT( x, ... ) { sprintf_P( dbgbuf, (const char*) F( x ), __VA_ARGS__ ) ; Serial.println( dbgbuf ); }
+    //#define DB_PRINT( x, ... ) { sprintf( dbgbuf,   x , __VA_ARGS__ ) ; Serial.println( dbgbuf ); }
+    extern char dbgbuf[60];
+        #ifdef __AVR_MEGA__
+            extern unsigned int __heap_start;
+            extern char *__malloc_heap_start;
+            extern char *__brkval;
+            int freeMemory();
+        #endif
 #else
-#define DB_PRINT( x, ... ) ;
+    #define DB_PRINT( x, ... ) ;
 #endif
 
 //-------------------------------Definition der CV-Adressen ---------------------------------------
