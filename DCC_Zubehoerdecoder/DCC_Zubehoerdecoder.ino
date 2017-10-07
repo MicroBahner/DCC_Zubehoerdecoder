@@ -68,8 +68,8 @@ char dbgbuf[60];
 //-----------------------------------------
 //-------------------------------------------
 #ifdef __STM32F1__
-#include "DCC_Zubehoerdecoder-STM32.h"
-//#include "TestKonf/DCC_Zubehoerdecoder-LS-STM32.h"
+//#include "DCC_Zubehoerdecoder-STM32.h"
+#include "TestKonf/DCC_Zubehoerdecoder-LS-STM32.h"
 #else
 #include "TestKonf\DCC_Zubehoerdecoder-LS-Nano.h"
 //#include "DCC_Zubehoerdecoder.h"
@@ -273,7 +273,9 @@ void setup() {
     setWeichenAddr(); // 1. Weichenadresse berechnen
         
     DBprintCV(); // im Debug-Mode alle CV-Werte ausgeben
-    
+    #ifdef DEBUG
+    byte *heap_start = new( byte );
+    #endif
     //--- Die definierten Io's in einem linearen Array speichern. Der entsprechende Array-Abschnitt
     // wird den Funktionsobjekten als Pointer übergeben, die damit ein Array mit 'ihren' Pin-Nummern
     // erhalten
@@ -325,10 +327,15 @@ void setup() {
         } // Ende switch Funktionstypen
     } // Ende loop über alle Funktionen
 
+#ifdef DEBUG
+    byte *heap_end = new( byte );
 #ifdef __AVR_MEGA__
     // Für Test Speicherbelegung ausgeben ( beim Heap sind die Adressen auf das RAM bezogen
     // der Offset von 256 Byte IO-Adressen im ATMEga 328 wird abgezogen
     DB_PRINT(">> Setup-Ende >> Heap: Start=0x%x (%d), End=0x%x (%d)", (int)&__heap_start-256, (int)__malloc_heap_start-256, (int)__brkval-256,(int)__brkval-256);
+#endif
+    DB_PRINT(">>HEAP>> Start=0x%x, End=0x%x, Size=%d", heap_start, heap_end, heap_end-heap_start );
+
 #endif
 }
 

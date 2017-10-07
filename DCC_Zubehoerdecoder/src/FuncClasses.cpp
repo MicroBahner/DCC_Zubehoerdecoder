@@ -365,6 +365,7 @@ Fsignal::Fsignal( int cvAdr, uint8_t pins[], uint8_t pinAnz, Fsignal** vorSig ){
     for ( byte pIx=0; pIx < _pinAnz ; pIx++ ) {
         // Modi der Ausgänge setzen
         byte sigMode = _getHsMask(); // Bitcodierung harte/weiche Ledumschaltung
+		_sigLed[pIx] = NULL;		 // Softled-Pointer mit NULL initiieren
         if ( _outP[pIx] != NC ) {
             // Die CV_s verwalten die pins Adressbezogen ( 1 CV für 3 Pins )
             // sigMode enthält bitcodiert die Info ob harte/weiche Umschaltung
@@ -383,10 +384,11 @@ Fsignal::Fsignal( int cvAdr, uint8_t pins[], uint8_t pinAnz, Fsignal** vorSig ){
                 DB_PRINT( "Softled, pin %d, Att=%d", _outP[pIx], att );
             }
             //DB_PRINT( "portTyp[%d][%d] = %d" , sigO&1, wIx+(sigO>>1), portTyp[sigO&1][wIx+(sigO>>1)] );
-        }
+		}
     }
     _fktStatus.sigBild = 1;
     set( 0 );
+    DB_PRINT( "Konstruktor %d", _cvAdr );
 }
 
 
@@ -422,6 +424,7 @@ void Fsignal::set( uint8_t sollWert ) {
             _fktStatus.state   = SIG_NEW;
             darkT.setTime( SIG_DARK_TIME ) ;
             _clrSignal(); // aktuelles Signalbild dunkelschalten
+            DB_PRINT("Ende set %d", _cvAdr );
         }
     }
     
@@ -523,6 +526,7 @@ void Fsignal::_clrSignal () {
     }
     // am Haupsignal gegebenenfalls auch das Vorsignal dunkelschalten
     if ( _vorSig != NULL && *_vorSig != NULL ) {
+        DB_PRINT("Vorsig dunkelschalten",0);
         (*_vorSig)->setDark( true );
-    }
+    } 
 }
