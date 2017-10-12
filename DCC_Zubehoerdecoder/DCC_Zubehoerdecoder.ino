@@ -19,17 +19,11 @@
  *  So sind z.B. bei Servoausgängen die Endlagen per CV-Wert einstellbar, bei Lichtsignalen ist die 
  *  Zuordnung der Ausgangszustände zum Signalzustand frei konfigurierbar.
 */
-#define DCC_DECODER_VERSION_ID 0x41
-// für debugging ------------------------------------------------------------
-//#define DEBUG ;             // Wenn dieser Wert gesetzt ist, werden Debug Ausgaben auf dem ser. Monitor ausgegeben
-//#define Serial Serial1
+#define DCC_DECODER_VERSION_ID 0x50
 
-#include "src/Globals.h"
+#include <NmraDcc.h>
 #include "src/FuncClasses.h"
 
-#ifdef DEBUG
-char dbgbuf[60];
-#endif
 
 //------------------------------------------ //
 // die NmraDcc - Library gibt es unter https://github.com/mrrwa/NmraDcc/archive/master.zip
@@ -66,15 +60,29 @@ char dbgbuf[60];
 #define ROCOADDR    2   // 0: Outputadresse 4 ist Weichenadress 1
                         // 1: Outputadresse 0 ist Weichenadress 1
 //-----------------------------------------
-//-------------------------------------------
+//------------------ Einbinden der Konfigurationsdatei -------------------------
 #ifdef __STM32F1__
-//#include "DCC_Zubehoerdecoder-STM32.h"
-#include "TestKonf/DCC_Zubehoerdecoder-LS-STM32.h"
+#include "DCC_Zubehoerdecoder-STM32.h"
+//#include "TestKonf/DCC_Zubehoerdecoder-LS-STM32.h"
 #else
-#include "TestKonf\DCC_Zubehoerdecoder-LS-Nano.h"
-//#include "DCC_Zubehoerdecoder.h"
+#include "DCC_Zubehoerdecoder.h"
+//#include "TestKonf\DCC_Zubehoerdecoder-LS-Nano.h"
 #endif
+//-------------------------------------------------------------------------------
+//-------------------------------------------
 const byte WeichenZahl = sizeof(iniTyp);
+
+//-------------------------------Definition der CV-Adressen ---------------------------------------
+#define CV_MODEVAL    47  // Initiierungs-CV
+                          // =0x5? wenn die CV-Werte initiiert sind. Bits 0..3 für Betriebsarten
+#define CV_POMLOW     48  // Adresse für die POM-Programmierung
+#define CV_POMHIGH    49
+#define CV_FUNCTION   50  // Start der Blöcke für die Funktionskonfiguration
+#define CV_BLKLEN      5  // Länge eines CV-Blocks ( pro Adresse ein Block )
+                          // Die Bedeutung ist weitgehend funktionsspezifisch
+
+#define cvAdr(wIx,par)    CV_FUNCTION+CV_BLKLEN*wIx+par
+#define getCvPar(wIx,par) Dcc.getCV( cvAdr(wIx,par) )
 
 // CV Default-Werte der Standardadressen:
 struct CVPair {
@@ -122,9 +130,9 @@ byte progMode;      // Merker ob Decoder im Programmiermodus
 # ifdef ENCODER_AKTIV
 // Die zuletzt empfangene Weichenposition kann per Encoder justiert werden. 
 // Die Werte werden gespeichert, sobald eine ander Weichenposition empfangen wird.
-byte adjWix;       // Weichenindex, der z.Z. vom Encoder beeinflusst wird.
+byte adjWix;        // Weichenindex, der z.Z. vom Encoder beeinflusst wird.
 byte adjPulse;      // per Encoder aktuell eingestellte Servoposition
-#define NO_ADJ 255    // Wert von adjPulse solange keine Änderung erfolgt ist
+#define NO_ADJ 255  // Wert von adjPulse solange keine Änderung erfolgt ist
 #endif
 bool localCV;       // lokale Änderung eines CV (Callback NotifyCV wird dann nicht ausgeführt )
 //---- Library-Objekte ----
@@ -518,7 +526,7 @@ void notifyCVChange( uint16_t CvAddr, uint8_t Value ) {
     if ( !localCV ) {
         //CV wurde über nmraDCC geändert. Ist dies eine aktive Servoposition, dann die Servoposition
         // entsprechend anpassen
-       //DB_PRINT( "neu: CV%d=%d", CvAddr, Value );
+       DB_PRINT( "neu: CV%d=%d", CvAddr, Value );
         for ( byte i=0; i<WeichenZahl; i++ ) {
             // prüfen ob Ausgang einen Servo ansteuert:
             switch ( iniTyp[i] ) {
@@ -660,6 +668,7 @@ void getEncoder(  ) {
             Fptr.servo[adjWix]->adjust( ADJPOS, adjPulse );
         } else if ( analogRead( resModeP ) < 500 ) {
             // Mittelstellungstaster gedrückt
+            DB_PRINT("Servo center",0);
             Fptr.servo[adjWix]->center(ABSOLUT);
         }
     }

@@ -4,7 +4,14 @@
  * Für jede im Konfig-File definierte Funktion muss ein passendes Objekt instanziiert werden.
  * Die Instanziierung muss im setup() mit 'new' erfolgen.
  */
-#include "Globals.h"
+#include <MobaTools.h>
+#include "DebugDefs.h"
+
+#define NC 0xff    // nicht verwendeten Funktionsausgängen kann der Port NC zugeweisen werden.
+// Da die Prüfung auf ungültige Pin-Nummern in den Arduino-internen Implementierungen je nach Prozessor
+// unterschiedlich ist, wird im Sketch selbst auf NC geprüft, und gegebenenfalls die Arduino Funktion nicht aufgerufen.
+#define PPWA 3                  // Zahl der Pins je Weichenadresse
+
 // Offset der CV-Adresse bei den Funktionsspezifschen CV-Werten
 const byte MODE=0, PAR1=1, PAR2=2, PAR3=3, STATE=4 ;
 
@@ -13,6 +20,7 @@ const byte MODE=0, PAR1=1, PAR2=2, PAR3=3, STATE=4 ;
 // ( gegebenenfalls auch direkter EEPROM Zugriff )
 //#define NMRADCC
 #ifdef NMRADCC
+    #include <NmraDcc.h>
     extern NmraDcc Dcc;
     #define getParam( parAdr ) Dcc.getCV( _cvAdr+parAdr )
     #define setParam( parAdr, value ) Dcc.setCV( _cvAdr+parAdr, value )

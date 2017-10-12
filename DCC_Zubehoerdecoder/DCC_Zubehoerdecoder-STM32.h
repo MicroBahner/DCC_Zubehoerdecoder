@@ -165,8 +165,6 @@ const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV
 //            z.B. wenn bei einem Servo kein Polarisierungsrelais benötigt wird
 const byte modePin      =   LED_BUILTIN;     // Anzeige Betriebszustand (Normal/Programmierung) (Led)
 
-#define SOFTLEDS 12 // default ist 16. Kann auf die tatsächlich benutzte Zahl reduziert werden, um RAM zu sparen.
-                    // Pro Softled werden 19 Byte benötigt
 // maple mini: ( ARDUINO_MAPLE_MINI )
 #ifdef ARDUINO_MAPLE_MINI
 const byte iniTyp[]     =   {    FSTATIC,  FSERVO,   FSIGNAL2,   FSIGNAL0,   FVORSIG,   FCOIL };

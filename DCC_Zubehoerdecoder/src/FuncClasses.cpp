@@ -14,8 +14,11 @@
  * weitere Methoden sind klassenspezifisch.
  */
 
- #include "FuncClasses.h"
+#include "FuncClasses.h"
 
+#ifdef DEBUG
+char dbgbuf[60];
+#endif
 
 
 //####################  allgemeine Hilfsfunktionen ##############################
@@ -43,8 +46,8 @@ Fcoil::Fcoil( int cvAdr, uint8_t out1P[] ) {
     DB_PRINT( "Fcoil CV=%d, OutPins %d,%d ", _cvAdr, _outP[0], _outP[1] );
     
     for ( byte i=0; i<2; i++ ) {
-        pinMode( _outP[i], OUTPUT );
-        digitalWrite( _outP[i], LOW );
+        _pinMode( _outP[i], OUTPUT );
+        _digitalWrite( _outP[i], LOW );
     }
     _flags.pulseON = false;
     _flags.sollCoil = getParam( STATE )&1;
@@ -72,13 +75,13 @@ void Fcoil::process() {
             DB_PRINT(" State=%d",  _flags.sollOut );
             if ( (_flags.sollCoil & 1) == 0 ) {
                 // Out1 aktiv setzen
-                digitalWrite( _outP[0], HIGH );
-                digitalWrite( _outP[1], LOW );
+                _digitalWrite( _outP[0], HIGH );
+                _digitalWrite( _outP[1], LOW );
                 //DB_PRINT( "Pin%d HIGH, Pin%d LOW", _outP[0], _outP[1] );
             } else {
                 // Out2 aktiv setzen
-                digitalWrite( _outP[1], HIGH );
-                digitalWrite( _outP[0], LOW );
+                _digitalWrite( _outP[1], HIGH );
+                _digitalWrite( _outP[0], LOW );
                 //DB_PRINT( "Pin%d LOW, Pin%d HIGH", _outP[0], _outP[1] );
             }
             _flags.pulseON = true;
@@ -316,6 +319,7 @@ uint8_t Fservo::getPos(){
 //..............    
 void Fservo::adjust( uint8_t mode, uint8_t value ) {
     // Servoparameter ändern
+    DB_PRINT( "adjust: mode=%d, val=%d", mode, value );
     switch ( mode ) {
       case ADJPOSEND:
         // Justierungswert im CV der aktuellen Position speichern
@@ -324,6 +328,7 @@ void Fservo::adjust( uint8_t mode, uint8_t value ) {
         // kein break, da weichenservo auch noch auf diese Position gestellt wird.    
       case ADJPOS:
         _weicheS.write( value );
+        break;
       case ADJSPEED:
         setParam( PAR3, value );
         _weicheS.setSpeed( value );
