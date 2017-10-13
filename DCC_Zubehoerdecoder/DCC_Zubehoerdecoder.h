@@ -20,8 +20,10 @@
  *           Ist A4 beim Programmstart auf 0, werden alle CV's auf die Defaults zurückgesetzt
  *                  
  * Eigenschaften:
- * Bis zu 8 (aufeinanderfolgende) Zubehöradressen ansteuerbar. Je nach verfügbaren Digitalausgängen 
- * sind ggfs auch mehr möglich.
+ * Mehrere (aufeinanderfolgende) Zubehöradressen ansteuerbar. Die mögliche Zahl von Adressen hängt 
+ * von den verfügbaren Digitalausgängen ab.
+ * Es können maximal 16 Servos angesteuert werden
+ * 
  * 1. Adresse per Programmierung einstellbar
  * 
  *  Das Verhalten der konfigurierten Funktionen wird über CV-Programmierung festgelegt: 
@@ -53,7 +55,8 @@
  *               = 0: Spulenausgang auch über DCC-Befehl abschalten
  *          Bit3 = 1: kein Überprüfung auf Weichenposition. Gegebenenfalls wird auch an gleichen
  *                    Anschluss wiederholt ein Puls ausgegeben
- *  CV51    Einschaltdauer der Spule  ( in 10ms Einheiten ) 0= keine automatische Abschaltung
+ *  CV51    Einschaltdauer der Spule  ( in 10ms Einheiten ) 
+ *          0= keine automatische Abschaltung, Bit0 im Modebyte muss 0 sein
  *  CV52    minimale Ausschaltdauer der Spule ( in 10ms Einheiten )
  *  CV53    -
  *  CV54    aktuelle Weichenstellung ( nicht manuell verändern! )
@@ -61,7 +64,7 @@
  *  FSTATIC statischer/Blinkender Ausgang 
  *  CV50    Bit0 = 1: Blinken,  0: statisch
  *          Bit1 = 1: Beim Blinken starten erst beide Leds dann Wechselblinken
- *          Bit2: mit weichem Auf/Abblenden 
+ *          Bit2 = 1: mit weichem Auf/Abblenden 
  *  CV51    Einschaltzeit des Blinkens ( 10ms Einheiten )
  *  CV52    Ausschaltzeit des Blinkens ( 10ms Einheiten )
  *  CV53    1. Einschaltzeit beim Start des Blinkens
@@ -149,14 +152,15 @@ const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV
 //            z.B. wenn bei einem Servo kein Polarisierungsrelais benötigt wird
 const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmierung) (Led)
 
-
-#define STATICMOD    CAUTOOFF|BLKSOFT|BLKSTRT    // Wechselblinker mit beiden Leds an beim Start            
+#define COILMOD     NOPOSCHK|CAUTOOFF
+#define SERVOMOD    SAUTOOFF|NOPOSCHK|SDIRECT
+#define STATICMOD   CAUTOOFF|BLKSOFT|BLKSTRT    // Wechselblinker mit beiden Leds an beim Start            
 const byte iniTyp[]     =   {    FSTATIC,  FSERVO,   FSIGNAL2,   FSIGNAL0,   FVORSIG,   FCOIL };
-const byte out1Pins[]   =   {       A2,         3,   /*rt*/ 9,   /*rt*/10,  /*ge*/12,       A0 };  // output-pins der Funktionen
-const byte out2Pins[]   =   {       A3,         5,   /*gn*/11,   /*ws*/ 8,  /*gn*/13,       A1 };
-const byte out3Pins[]   =   {       NC,         6,   /*ge*/ 7,         NC,        NC,       NC };
+const byte out1Pins[]   =   {       A2,         3,   /*rt*/ 9,   /*rt*/10,  /*ge*/A0,        5 };  // output-pins der Funktionen
+const byte out2Pins[]   =   {       A3,        12,   /*gn*/11,   /*ws*/ 8,  /*gn*/A1,        6 };
+const byte out3Pins[]   =   {       NC,        NC,   /*ge*/ 7,         NC,        NC,       NC };
  
-const byte iniFmode[]     = {STATICMOD,  SAUTOOFF,          0,          0,         0, NOPOSCHK };
+const byte iniFmode[]     = {STATICMOD,  SERVOMOD,          0,          0,         0,  COILMOD };
 const byte iniPar1[]      = {       50,        30,    0b01001,    0b10001,      0b01,       50 };
 const byte iniPar2[]      = {       50,       150,    0b00010,    0b00110,      0b10,       50 };
 const byte iniPar3[]      = {       50,         8,          5,          0,        19,        0 };

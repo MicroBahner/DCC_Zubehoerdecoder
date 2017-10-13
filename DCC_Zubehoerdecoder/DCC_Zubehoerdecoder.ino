@@ -1,9 +1,11 @@
 /* Universeller DCC-Decoder für Weichen und (Licht-)Signale
-*  Version 5.0Beta - Die Funktionalitäten sind als Klassen definiert 
+*  Version 5.0 - Die Funktionalitäten sind als Klassen definiert 
 *  Die Klassenobjekte werden erst im Setup je nach Konfiguration instanziiert
 *  
  * Eigenschaften:
- * Bis zu 8 (aufeinanderfolgende) Zubehöradressen ansteuerbar
+ * Mehrere (aufeinanderfolgende) Zubehöradressen ansteuerbar
+ * Die max. Zahl der Adressen hängt im Wesentlichen von der Zahl der Digitalausgänge ab
+ * (max 16 Servos sind konfigurierbar)
  * 1. Adresse per Programmierung einstellbar
  * 
  * 3 Ausgänge / Zubehöradresse
@@ -122,6 +124,7 @@ byte progMode;      // Merker ob Decoder im Programmiermodus
 #define POMMODE     3   // Allways-Pom Mode ( keine Prog-Led )
 #define INIMODE     4   // Wie Normalmode, aber die StandardCV-Werte und CV47-49 werden bei jedem
                         // Start aus den defaults geladen
+#define INIALL      5   // Alle CV's müssen initiiert werden
 
 #define SET_PROGLED digitalWrite( modePin, HIGH )
 #define CLR_PROGLED digitalWrite( modePin, LOW )
@@ -180,8 +183,6 @@ void setup() {
            while ( !Serial && (millis()<wait) );
         }
         #endif
-    #endif
-    #ifdef DEBUG
      Serial.print( "Betr:" ); Serial.print(temp);Serial.print(" -> Mode=" );
       switch ( progMode ) {
         case NORMALMODE:
@@ -224,48 +225,9 @@ void setup() {
         // Wird über DCC ein 'factory-Reset' empfangen wird modeVal zurückgesetzt, was beim nächsten
         // Start zum initiieren führt.
         //
-        // Standard-CV's
-        for ( byte i=0; i<(sizeof(FactoryDefaultCVs) / sizeof(CVPair)); i++ ) {
-                Dcc.setCV( FactoryDefaultCVs[i].CV, FactoryDefaultCVs[i].Value);
-        }
-        // Decoderspezifische CV's
-        Dcc.setCV( (int) CV_POMLOW, PomAddr%256 );
-        Dcc.setCV( (int) CV_POMHIGH, PomAddr/256 );
-        Dcc.setCV( (int) CV_MODEVAL, iniMode );
-        for ( byte i = 0; i<WeichenZahl; i++ ) {
-            Dcc.setCV( cvAdr(i,MODE), iniFmode[i] );
-            Dcc.setCV( cvAdr(i,PAR1), iniPar1[i] );
-            Dcc.setCV( cvAdr(i,PAR2), iniPar2[i] );
-            Dcc.setCV( cvAdr(i,PAR3), iniPar3[i] );
-            Dcc.setCV( cvAdr(i,STATE), iniPar4[i] );
-        }
+        iniCv( INIALL );
     } else if ( progMode == INIMODE ) {
-        // Standard-CV's immer initiieren
-        for ( byte i=0; i<(sizeof(FactoryDefaultCVs) / sizeof(CVPair)); i++ ) {
-                Dcc.setCV( FactoryDefaultCVs[i].CV, FactoryDefaultCVs[i].Value);
-        }
-        Dcc.setCV( (int) CV_POMLOW, PomAddr%256 );
-        Dcc.setCV( (int) CV_POMHIGH, PomAddr/256 );
-        Dcc.setCV( (int) CV_MODEVAL, iniMode );
-        
-        // Funktionsspezifische Parameter aus INI-Tabelle laden
-        for ( byte i = 0; i<WeichenZahl; i++ ) {
-            Dcc.setCV( cvAdr(i,MODE), iniFmode[i] );
-            Dcc.setCV( cvAdr(i,PAR1), iniPar1[i] );
-            Dcc.setCV( cvAdr(i,PAR2), iniPar2[i] );
-            Dcc.setCV( cvAdr(i,PAR3), iniPar3[i] );
-            switch ( iniTyp[i] ) {
-              case FSIGNAL2:
-              case FVORSIG:
-              case FSIGNAL0:
-                // bei den Signaltypen auch den 5. CV-Wert als Parameter laden
-                Dcc.setCV( cvAdr(i,STATE), iniPar4[i] );
-                break;
-              default:
-                ;
-            }
-        }
-        
+        iniCv( INIMODE );
     }
     
     // Betriebsart auslesen
@@ -584,6 +546,42 @@ void notifyDccReset( uint8_t hardReset ) {
 //--------------------------------------------------------
 
 /////////////////////////////////////////////////////////////////////////
+// Initiieren der CV-Werte
+void iniCv( byte mode ) {
+        // Standard-CV's
+        for ( byte i=0; i<(sizeof(FactoryDefaultCVs) / sizeof(CVPair)); i++ ) {
+                Dcc.setCV( FactoryDefaultCVs[i].CV, FactoryDefaultCVs[i].Value);
+        }
+        // Decoderspezifische CV's
+
+        // allgemeine CV's
+        Dcc.setCV( (int) CV_POMLOW, PomAddr%256 );
+        Dcc.setCV( (int) CV_POMHIGH, PomAddr/256 );
+        Dcc.setCV( (int) CV_MODEVAL, iniMode );
+        // Funktionsspezifische CV's
+        for ( byte i = 0; i<WeichenZahl; i++ ) {
+            Dcc.setCV( cvAdr(i,MODE), iniFmode[i] );
+            Dcc.setCV( cvAdr(i,PAR1), iniPar1[i] );
+            Dcc.setCV( cvAdr(i,PAR2), iniPar2[i] );
+            Dcc.setCV( cvAdr(i,PAR3), iniPar3[i] );
+            if ( mode == INIALL ) {
+                // Bei INIALL auch alle Statuswerte initiieren
+                Dcc.setCV( cvAdr(i,STATE), iniPar4[i] );
+            }  else {
+                // bei den Signaltypen immer auch den 5. CV-Wert als Parameter laden
+                switch ( iniTyp[i] ) {
+                  case FSIGNAL2:
+                  case FVORSIG:
+                  case FSIGNAL0:
+                    Dcc.setCV( cvAdr(i,STATE), iniPar4[i] );
+                    break;
+                  default:
+                    ;
+            }
+        }
+    }
+}
+//-------------------------------------------------------
 // Unterprogramme zur Servojustierung mit Drehencoder
 void IniEncoder( void ) {
     #ifdef ENCODER_AKTIV

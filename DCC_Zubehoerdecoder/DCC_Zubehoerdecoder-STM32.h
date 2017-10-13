@@ -1,9 +1,10 @@
-﻿/* Universeller DCC - Zubehördecoder
- * 2 Ausgänge / Zubehöradresse
+/* Universeller DCC - Zubehördecoder
+ * 3 Ausgänge / Zubehöradresse
  * Einstellbare Funktionalität:
  *  - Servo mit Umschaltrelais zur Weichenpolarisierung
  *  - Doppelspulenantriebe
- *  - statische/blinkende Ausgänge  
+ *  - statische/blinkende Ausgänge 
+ *  - Lichtsignale 
  *  - Einstellen der Servoendlagen per Drehencoder. 
  *    Der Drehencoder bezieht sich immer auf die zuletzt gestellte Weichenposition .
  *  - Die Betriebsmodi und Startverhalten wird über die Analogeingänge A4/A5 (parametrierbar) eingestellt. Dazu 
@@ -19,8 +20,10 @@
  *           Ist A4 beim Programmstart auf 0, werden alle CV's auf die Defaults zurückgesetzt
  *                  
  * Eigenschaften:
- * Bis zu 8 (aufeinanderfolgende) Zubehöradressen ansteuerbar. Je nach verfügbaren Digitalausgängen 
- * sind ggfs auch mehr möglich.
+ * Mehrere (aufeinanderfolgende) Zubehöradressen ansteuerbar. Die mögliche Zahl von Adressen hängt 
+ * von den verfügbaren Digitalausgängen ab.
+ * Es können maximal 16 Servos angesteuert werden
+ * 
  * 1. Adresse per Programmierung einstellbar
  * 
  *  Das Verhalten der konfigurierten Funktionen wird über CV-Programmierung festgelegt: 
@@ -48,11 +51,12 @@
  *  CV54    aktuelle Weichenstellung ( nicht manuell verändern! )
  *  
  *  FCOIL Doppelspulenantrieb: ( derzeit nur mit automatischer Abschaltung )
- *  CV50    Bit0 = 1: Spulenausgang automatisch abschalten
- *               = 0: Spulenausgang über DCC-Befehl abschalten
+ *  CV50    Bit0 = 1: Spulenausgang nur automatisch abschalten
+ *               = 0: Spulenausgang auch über DCC-Befehl abschalten
  *          Bit3 = 1: kein Überprüfung auf Weichenposition. Gegebenenfalls wird auch an gleichen
  *                    Anschluss wiederholt ein Puls ausgegeben
- *  CV51    Einschaltdauer der Spule 1 ( in 10ms Einheiten )
+ *  CV51    Einschaltdauer der Spule  ( in 10ms Einheiten ) 
+ *          0= keine automatische Abschaltung, Bit0 im Modebyte muss 0 sein
  *  CV52    minimale Ausschaltdauer der Spule ( in 10ms Einheiten )
  *  CV53    -
  *  CV54    aktuelle Weichenstellung ( nicht manuell verändern! )
@@ -60,7 +64,7 @@
  *  FSTATIC statischer/Blinkender Ausgang 
  *  CV50    Bit0 = 1: Blinken,  0: statisch
  *          Bit1 = 1: Beim Blinken starten erst beide Leds dann Wechselblinken
- *          Bit2: mit weichem Auf/Abblenden 
+ *          Bit2 = 1: mit weichem Auf/Abblenden 
  *  CV51    Einschaltzeit des Blinkens ( 10ms Einheiten )
  *  CV52    Ausschaltzeit des Blinkens ( 10ms Einheiten )
  *  CV53    1. Einschaltzeit beim Start des Blinkens

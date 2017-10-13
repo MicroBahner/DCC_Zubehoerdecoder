@@ -41,4 +41,10 @@
  *                  Fehler bei Vorsignaladressierung beseitigt
  *                  Betriebsmode auch über #define fest einstellbar
  *                  Reset auf Default-Einstellung per Factory-Reset ( DCC CV-Schreiben auf Adr 8 )
+ *   Version 5.0.0  Umstellung der Software auf Klassen für die Funktionsobjekte. Für jede Funktion ( FSTATIC, FSERVO,
+ *                  FCOIL, FSIGNAL ) wird ein Klasse angelegt. Klassenobjekte werden entsprechend der Konfiguration 
+ '                  dynamisch im Setup instanziiert. Die Klassendefinitionen sind in eine eigene Datei 
+ *                  ( Subdirectory 'src' ) ausgelagert.
+ *                  Kleine Korrekturen und Ergänzungen im Manual und den Beschreibungen in Sketch und Konfig-Datei
+ *                  Die Konfig-Datei ist vollständig kompatibel zur Vorversion ohne Klassen.
  *                  
