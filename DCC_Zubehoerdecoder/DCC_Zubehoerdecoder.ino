@@ -65,10 +65,9 @@
 //------------------ Einbinden der Konfigurationsdatei -------------------------
 #ifdef __STM32F1__
 #include "DCC_Zubehoerdecoder-STM32.h"
-//#include "TestKonf/DCC_Zubehoerdecoder-LS-STM32.h"
 #else
 #include "DCC_Zubehoerdecoder.h"
-//#include "TestKonf\DCC_Zubehoerdecoder-LS-Nano.h"
+//#include "examples\DCC_Zubehoerdecoder-Micro.h"
 #endif
 //-------------------------------------------------------------------------------
 //-------------------------------------------
@@ -177,8 +176,8 @@ void setup() {
     
     #ifdef DEBUG
     Serial.begin(115200); //Debugging
-        #ifdef __STM32F1__
-        // auf STM32: warten bis USB aktiv (maximal 6sec)
+        #if defined(__STM32F1__) || defined(__AVR_ATmega32U4__) 
+        // auf STM32/ATmega32u4: warten bis USB aktiv (maximal 6sec)
         {  unsigned long wait=millis()+6000;
            while ( !Serial && (millis()<wait) );
         }
