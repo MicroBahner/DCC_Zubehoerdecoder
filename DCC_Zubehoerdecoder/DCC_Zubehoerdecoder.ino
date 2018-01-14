@@ -23,7 +23,7 @@
 */
 #define DCC_DECODER_VERSION_ID 0x50
 
-#include <NmraDcc.h>
+#include "Interface.h"
 #include "src/FuncClasses.h"
 
 
@@ -83,7 +83,7 @@ const byte WeichenZahl = sizeof(iniTyp);
                           // Die Bedeutung ist weitgehend funktionsspezifisch
 
 #define cvAdr(wIx,par)    CV_FUNCTION+CV_BLKLEN*wIx+par
-#define getCvPar(wIx,par) Dcc.getCV( cvAdr(wIx,par) )
+#define getCvPar(wIx,par) ifc_getCV( cvAdr(wIx,par) )
 
 // CV Default-Werte der Standardadressen:
 struct CVPair {
@@ -92,11 +92,11 @@ struct CVPair {
 };
 CVPair FactoryDefaultCVs [] =
 {
-  {CV_ACCESSORY_DECODER_ADDRESS_LSB, DccAddr%256},
-  {CV_ACCESSORY_DECODER_ADDRESS_MSB, DccAddr/256},
-  {CV_VERSION_ID, DCC_DECODER_VERSION_ID},
-  /*{CV_MANUFACTURER_ID, MAN_ID_DIY},*/
-  {CV_29_CONFIG, CV29_ACCESSORY_DECODER | CV29_OUTPUT_ADDRESS_MODE},
+  {cvAccDecAddressLow, DccAddr%256},
+  {cvAccDecAddressHigh, DccAddr/256},
+  {cvVersionId, DCC_DECODER_VERSION_ID},
+  /*{cvManufactId, manIdValue},*/
+  {cv29Config, config29Value},
 };
 
 // ----------------------- Variable ---------------------------------------------------
@@ -117,17 +117,6 @@ union { // für jede Klasse gibt es ein Array, die aber übereinanderliegen, da 
 
 
 byte progMode;      // Merker ob Decoder im Programmiermodus
-#define NORMALMODE  0
-#define ADDRMODE    1   // Warte auf 1. Telegramm zur Bestimmung der ersten Weichenadresse ( Prog-Led blinkt )
-#define PROGMODE    2   // Adresse empfangen, POM-Programmierung möglich ( Prog-Led aktiv )
-#define POMMODE     3   // Allways-Pom Mode ( keine Prog-Led )
-#define INIMODE     4   // Wie Normalmode, aber die StandardCV-Werte und CV47-49 werden bei jedem
-                        // Start aus den defaults geladen
-#define INIALL      5   // Alle CV's müssen initiiert werden
-
-#define SET_PROGLED digitalWrite( modePin, HIGH )
-#define CLR_PROGLED digitalWrite( modePin, LOW )
-
 // -------- Encoderauswertung ----- Justierung der Servoendlage -----------------------------
 # ifdef ENCODER_AKTIV
 // Die zuletzt empfangene Weichenposition kann per Encoder justiert werden. 
@@ -140,7 +129,6 @@ bool localCV;       // lokale Änderung eines CV (Callback NotifyCV wird dann ni
 //---- Library-Objekte ----
 EggTimer AckImpuls;
 EggTimer ledTimer;  // zum Blinken der Programmierled
-NmraDcc Dcc;
 
 
 //^^^^^^^^^^^^^^^^^^^^^^^^ Ende der Definitionen ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -204,21 +192,11 @@ void setup() {
 
     _pinMode( ackPin, OUTPUT );
     //-----------------------------------
-    // nmra-Dcc Lib initiieren
-    Dcc.pin( digitalPinToInterrupt(dccPin), dccPin, 1); 
-    if ( progMode == NORMALMODE || progMode == INIMODE ) {
-        // keine POM-Programmierung
-        Dcc.init( MAN_ID_DIY, DCC_DECODER_VERSION_ID, FLAGS_DCC_ACCESSORY_DECODER, (uint8_t)((uint16_t) 0) );
-        CLR_PROGLED;
-    } else {
-        // POM Programmierung aktiv
-        Dcc.init( MAN_ID_DIY, DCC_DECODER_VERSION_ID, FLAGS_DCC_ACCESSORY_DECODER, (uint8_t)(CV_POMLOW) );
-        SET_PROGLED;
-    }
-
+    // Interface initiieren
+    ifc_init( DCC_DECODER_VERSION_ID, progMode, CV_POMLOW );
     //-------------------------------------
     // CV's initiieren
-    if ( (Dcc.getCV( CV_MODEVAL )&0xf0) != ( iniMode&0xf0 ) || analogRead(resModeP) < 100 ) {
+    if ( (ifc_getCV( CV_MODEVAL )&0xf0) != ( iniMode&0xf0 ) || analogRead(resModeP) < 100 ) {
         // In modeVal steht kein sinnvoller Wert ( oder resModeP ist auf 0 ),
         // alles initiieren mit den Defaultwerten
         // Wird über DCC ein 'factory-Reset' empfangen wird modeVal zurückgesetzt, was beim nächsten
@@ -230,7 +208,7 @@ void setup() {
     }
     
     // Betriebsart auslesen
-    opMode = Dcc.getCV( CV_MODEVAL) &0x0f;
+    opMode = ifc_getCV( CV_MODEVAL) &0x0f;
     rocoOffs = ( opMode & ROCOADDR ) ? 4 : 0;
     
 
@@ -326,10 +304,10 @@ void loop() {
     #endif
     
     getEncoder();   // Drehencoder auswerten und Servolage gegebenenfalls anpassen
-    Dcc.process();  // Hier werden die empfangenen Telegramme analysiert und der Sollwert gesetzt
+    ifc_process();  // Hier werden die empfangenen Telegramme analysiert und der Sollwert gesetzt
     #ifdef DEBUG
     // Merker CV für CV-Ausgabe rücksetzen (MerkerCV ist 1.CV hinter dem CV-Block für die ausgangskonfiguration)
-    Dcc.setCV( cvAdr(WeichenZahl,MODE) , 0xff );
+    ifc_setCV( cvAdr(WeichenZahl,MODE) , 0xff );
     #endif
     
     // Ausgänge ansteuern
@@ -400,8 +378,8 @@ void setPosition( byte wIx, byte sollWert, byte state = 0 ) {
 //////////////////////////////////////////////////////////////
 // Unterprogramme, die von der DCC Library aufgerufen werden:
 //------------------------------------------------
-// Die folgende Funktion wird von Dcc.process() aufgerufen, wenn ein Weichentelegramm empfangen wurde
-void notifyDccAccState( uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, uint8_t State ){
+// Die folgende Funktion wird von ifc_process() aufgerufen, wenn ein Weichentelegramm empfangen wurde
+void ifc_notifyDccAccState( uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, uint8_t State ){
     // Weichenadresse berechnen
     byte i,dccSoll,dccState;
     word wAddr = Addr+rocoOffs; // Roco zählt ab 0, alle anderen lassen die ersten 4 Weichenadressen frei
@@ -410,12 +388,12 @@ void notifyDccAccState( uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, u
         // Adresse berechnen und speichern
         if (isOutputAddr ) {
             weichenAddr = wAddr;
-            Dcc.setCV( CV_ACCESSORY_DECODER_ADDRESS_LSB, wAddr%256 );
-            Dcc.setCV( CV_ACCESSORY_DECODER_ADDRESS_MSB, wAddr/256 );
+            ifc_setCV( cvAccDecAddressLow, wAddr%256 );
+            ifc_setCV( cvAccDecAddressHigh, wAddr/256 );
         } else {
-            Dcc.setCV( CV_ACCESSORY_DECODER_ADDRESS_LSB, BoardAddr%64 );
-            Dcc.setCV( CV_ACCESSORY_DECODER_ADDRESS_MSB, BoardAddr/64 );
-            weichenAddr = (Dcc.getAddr( )-1)*4 +1 + rocoOffs;
+            ifc_setCV( cvAccDecAddressLow, BoardAddr%64 );
+            ifc_setCV( cvAccDecAddressHigh, BoardAddr/64 );
+            weichenAddr = (ifc_getAddr( )-1)*4 +1 + rocoOffs;
         }
         progMode = PROGMODE;
         SET_PROGLED;
@@ -475,7 +453,7 @@ void notifyDccAccState( uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, u
 }
 //---------------------------------------------------
 // wird aufgerufen, wenn die Zentrale ein CV ausliest. Es wird ein 60mA Stromimpuls erzeugt
-void notifyCVAck ( void ) {
+void ifc_notifyCVAck ( void ) {
     // Ack-Impuls starten
     //DB_PRINT( "Ack-Pulse" );
     AckImpuls.setTime( 6 );
@@ -483,7 +461,7 @@ void notifyCVAck ( void ) {
 }
 //-----------------------------------------------------
 // Wird aufgerufen, nachdem ein CV-Wert verändert wurde
-void notifyCVChange( uint16_t CvAddr, uint8_t Value ) {
+void ifc_notifyCVChange( uint16_t CvAddr, uint8_t Value ) {
     if ( !localCV ) {
         //CV wurde über nmraDCC geändert. Ist dies eine aktive Servoposition, dann die Servoposition
         // entsprechend anpassen
@@ -527,17 +505,17 @@ void notifyCVChange( uint16_t CvAddr, uint8_t Value ) {
     }
 }    
 //-----------------------------------------------------
-void notifyCVResetFactoryDefault(void) {
+void ifc_notifyCVResetFactoryDefault(void) {
     // Auf Standardwerte zurücksetzen und Neustart
-    Dcc.setCV( CV_MODEVAL, 255 );
+    ifc_setCV( CV_MODEVAL, 255 );
     delay( 20 );
-    DB_PRINT( "Reset: modeVal=0x%2x", Dcc.getCV( CV_MODEVAL ) );
+    DB_PRINT( "Reset: modeVal=0x%2x", ifc_getCV( CV_MODEVAL ) );
     delay(500);
     softReset();
 }
 //------------------------------------------------------
 #ifdef DEBUG
-void notifyDccReset( uint8_t hardReset ) {
+void ifc_notifyDccReset( uint8_t hardReset ) {
     //if ( hardReset > 0 )//DB_PRINT("Reset empfangen, Value: %d", hardReset);
     // wird bei CV-Auslesen gesendet
 }
@@ -549,30 +527,30 @@ void notifyDccReset( uint8_t hardReset ) {
 void iniCv( byte mode ) {
         // Standard-CV's
         for ( byte i=0; i<(sizeof(FactoryDefaultCVs) / sizeof(CVPair)); i++ ) {
-                Dcc.setCV( FactoryDefaultCVs[i].CV, FactoryDefaultCVs[i].Value);
+                ifc_setCV( FactoryDefaultCVs[i].CV, FactoryDefaultCVs[i].Value);
         }
         // Decoderspezifische CV's
 
         // allgemeine CV's
-        Dcc.setCV( (int) CV_POMLOW, PomAddr%256 );
-        Dcc.setCV( (int) CV_POMHIGH, PomAddr/256 );
-        Dcc.setCV( (int) CV_MODEVAL, iniMode );
+        ifc_setCV( (int) CV_POMLOW, PomAddr%256 );
+        ifc_setCV( (int) CV_POMHIGH, PomAddr/256 );
+        ifc_setCV( (int) CV_MODEVAL, iniMode );
         // Funktionsspezifische CV's
         for ( byte i = 0; i<WeichenZahl; i++ ) {
-            Dcc.setCV( cvAdr(i,MODE), iniFmode[i] );
-            Dcc.setCV( cvAdr(i,PAR1), iniPar1[i] );
-            Dcc.setCV( cvAdr(i,PAR2), iniPar2[i] );
-            Dcc.setCV( cvAdr(i,PAR3), iniPar3[i] );
+            ifc_setCV( cvAdr(i,MODE), iniFmode[i] );
+            ifc_setCV( cvAdr(i,PAR1), iniPar1[i] );
+            ifc_setCV( cvAdr(i,PAR2), iniPar2[i] );
+            ifc_setCV( cvAdr(i,PAR3), iniPar3[i] );
             if ( mode == INIALL ) {
                 // Bei INIALL auch alle Statuswerte initiieren
-                Dcc.setCV( cvAdr(i,STATE), iniPar4[i] );
+                ifc_setCV( cvAdr(i,STATE), iniPar4[i] );
             }  else {
                 // bei den Signaltypen immer auch den 5. CV-Wert als Parameter laden
                 switch ( iniTyp[i] ) {
                   case FSIGNAL2:
                   case FVORSIG:
                   case FSIGNAL0:
-                    Dcc.setCV( cvAdr(i,STATE), iniPar4[i] );
+                    ifc_setCV( cvAdr(i,STATE), iniPar4[i] );
                     break;
                   default:
                     ;
@@ -655,9 +633,9 @@ void getEncoder(  ) {
             if ( adjPulse == NO_ADJ ) {
                 // ist erster Justierimpuls, aktuelle Position aus CV auslesen
                 if ( Fptr.servo[adjWix]->getPos() == GERADE ) {
-                    adjPulse = Dcc.getCV( cvAdr(adjWix,PAR1) );
+                    adjPulse = ifc_getCV( cvAdr(adjWix,PAR1) );
                 } else {
-                    adjPulse = Dcc.getCV( cvAdr(adjWix,PAR2) );
+                    adjPulse = ifc_getCV( cvAdr(adjWix,PAR2) );
                 }
             }
             if ( (jogCount>0 && adjPulse<180) || (jogCount<0 && adjPulse>0) )
@@ -703,12 +681,12 @@ void ChkAdjEncode( byte WIndex, byte dccSoll ){
 // Allgemeine Unterprogramme 
 void setWeichenAddr(void) {
     // Adressmodus aus CV29 auslesen
-    isOutputAddr = Dcc.getCV( CV_29_CONFIG ) & CV29_OUTPUT_ADDRESS_MODE;
+    isOutputAddr = ifc_getCV( cv29Config ) & config29AddrMode;
     // Adresse der 1. Weiche aus Decoderaddresse berechnen
     if ( isOutputAddr ) 
-        weichenAddr = Dcc.getAddr( );
+        weichenAddr = ifc_getAddr( );
     else
-        weichenAddr = (Dcc.getAddr( )-1)*4 +1 + rocoOffs ;
+        weichenAddr = (ifc_getAddr( )-1)*4 +1 + rocoOffs ;
 }
 //--------------------------------------------------------
 void softReset(void){
@@ -752,7 +730,7 @@ void dccSim ( void ) {
                 soll = atoi( strtok( NULL, " ," ) );
                 state = atoi( strtok(NULL, " ,") );
                 DB_PRINT("Sim: AC,%d,%d,%d",adr,soll,state);
-                notifyDccAccState( adr, adr/4, soll, state );           }
+                ifc_notifyDccAccState( adr, adr/4, soll, state );           }
         // Empfangspuffer rücksetzen
         rcvIx = 0;
         }
@@ -782,14 +760,14 @@ void DBprintCV(void) {
     // für Debug-Zwecke den gesamten genutzten CV-Speicher ausgeben
     // Standard-Adressen
    DB_PRINT( "--------- Debug-Ausgabe CV-Werte ---------", 0 );
-   DB_PRINT( "Version: %d, ManufactId: %d", Dcc.getCV( CV_VERSION_ID ), Dcc.getCV( CV_MANUFACTURER_ID ) );
-   DB_PRINT( "Konfig   (CV29)  : 0x%X", Dcc.getCV( CV_29_CONFIG ) );
-   DB_PRINT( "Adresse: (CV1/9) : %d", Dcc.getCV( CV_ACCESSORY_DECODER_ADDRESS_LSB )+Dcc.getCV( CV_ACCESSORY_DECODER_ADDRESS_MSB )*256);
+   DB_PRINT( "Version: %d, ManufactId: %d", ifc_getCV( cvVersionId ), ifc_getCV( cvManufactId ) );
+   DB_PRINT( "Konfig   (CV29)  : 0x%X", ifc_getCV( cv29Config ) );
+   DB_PRINT( "Adresse: (CV1/9) : %d", ifc_getCV( cvAccDecAddressLow )+ifc_getCV( cvAccDecAddressHigh )*256);
    DB_PRINT( "1.Weichenaddresse: %d", weichenAddr );
     
     // Decoder-Konfiguration global
-   DB_PRINT( "Initierungswert: 0x%x (%d) ", Dcc.getCV( CV_MODEVAL ), Dcc.getCV( CV_MODEVAL ) );
-   DB_PRINT( "PoM-Adresse    : %d"   , Dcc.getCV( CV_POMLOW) + 256* Dcc.getCV( CV_POMHIGH ) );
+   DB_PRINT( "Initierungswert: 0x%x (%d) ", ifc_getCV( CV_MODEVAL ), ifc_getCV( CV_MODEVAL ) );
+   DB_PRINT( "PoM-Adresse    : %d"   , ifc_getCV( CV_POMLOW) + 256* ifc_getCV( CV_POMHIGH ) );
     
     // Output-Konfiguration
    DB_PRINT( "Wadr | Typ | CV's  | Mode | Par1 | Par2 | Par3 | Status |",0 );
