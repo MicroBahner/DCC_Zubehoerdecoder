@@ -115,16 +115,15 @@
 //----------------------------------------------------------------
 // Hardwareabhängige Konstante ( nicht per CV änderbar)
 //----------------------------------------------------------------
-
 // Eingänge analog: ( Bei Nano und Mini - Versionen kann hier auch A7 und A6 verwendet werden, um mehr
 //                    digital nutzbare Ports freizubekommen.
 //                    beim UNO sind A7+A6 nicht vorhanden! )
 // #define FIXMODE NORMALMODE    // Ist dieses define aktiv, wird der Betriebsmode fest gesetzt, betrModeP wird dann
                         // nicht gelesen und ignoriert. Mögliche Werte:
                         // NORMALMODE, POMMODE, INIMODE, ADDRMODE
-const byte betrModeP    =   A7;     // Analogeingang zur Bestimmung des Betriebsmodus. Wird nur beim
+const byte betrModeP    =   A5;     // Analogeingang zur Bestimmung des Betriebsmodus. Wird nur beim
                                     // Programmstart eingelesen!
-const byte resModeP     =   A6;     // Rücksetzen CV-Werte + Mittelstellung Servos
+const byte resModeP     =   A4;     // Rücksetzen CV-Werte + Mittelstellung Servos
 
 // Eingänge digital (die Ports A0-A5 lassen sich auch digital verwenden): ---------
 
@@ -132,8 +131,8 @@ const byte resModeP     =   A6;     // Rücksetzen CV-Werte + Mittelstellung Ser
 #define ENCODER_AKTIV       // Wird diese Zeile auskommentiert, wird der Encoder nicht verwendet. 
                             // Die Encoder-Ports werden dann ignoriert, und können anderweitig 
                             // verwendet werden.
-const byte encode1P     =   A5;     // Eingang Drehencoder zur Justierung.
-const byte encode2P     =   A4;
+const byte encode1P     =   A3;     // Eingang Drehencoder zur Justierung.
+const byte encode2P     =   A2;
 // ............................................
 //-------------------------------------------------------------------------------------------------------
 // Betriebswerte ( per CV änderbar ) Diese Daten werden nur im Initiierungsmodus in die CV's geschrieben.
@@ -146,7 +145,6 @@ const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV
                                     // mit LocoNet-Schnittstelle ist dies die LocoNetId
 
 
-
 // Ausgänge:  mit NC gekennzeichnete Ausgänge werden keinem Port zugeordnet. Damit können Ports gespart werden,
 //            z.B. wenn bei einem Servo kein Polarisierungsrelais benötigt wird
 const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmierung) (Led)
@@ -155,8 +153,8 @@ const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmi
 #define SERVOMOD    SAUTOOFF|NOPOSCHK|SDIRECT
 #define STATICMOD   CAUTOOFF|BLKSOFT|BLKSTRT    // Wechselblinker mit beiden Leds an beim Start            
 const byte iniTyp[]     =   {    FSTATIC,  FSERVO,   FSIGNAL2,   FSIGNAL0,   FVORSIG,   FCOIL };
-const byte out1Pins[]   =   {       A2,         3,   /*rt*/ 9,   /*rt*/10,  /*ge*/A0,        5 };  // output-pins der Funktionen
-const byte out2Pins[]   =   {       A3,        12,   /*gn*/11,   /*ws*/ 8,  /*gn*/A1,        6 };
+const byte out1Pins[]   =   {       A0,         3,   /*rt*/ 9,   /*rt*/10,  /*ge*/12,       14 };  // output-pins der Funktionen
+const byte out2Pins[]   =   {       A1,         5,   /*gn*/11,   /*ws*/ 8,  /*gn*/13,       15 };
 const byte out3Pins[]   =   {       NC,        NC,   /*ge*/ 7,         NC,        NC,       NC };
  
 const byte iniFmode[]     = {STATICMOD,  SERVOMOD,          0,          0,         0,  COILMOD };

@@ -1,6 +1,6 @@
-/* Interface des Zubehördecoders
-** Alle Interface-abhängigen ( Loconet oder DCC ) Programmkomponenten werden hier
-** zusammengefasst, und neutrale Aufrufe für die Funktionalitäten im Sketch zur Verfügung gestellt.
+/* Interface des Zubehï¿½rdecoders
+** Alle Interface-abhï¿½ngigen ( Loconet oder DCC ) Programmkomponenten werden hier
+** zusammengefasst, und neutrale Aufrufe fï¿½r die Funktionalitï¿½ten im Sketch zur Verfï¿½gung gestellt.
 */
 
 #ifndef INTERFACE_H
@@ -9,27 +9,32 @@
 #include <inttypes.h>
 #include <Arduino.h>
 
-//#define LOCONET // Wird dies auskommentiert, wird ein DCC-Interface eingebunden
+#define LOCONET // Wird dies auskommentiert, wird ein DCC-Interface eingebunden
 
+//######################################################################################################
+
+//---------- defines fÃ¼r LocoNet-Interface -----------------------------------------------------------
 #ifdef LOCONET
-const uint8_t txPin        =   2;
-// Das Empfangssignal MUSS auf dem pin 4 ( bei Micro/Leonardo ) oder pin 48 ( bei Mega ) liegen.
-
+    const uint8_t txPin        =   2;
+    // Das Empfangssignal MUSS auf dem pin 4 ( bei Micro/Leonardo ) oder pin 48 ( bei Mega ) liegen.
+    
+    
+//----------- defines fÃ¼r DCC-Interface -----------------------------------------------------------
 #else
-const uint8_t dccPin       =   2;
-const uint8_t ackPin       =   4;
+    const uint8_t dccPin       =   2;
+    const uint8_t ackPin       =   4;
 #endif
 
-
-// Modes für progMode
+//----------- allgemeine defines fÃ¼r beide Interfaces ----------------------------------------------
+// Modes fï¿½r progMode
 extern byte progMode;
 #define NORMALMODE  0
 #define ADDRMODE    1   // Warte auf 1. Telegramm zur Bestimmung der ersten Weichenadresse ( Prog-Led blinkt )
-#define PROGMODE    2   // Adresse empfangen, POM-Programmierung möglich ( Prog-Led aktiv )
+#define PROGMODE    2   // Adresse empfangen, POM-Programmierung mï¿½glich ( Prog-Led aktiv )
 #define POMMODE     3   // Allways-Pom Mode ( keine Prog-Led )
 #define INIMODE     4   // Wie Normalmode, aber die StandardCV-Werte und CV47-49 werden bei jedem
                         // Start aus den defaults geladen
-#define INIALL      5   // Alle CV's müssen initiiert werden
+#define INIALL      5   // Alle CV's mï¿½ssen initiiert werden
 
 extern const byte modePin;
 #define SET_PROGLED digitalWrite( modePin, HIGH )

@@ -21,7 +21,7 @@
  *  So sind z.B. bei Servoausgängen die Endlagen per CV-Wert einstellbar, bei Lichtsignalen ist die 
  *  Zuordnung der Ausgangszustände zum Signalzustand frei konfigurierbar.
 */
-#define DCC_DECODER_VERSION_ID 0x50
+#define DCC_DECODER_VERSION_ID 0x51
 
 #include "Interface.h"
 #include "src/FuncClasses.h"
@@ -65,9 +65,10 @@
 //------------------ Einbinden der Konfigurationsdatei -------------------------
 #ifdef __STM32F1__
 #include "DCC_Zubehoerdecoder-STM32.h"
+#elif defined(__AVR_ATmega32U4__)
+#include "DCC_Zubehoerdecoder-Micro.h"
 #else
 #include "DCC_Zubehoerdecoder.h"
-//#include "examples\DCC_Zubehoerdecoder-Micro.h"
 #endif
 //-------------------------------------------------------------------------------
 //-------------------------------------------
@@ -190,10 +191,6 @@ void setup() {
       }
     #endif
 
-    _pinMode( ackPin, OUTPUT );
-    //-----------------------------------
-    // Interface initiieren
-    ifc_init( DCC_DECODER_VERSION_ID, progMode, CV_POMLOW );
     //-------------------------------------
     // CV's initiieren
     if ( (ifc_getCV( CV_MODEVAL )&0xf0) != ( iniMode&0xf0 ) || analogRead(resModeP) < 100 ) {
@@ -206,6 +203,9 @@ void setup() {
     } else if ( progMode == INIMODE ) {
         iniCv( INIMODE );
     }
+    //-----------------------------------
+    // Interface initiieren
+    ifc_init( DCC_DECODER_VERSION_ID, progMode, CV_POMLOW );
     
     // Betriebsart auslesen
     opMode = ifc_getCV( CV_MODEVAL) &0x0f;
@@ -335,10 +335,11 @@ void loop() {
     } // Ende Schleife über die Funktionen (Weichen)---------------
 
 
-
+    #ifndef LOCONET
     // Ackimpuls abschalten--------------------------
     if ( !AckImpuls.running() ) _digitalWrite( ackPin, LOW );
-
+    #endif
+    
     // Programmierled blinkt im Programmiermode bis zum Empfang einer Adresse
     if ( ! ledTimer.running() && progMode == ADDRMODE) {
         ledTimer.setTime( 500 );
@@ -452,6 +453,7 @@ void ifc_notifyDccAccState( uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAdd
     }
 }
 //---------------------------------------------------
+#ifndef LOCONET
 // wird aufgerufen, wenn die Zentrale ein CV ausliest. Es wird ein 60mA Stromimpuls erzeugt
 void ifc_notifyCVAck ( void ) {
     // Ack-Impuls starten
@@ -459,6 +461,7 @@ void ifc_notifyCVAck ( void ) {
     AckImpuls.setTime( 6 );
     _digitalWrite( ackPin, HIGH );
 }
+#endif
 //-----------------------------------------------------
 // Wird aufgerufen, nachdem ein CV-Wert verändert wurde
 void ifc_notifyCVChange( uint16_t CvAddr, uint8_t Value ) {
@@ -514,12 +517,12 @@ void ifc_notifyCVResetFactoryDefault(void) {
     softReset();
 }
 //------------------------------------------------------
-#ifdef DEBUG
 void ifc_notifyDccReset( uint8_t hardReset ) {
+#ifdef DEBUG
     //if ( hardReset > 0 )//DB_PRINT("Reset empfangen, Value: %d", hardReset);
     // wird bei CV-Auslesen gesendet
-}
 #endif
+}
 //--------------------------------------------------------
 
 /////////////////////////////////////////////////////////////////////////
