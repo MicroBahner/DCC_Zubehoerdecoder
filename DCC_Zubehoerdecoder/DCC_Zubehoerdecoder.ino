@@ -32,7 +32,7 @@
 
 
 #ifdef __STM32F1__
-    #define digitalPinToInterrupt(x) x
+    // ist jetzt im core definiert #define digitalPinToInterrupt(x) x
     #define MODISTEP    4096/6      // Grenzwerte am Analogeingang der Betriebsmodi
 #else
     #define MODISTEP    1024/6

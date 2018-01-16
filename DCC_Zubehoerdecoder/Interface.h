@@ -10,7 +10,7 @@
 #include <Arduino.h>
 #include "src/DebugDefs.h"
 
-#define LOCONET // Wird dies auskommentiert, wird ein DCC-Interface eingebunden
+//#define LOCONET // Wird dies auskommentiert, wird ein DCC-Interface eingebunden
 
 //######################################################################################################
 
@@ -22,8 +22,16 @@
     
 //----------- defines für DCC-Interface -----------------------------------------------------------
 #else
-    const uint8_t dccPin       =   2;
-    const uint8_t ackPin       =   4;
+    #if defined ( ARDUINO_MAPLE_MINI )
+        const byte dccPin       =   3;
+        const byte ackPin       =   18;
+    #elif defined (ARDUINO_GENERIC_STM32F103C)
+        const byte dccPin       =   PB0;
+        const byte ackPin       =   PB4;
+    #else
+        const uint8_t dccPin       =   2;
+        const uint8_t ackPin       =   4;
+    #endif
 #endif
 
 //----------- allgemeine defines für beide Interfaces ----------------------------------------------
@@ -63,6 +71,15 @@ void ifc_setCV( uint16_t address, uint8_t value );
 uint16_t ifc_getAddr();
 void ifc_process();
 
+//======================  allgemeine Hilfsfunktionen ==================================
+// Ausblenden der nicht belegten (NC) Ports
+#ifdef __STM32F1__
+void _pinMode( byte port, WiringPinMode mode );
+#else
+void _pinMode( byte port, byte mode );
+#endif
+
+void _digitalWrite( byte port, byte state ) ;
 
 
 

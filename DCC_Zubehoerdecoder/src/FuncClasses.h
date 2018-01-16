@@ -33,6 +33,7 @@ const byte MODE=0, PAR1=1, PAR2=2, PAR3=3, STATE=4 ;
 #endif
 //======================  allgemeine Hilfsfunktionen ==================================
 // Ausblenden der nicht belegten (NC) Ports
+/* verschoben nach interface.h
 #ifdef __STM32F1__
 void _pinMode( byte port, WiringPinMode mode );
 #else
@@ -40,7 +41,7 @@ void _pinMode( byte port, byte mode );
 #endif
 
 void _digitalWrite( byte port, byte state ) ;
-
+*/
 //========================= Funktionsklassen  =========================================
 
 //---------------------- FCOIL -------------------------------------------
