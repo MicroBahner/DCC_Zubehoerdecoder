@@ -164,6 +164,7 @@ void setup() {
     _pinMode( modePin, OUTPUT );
     
     #ifdef DEBUG
+    #warning "Debugging ist aktiv"
     Serial.begin(115200); //Debugging
         #if defined(__STM32F1__) || defined(__AVR_ATmega32U4__) 
         // auf STM32/ATmega32u4: warten bis USB aktiv (maximal 6sec)
@@ -529,6 +530,7 @@ void ifc_notifyDccReset( uint8_t hardReset ) {
 // Initiieren der CV-Werte
 void iniCv( byte mode ) {
         // Standard-CV's
+        DB_PRINT("iniCV: %d", mode );
         for ( byte i=0; i<(sizeof(FactoryDefaultCVs) / sizeof(CVPair)); i++ ) {
                 ifc_setCV( FactoryDefaultCVs[i].CV, FactoryDefaultCVs[i].Value);
         }
@@ -540,6 +542,7 @@ void iniCv( byte mode ) {
         ifc_setCV( (int) CV_MODEVAL, iniMode );
         // Funktionsspezifische CV's
         for ( byte i = 0; i<WeichenZahl; i++ ) {
+            DB_PRINT("fktSpezCv: %d,Typ=%d", i, iniTyp[i] );
             ifc_setCV( cvAdr(i,MODE), iniFmode[i] );
             ifc_setCV( cvAdr(i,PAR1), iniPar1[i] );
             ifc_setCV( cvAdr(i,PAR2), iniPar2[i] );

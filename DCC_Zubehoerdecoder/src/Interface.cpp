@@ -3,6 +3,7 @@
 ** zusammengefasst, und neutrale Aufrufe für die Funktionalitäten im Sketch zur Verfügung gestellt.
 */
 #include "../Interface.h"
+#include "DebugDefs.h"
 #ifdef LOCONET
 // --------------- Loconet-Interface -------------------------------------------------
 #if defined (__AVR_ATmega1280__) || defined(__AVR_ATmega2560__) || defined(__AVR_ATmega32U4__)
@@ -23,26 +24,30 @@ const uint8_t manIdValue            = 13;
 
 LocoNetSystemVariableClass sv;
 lnMsg       *LnPacket;
-SV_STATUS   svStatus = SV_OK;
 boolean     deferredProcessingNeeded = false;
 
 
 void ifc_init( uint8_t version, uint8_t progMode, uint8_t cvPomLow ) {
+    DB_PRINT("Loconet-Init %d",0);
     LocoNet.init(txPin); 
-    sv.init(13, 4, 1, version); // ManufacturerId, DeviceId, ProductId, SwVersion
+    DB_PRINT("Loconet-Init %d",1);
+    sv.init(13, 4, 1, 1); // ManufacturerId, DeviceId, ProductId, SwVersion
     sv.writeSVStorage(SV_ADDR_NODE_ID_H, sv.readSVStorage( cvPomLow+1 ) );
     sv.writeSVStorage(SV_ADDR_NODE_ID_L, sv.readSVStorage( cvPomLow ));
 
     sv.writeSVStorage(SV_ADDR_SERIAL_NUMBER_H, 0x56);
     sv.writeSVStorage(SV_ADDR_SERIAL_NUMBER_L, 0x78);
-
+    DB_PRINT( "Init LocoNet: Node-Id = %d", sv.readSVStorage(SV_ADDR_NODE_ID_H)*256+sv.readSVStorage(SV_ADDR_NODE_ID_L) );
 }
 
 void ifc_process() {
     SV_STATUS svStatus;
+    static boolean  deferredProcessingNeeded = false;
     LnPacket = LocoNet.receive() ;
+    //DB_PRINT("LN-Package = %04x", LnPacket);
     if( LnPacket ) {
         #ifdef DEBUG 
+        #warning " LocoNet debugging aktiv"
         // First print out the packet in HEX
         Serial.print("RX: ");
         uint8_t msgLen = getLnMsgSize(LnPacket); 
@@ -55,7 +60,6 @@ void ifc_process() {
           Serial.print(val, HEX);
           Serial.print(' ');
         }
-#warning " wird dies übersetzt?"
         Serial.println();
         #endif  
         
