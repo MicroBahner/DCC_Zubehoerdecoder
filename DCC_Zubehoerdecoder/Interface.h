@@ -10,7 +10,7 @@
 #include <Arduino.h>
 #include "src/DebugDefs.h"
 
-//#define LOCONET // Wird dies auskommentiert, wird ein DCC-Interface eingebunden
+#define LOCONET // Wird dies auskommentiert, wird ein DCC-Interface eingebunden
 
 //######################################################################################################
 

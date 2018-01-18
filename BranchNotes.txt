@@ -1,10 +1,17 @@
-ClassVersion:
+LocoNet2:
+Erweiterung des Zubehördecoders um eine LocoNet Schnittstelle. 
+Schnittstellenspezifische Declarationen werden in der neuen Datei Interface.h zusammengefasst. In dieser Datei wird per #define auch festgelegt, ob die DCC oder die LocoNet-Schnittstelle eingebunden wird.
+
+LocoNet-ID: Die LocoNetId entspricht derzeit der Pom-Adresse. Bei jedem Neustart wird die Pom-Adresse als LocoNet Id übernommen. Änderungen der Pom-Adresse wirken sich daher erst beim nächsten Neustart aus. 
+Die Konfigurationsvariablen werden per LocoNet-SV im Format 2 verwaltet. Da die MRRWA-DCC-Lib die CV's anders abspeichert, als die LocoNet Library, sind diese nicht kompatibel. Wird auf einem Arduino von DCC auf LocoNet umgeschaltet (oder umgekehrt) werden die CV's/SV's daher ungültig und müssen auf die defaults aus dem Konfigurations-File zurückgesetzt werden.
+
+Welche Konfig-Datei eingebunden wird, hängt vom Prozessor ab:
+STM32 Prozessoren (nur DCC) : DCC_Zubehoerdecoder-STM32.h
+ATmega32U4( Micro/Leonardo ): DCC_Zubehoerdecoder-Micro.h
+Andere (AVR) (nur DCC)      : DCC_Zubehoerdecoder.h
+
+ClassVersion (mit Version 5 in den Master-Branch übernommen):
 in diesem Branch sollen alle Funktionen als Klassen realisiert werden:
 FServo, FCoil, FStatic, FSignal
-Klassenobjekte werden erst im Setup entsprechend der Konfiguration erstellt.
-Damit werden auch die notwendigen Objekte der MobaTools erst im Konstruktor der
-Funktionsklassen instanziiert. Die Anzahl der Objekte entspricht dann genau der
-Anzahl der aufgrund der Konfiguration notwendigen Instanzen.
-Die Funktionsklassen erhalten bei der Intanziierung im Konstruktor die notwendigen
-Informationen ( CV-Adresse, IO Pins ) und greifen nicht selbst auf die Konfigurationsdaten
-im .h-File zu.
+Klassenobjekte werden erst im Setup entsprechend der Konfiguration erstellt. Damit werden auch die notwendigen Objekte der MobaTools erst im Konstruktor der Funktionsklassen instanziiert. Die Anzahl der Objekte entspricht dann genau der Anzahl der aufgrund der Konfiguration notwendigen Instanzen.
+Die Funktionsklassen erhalten bei der Intanziierung im Konstruktor die notwendigen Informationen ( CV-Adresse, IO Pins ) und greifen nicht selbst auf die Konfigurationsdaten im .h-File zu.

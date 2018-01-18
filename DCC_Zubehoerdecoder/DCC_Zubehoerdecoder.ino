@@ -21,18 +21,17 @@
  *  So sind z.B. bei Servoausgängen die Endlagen per CV-Wert einstellbar, bei Lichtsignalen ist die 
  *  Zuordnung der Ausgangszustände zum Signalzustand frei konfigurierbar.
 */
-#define DCC_DECODER_VERSION_ID 0x51
+#define DCC_DECODER_VERSION_ID 0x52
 
 #include "Interface.h"
 #include "src/FuncClasses.h"
 
 
 //------------------------------------------ //
-// die NmraDcc - Library gibt es unter https://github.com/mrrwa/NmraDcc/archive/master.zip
 
 
 #ifdef __STM32F1__
-    // ist jetzt im core definiert #define digitalPinToInterrupt(x) x
+    // ist jetzt im core definiert: #define digitalPinToInterrupt(x) x
     #define MODISTEP    4096/6      // Grenzwerte am Analogeingang der Betriebsmodi
 #else
     #define MODISTEP    1024/6
@@ -308,7 +307,7 @@ void loop() {
     ifc_process();  // Hier werden die empfangenen Telegramme analysiert und der Sollwert gesetzt
     #ifdef DEBUG
     // Merker CV für CV-Ausgabe rücksetzen (MerkerCV ist 1.CV hinter dem CV-Block für die ausgangskonfiguration)
-    ifc_setCV( cvAdr(WeichenZahl,MODE) , 0xff );
+    if( ifc_getCV( cvAdr(WeichenZahl,MODE)) != 0xff ) ifc_setCV( cvAdr(WeichenZahl,MODE) , 0xff );
     #endif
     
     // Ausgänge ansteuern
@@ -529,6 +528,7 @@ void ifc_notifyDccReset( uint8_t hardReset ) {
 /////////////////////////////////////////////////////////////////////////
 // Initiieren der CV-Werte
 void iniCv( byte mode ) {
+        localCV= true; // keine auswertung in ifc_notifyCVchange
         // Standard-CV's
         DB_PRINT("iniCV: %d", mode );
         for ( byte i=0; i<(sizeof(FactoryDefaultCVs) / sizeof(CVPair)); i++ ) {
@@ -563,6 +563,7 @@ void iniCv( byte mode ) {
             }
         }
     }
+    localCV=false;
 }
 //-------------------------------------------------------
 // Unterprogramme zur Servojustierung mit Drehencoder

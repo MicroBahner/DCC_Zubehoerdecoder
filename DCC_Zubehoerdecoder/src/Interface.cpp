@@ -79,6 +79,7 @@ uint8_t ifc_getCV( uint16_t address ) {
 }
 
 void ifc_setCV( uint16_t address, uint8_t value ) {
+    DB_PRINT( "setCV: Ad=%3d, Val=%3d", address, value );
     sv.writeSVStorage( address, value );
 }
 
@@ -92,6 +93,7 @@ void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction ) 
 }
 
 void notifySVChanged(uint16_t Offset){
+    
     ifc_notifyCVChange( Offset, sv.readSVStorage(Offset) );
 }
 
