@@ -84,7 +84,7 @@ void ifc_setCV( uint16_t address, uint8_t value ) {
 }
 
 uint16_t ifc_getAddr(){
-    return sv.readSVStorage( 17 );
+    return sv.readSVStorage(cvAccDecAddressLow ) + 256*sv.readSVStorage(cvAccDecAddressHigh );
 }
 
 

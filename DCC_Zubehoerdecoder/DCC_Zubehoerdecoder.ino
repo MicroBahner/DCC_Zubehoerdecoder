@@ -503,7 +503,7 @@ void ifc_notifyCVChange( uint16_t CvAddr, uint8_t Value ) {
         // Adressierungsart in CV29 oder direkt durch Ändern der Decoderadresse geschehen.
         // Wird die Decoderadresse geändert muss zuerst das MSB (CV9) verändert werden. Mit dem
         // Ändern des LSB (CV1) wird dann die Weichenadresse neu berechnet
-        if ( CvAddr ==  29 || CvAddr ==  1 ) setWeichenAddr();
+        if ( CvAddr ==  29 || CvAddr ==  cvAccDecAddressLow || CvAddr ==  cvAccDecAddressHigh) setWeichenAddr();
     
     }
 }    

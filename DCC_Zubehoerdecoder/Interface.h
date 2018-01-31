@@ -1,6 +1,6 @@
-/* Interface des Zubeh�rdecoders
-** Alle Interface-abh�ngigen ( Loconet oder DCC ) Programmkomponenten werden hier
-** zusammengefasst, und neutrale Aufrufe f�r die Funktionalit�ten im Sketch zur Verf�gung gestellt.
+/* Interface des Zubehördecoders
+** Alle Interface-abhängigen ( Loconet oder DCC ) Programmkomponenten werden hier
+** zusammengefasst, und neutrale Aufrufe für die Funktionalitäten im Sketch zur Verfügung gestellt.
 */
 
 #ifndef INTERFACE_H
