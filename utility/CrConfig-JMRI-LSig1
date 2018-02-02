@@ -33,6 +33,6 @@ echo "#define INITYP9 $INITYP9">>  $model.tmp
 echo "#define INITYP10 $INITYP10">>  $model.tmp
 echo "#define INITYP11 $INITYP11">>  $model.tmp
 echo "#define INITYP12 $INITYP12">>  $model.tmp
-gpp -s "\"" +n  --include $model.tmp  -I ./src -I ./  -o Public_Domain_LNSV2_$model-UX.xml ./src/Public_Domain_LNSV2_GPP-Generic.gpp
+gpp -s "\"" +n  --include $model.tmp  -I ./src -I ./  -o Public_Domain_LNSV2_$model.xml ./src/Public_Domain_LNSV2_GPP-Generic.gpp
 # pause
 rm $model.tmp
