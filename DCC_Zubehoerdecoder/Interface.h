@@ -19,6 +19,7 @@
     const uint8_t txPin        =   2;
     // Das Empfangssignal MUSS auf dem pin 4 ( bei Micro/Leonardo ) oder pin 48 ( bei Mega ) liegen.
     
+    void ifc_init( uint8_t cvPomLow ) ;
     
 //----------- defines für DCC-Interface -----------------------------------------------------------
 #else

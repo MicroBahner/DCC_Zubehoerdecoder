@@ -28,16 +28,21 @@ boolean     deferredProcessingNeeded = false;
 
 
 void ifc_init( uint8_t version, uint8_t progMode, uint8_t cvPomLow ) {
-    DB_PRINT("Loconet-Init %d",0);
+    // DB_PRINT("Loconet-Init %d",0);
     LocoNet.init(txPin); 
-    DB_PRINT("Loconet-Init %d",1);
-    sv.init(13, 4, 1, 1); // ManufacturerId, DeviceId, ProductId, SwVersion
+    // DB_PRINT("Loconet-Init %d",1);
+    sv.init(13, 4, 1, version ); // ManufacturerId, DeviceId, ProductId, SwVersion
     sv.writeSVStorage(SV_ADDR_NODE_ID_H, sv.readSVStorage( cvPomLow+1 ) );
     sv.writeSVStorage(SV_ADDR_NODE_ID_L, sv.readSVStorage( cvPomLow ));
 
     sv.writeSVStorage(SV_ADDR_SERIAL_NUMBER_H, 0x56);
     sv.writeSVStorage(SV_ADDR_SERIAL_NUMBER_L, 0x78);
     DB_PRINT( "Init LocoNet: Node-Id = %d", sv.readSVStorage(SV_ADDR_NODE_ID_H)*256+sv.readSVStorage(SV_ADDR_NODE_ID_L) );
+}
+
+void ifc_init( uint8_t cvPomLow ) {
+    sv.writeSVStorage(SV_ADDR_NODE_ID_H, sv.readSVStorage( cvPomLow+1 ) );
+    sv.writeSVStorage(SV_ADDR_NODE_ID_L, sv.readSVStorage( cvPomLow ));
 }
 
 void ifc_process() {

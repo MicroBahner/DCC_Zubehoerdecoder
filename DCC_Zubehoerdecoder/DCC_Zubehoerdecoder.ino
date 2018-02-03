@@ -95,7 +95,7 @@ CVPair FactoryDefaultCVs [] =
   {cvAccDecAddressLow, DccAddr%256},
   {cvAccDecAddressHigh, DccAddr/256},
   {cvVersionId, DCC_DECODER_VERSION_ID},
-  /*{cvManufactId, manIdValue},*/
+  {cvManufactId, manIdValue},
   {cv29Config, config29Value},
 };
 
@@ -129,7 +129,14 @@ bool localCV;       // lokale Änderung eines CV (Callback NotifyCV wird dann ni
 //---- Library-Objekte ----
 EggTimer AckImpuls;
 EggTimer ledTimer;  // zum Blinken der Programmierled
-
+#ifdef LOCONET
+// Bei der Loconet-Schnittstelle wird 2Sec nach Ändern der 'Pom' Adresse ein Reset ausgeführt, wobei
+// die Pom-Adress als Loconet ID übernommen wird. Die Zeitverzögerung ist erforderlich, damit Low- und High
+// Byte geschrieben werden können, bevor der Reset ausgeführt wird. Die Zeit startet, wenn eins der beiden
+// Byte geschrieben wird.
+bool chgLoconetId = false;
+EggTimer idLoconet;
+#endif
 
 //^^^^^^^^^^^^^^^^^^^^^^^^ Ende der Definitionen ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 //###########################################################################
@@ -336,8 +343,13 @@ void loop() {
 
 
     #ifndef LOCONET
-    // Ackimpuls abschalten--------------------------
+    // nur DCC: Ackimpuls abschalten--------------------------
     if ( !AckImpuls.running() ) _digitalWrite( ackPin, LOW );
+    #else
+    // nur bei Loconet: prüfen ob Loconet-Id geändert werden soll
+    if ( chgLoconetId && !idLoconet.running() ) {
+        chgLoconetId = false;
+        ifc_init( CV_POMLOW );    }
     #endif
     
     // Programmierled blinkt im Programmiermode bis zum Empfang einer Adresse
@@ -504,7 +516,14 @@ void ifc_notifyCVChange( uint16_t CvAddr, uint8_t Value ) {
         // Wird die Decoderadresse geändert muss zuerst das MSB (CV9) verändert werden. Mit dem
         // Ändern des LSB (CV1) wird dann die Weichenadresse neu berechnet
         if ( CvAddr ==  29 || CvAddr ==  cvAccDecAddressLow || CvAddr ==  cvAccDecAddressHigh) setWeichenAddr();
-    
+
+        #ifdef LOCONET
+        // Prüfen ob Pom-Adresse geändert wurde. Wenn ja, reset-Timer starten
+        if ( CvAddr == CV_POMLOW || CvAddr == CV_POMHIGH ) {
+            chgLoconetId = true;
+            idLoconet.setTime( 2000 );
+        }
+        #endif
     }
 }    
 //-----------------------------------------------------
