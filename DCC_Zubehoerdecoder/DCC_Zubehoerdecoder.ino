@@ -82,8 +82,18 @@ const byte WeichenZahl = sizeof(iniTyp);
 #define CV_BLKLEN      5  // Länge eines CV-Blocks ( pro Adresse ein Block )
                           // Die Bedeutung ist weitgehend funktionsspezifisch
 
-#define cvAdr(wIx,par)    CV_FUNCTION+CV_BLKLEN*wIx+par
-#define getCvPar(wIx,par) ifc_getCV( cvAdr(wIx,par) )
+// für spätere Erweiterungen wird ein weiterer Satz CV's definiert mit zusätzlichen Informationen
+// (speziell für die Programmierung per LocoNet sinnvoll)
+#define CV_EXTDATA     150
+#define CV_ERWLEN         6     // Blockklänge der Erweiterungsdaten
+//enum { WADR_LOW=0, WADR_HIGH=1, PIN0=2, PIN1=3, PIN2=4, FUNKT=5 } ;
+enum { WADR_LOW, WADR_HIGH, ROPIN0, ROEPIN1, ROPIN2, ROFUNKT } ;
+
+
+#define cvAdr(wIx,par)      CV_FUNCTION+CV_BLKLEN*wIx+par
+#define getCvPar(wIx,par)   ifc_getCV( cvAdr(wIx,par) )
+#define cvEAdr(wIx,epar)    CV_EXTDATA+epar+CV_ERWLEN*wIx  
+#define getCvExtPar(wIx,epar) ifc_getCV( cvEAdr(wIx,epar) )
 
 // CV Default-Werte der Standardadressen:
 struct CVPair {
