@@ -66,7 +66,8 @@
 #ifdef __STM32F1__
 #include "DCC_Zubehoerdecoder-STM32.h"
 #else
-#include "DCC_Zubehoerdecoder.h"
+//#include "DCC_Zubehoerdecoder.h"
+#include "TestKOnf\DCC_Zubehoerdecoder-LS-Nano.h"
 //#include "examples\DCC_Zubehoerdecoder-Micro.h"
 #endif
 //-------------------------------------------------------------------------------
@@ -208,7 +209,7 @@ void setup() {
     Dcc.pin( digitalPinToInterrupt(dccPin), dccPin, 1); 
     if ( progMode == NORMALMODE || progMode == INIMODE ) {
         // keine POM-Programmierung
-        Dcc.init( MAN_ID_DIY, DCC_DECODER_VERSION_ID, FLAGS_DCC_ACCESSORY_DECODER, (uint8_t)((uint16_t) 0) );
+        Dcc.init( MAN_ID_DIY, DCC_DECODER_VERSION_ID, FLAGS_DCC_ACCESSORY_DECODER|FLAGS_OUTPUT_ADDRESS_MODE, (uint8_t)((uint16_t) 0) );
         CLR_PROGLED;
     } else {
         // POM Programmierung aktiv
@@ -401,6 +402,11 @@ void setPosition( byte wIx, byte sollWert, byte state = 0 ) {
 // Unterprogramme, die von der DCC Library aufgerufen werden:
 //------------------------------------------------
 // Die folgende Funktion wird von Dcc.process() aufgerufen, wenn ein Weichentelegramm empfangen wurde
+void notifyDccAccTurnoutOutput( uint16_t Addr, uint8_t Direction, uint8_t OutputPower ) {
+    // Diese Funktion wird bei nmraDcc > 1.4.2 aufgerufen
+    DB_PRINT( "(1.4.4): Addr: %d, Mod8:%d, Addr&7:%d, Dir:%d, OutPwr:%d ", Addr, Addr%8, Addr&0x7, Direction, OutputPower );
+    notifyDccAccState( Addr, Addr%8, Direction, OutputPower );
+}
 void notifyDccAccState( uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, uint8_t State ){
     // Weichenadresse berechnen
     byte i,dccSoll,dccState;
