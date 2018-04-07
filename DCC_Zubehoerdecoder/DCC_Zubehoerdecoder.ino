@@ -87,7 +87,7 @@ const byte WeichenZahl = sizeof(iniTyp);
 #define CV_EXTDATA     150
 #define CV_ERWLEN         6     // Blockklänge der Erweiterungsdaten
 //enum { WADR_LOW=0, WADR_HIGH=1, PIN0=2, PIN1=3, PIN2=4, FUNKT=5 } ;
-enum { WADR_LOW, WADR_HIGH, ROPIN0, ROEPIN1, ROPIN2, ROFUNKT } ;
+enum { WADR_LOW, WADR_HIGH, ROPIN0, ROPIN1, ROPIN2, ROFUNKT } ;
 
 
 #define cvAdr(wIx,par)      CV_FUNCTION+CV_BLKLEN*wIx+par
@@ -216,6 +216,7 @@ void setup() {
         // Wird über DCC ein 'factory-Reset' empfangen wird modeVal zurückgesetzt, was beim nächsten
         // Start zum initiieren führt.
         //
+        DB_PRINT( "Init-ALL!!",0);
         iniCv( INIALL );
     } else if ( progMode == INIMODE ) {
         iniCv( INIMODE );
@@ -420,10 +421,10 @@ void ifc_notifyDccAccState( uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAdd
         }
         progMode = PROGMODE;
         SET_PROGLED;
-       //DB_PRINT( "Neu: Boardaddr: %d, 1.Weichenaddr: %d", BoardAddr, weichenAddr );
+       DB_PRINT( "Neu: Boardaddr: %d, 1.Weichenaddr: %d (OutputAdr.=%d)", BoardAddr, weichenAddr,isOutputAddr );
     }
     // Testen ob eigene Weichenadresse
-    //DB_PRINT( "DecAddr=%d, Weichenadresse: %d , Ausgang: %d, State: %d", BoardAddr, wAddr, OutputAddr, State );
+    DB_PRINT( "DecAddr=%d, Weichenadresse: %d , Ausgang: %d, State: %d", BoardAddr, wAddr, OutputAddr, State );
     // Prüfen ob Adresse im Decoderbereich
     if ( wAddr >= weichenAddr && wAddr < (weichenAddr + WeichenZahl) ) {
         // ist eigene Adresse, Sollwert setzen
@@ -723,6 +724,7 @@ void setWeichenAddr(void) {
         weichenAddr = ifc_getAddr( );
     else
         weichenAddr = (ifc_getAddr( )-1)*4 +1 + rocoOffs ;
+    DB_PRINT("setWadr: isOA=%d, getAdr=%d, wAdr=%d", isOutputAddr, ifc_getAddr(), weichenAddr );
 }
 //--------------------------------------------------------
 void softReset(void){

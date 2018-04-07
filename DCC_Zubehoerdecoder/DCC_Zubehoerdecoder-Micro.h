@@ -139,7 +139,7 @@ const byte encode2P     =   A2;
 // Der Initiierungsmodus lässt sich per Mode-Eingang aktivieren oder er ist automatisch aktiv, wenn keine
 // sinnvollen Werte im CV47 stehen.
 //-------------------------------------------------------------------------------------------------------
-const byte DccAddr          =  20;    // DCC-Decoderadresse
+const uint16_t DccAddr          = 316;    // DCC-Decoderadresse
 const byte iniMode          = 0x50 | AUTOADDR /*| ROCOADDR*/;  // default-Betriebsmodus ( CV47 )
 const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV48/49 )
                                     // mit LocoNet-Schnittstelle ist dies die LocoNetId

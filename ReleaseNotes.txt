@@ -47,4 +47,12 @@
  *                  ( Subdirectory 'src' ) ausgelagert.
  *                  Kleine Korrekturen und Ergänzungen im Manual und den Beschreibungen in Sketch und Konfig-Datei
  *                  Die Konfig-Datei ist vollständig kompatibel zur Vorversion ohne Klassen.
+ *   Version 6.0.0  Der Zubehördecoder kann auch für ein LocoNet-Interface übersetzt werden. Interfacespezifische Programmteile
+ *                  sind in interface.cpp zusammengefasst.
+ *                   -  Die eigen Adresse wird selbst berechent, da die NMRA-DCCLib bis V1.4.2 bei Outputaddressing diese Adresse
+ *                      für Adressen > 255 falsch berechnet
+ *                   -  Anpassungen an NMRA-DCC Lib 2.0.0
+ *                   -  Der Decoder arbeitet jetzt fest mit Output Addressing. CV29 kann nicht verändert werden, da es keine
+ *                      sinnvoll änderbaren Einstellungen mehr enthält.
+ 
  *                  

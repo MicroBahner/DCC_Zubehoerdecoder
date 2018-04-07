@@ -128,11 +128,11 @@ void ifc_init( uint8_t version, uint8_t progMode, uint8_t cvPomLow ) {
     Dcc.pin( digitalPinToInterrupt(dccPin), dccPin, 1); 
     if ( progMode == NORMALMODE || progMode == INIMODE ) {
         // keine POM-Programmierung
-        Dcc.init( MAN_ID_DIY, version, FLAGS_DCC_ACCESSORY_DECODER, (uint8_t)((uint16_t) 0) );
+        Dcc.init( MAN_ID_DIY, version, FLAGS_DCC_ACCESSORY_DECODER | FLAGS_OUTPUT_ADDRESS_MODE, (uint8_t)((uint16_t) 0) );
         CLR_PROGLED;
     } else {
         // POM Programmierung aktiv
-        Dcc.init( MAN_ID_DIY, version, FLAGS_DCC_ACCESSORY_DECODER, (uint8_t)(cvPomLow) );
+        Dcc.init( MAN_ID_DIY, version, FLAGS_DCC_ACCESSORY_DECODER | FLAGS_OUTPUT_ADDRESS_MODE, (uint8_t)(cvPomLow) );
         SET_PROGLED;
     }
 
@@ -147,7 +147,15 @@ void ifc_setCV( uint16_t address, uint8_t value ) {
 }
 
 uint16_t ifc_getAddr(){
-    return Dcc.getAddr();
+    // return Dcc.getAddr(); wegen Fehler in Lib bei Adressen>255, die Adresse selbst berechenen
+      uint8_t   CV29Value ;
+  
+    CV29Value = Dcc.getCV( CV_29_CONFIG ) ;
+
+    if( CV29Value & CV29_OUTPUT_ADDRESS_MODE ) 
+      return ( Dcc.getCV( CV_ACCESSORY_DECODER_ADDRESS_MSB ) << 8 ) | Dcc.getCV(CV_ACCESSORY_DECODER_ADDRESS_LSB );
+    else
+      return ( ( Dcc.getCV( CV_ACCESSORY_DECODER_ADDRESS_MSB ) & 0b00000111) << 6 ) | ( Dcc.getCV( CV_ACCESSORY_DECODER_ADDRESS_LSB ) & 0b00111111) ;
 }
 
 void ifc_process() {
