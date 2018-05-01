@@ -799,14 +799,19 @@ void DBprintCV(void) {
     // Standard-Adressen
    DB_PRINT( "--------- Debug-Ausgabe CV-Werte ---------", 0 );
    DB_PRINT( "Version: %d, ManufactId: %d", ifc_getCV( cvVersionId ), ifc_getCV( cvManufactId ) );
-   DB_PRINT( "Konfig   (CV29)  : 0x%X", ifc_getCV( cv29Config ) );
-   DB_PRINT( "Adresse: (CV1/9) : %d", ifc_getCV( cvAccDecAddressLow )+ifc_getCV( cvAccDecAddressHigh )*256);
-   DB_PRINT( "1.Weichenaddresse: %d", weichenAddr );
     
     // Decoder-Konfiguration global
-   DB_PRINT( "Initierungswert: 0x%x (%d) ", ifc_getCV( CV_MODEVAL ), ifc_getCV( CV_MODEVAL ) );
-   DB_PRINT( "PoM-Adresse    : %d"   , ifc_getCV( CV_POMLOW) + 256* ifc_getCV( CV_POMHIGH ) );
-    
+   #ifdef LOCONET
+   DB_PRINT(  "Initwert (SV47)   : 0x%x (%d) ", ifc_getCV( CV_MODEVAL ), ifc_getCV( CV_MODEVAL ) );
+    DB_PRINT( "Konfig   (SV29)   : 0x%X", ifc_getCV( cv29Config ) );
+    DB_PRINT( "Adresse:(SV17/18) : %d", ifc_getCV( cvAccDecAddressLow )+ifc_getCV( cvAccDecAddressHigh )*256);
+    DB_PRINT( "LoconetId(SV48/49): %d"   , ifc_getCV( CV_POMLOW) + 256* ifc_getCV( CV_POMHIGH ) );
+   #else
+   DB_PRINT(  "Initwert (CV47)  : 0x%x (%d) ", ifc_getCV( CV_MODEVAL ), ifc_getCV( CV_MODEVAL ) );
+    DB_PRINT( "Konfig   (CV29)  : 0x%X", ifc_getCV( cv29Config ) );
+    DB_PRINT( "Adresse:(CV1/9)  : %d", ifc_getCV( cvAccDecAddressLow )+ifc_getCV( cvAccDecAddressHigh )*256);
+    DB_PRINT( "PoM-Adr.(CV48/49): %d"   , ifc_getCV( CV_POMLOW) + 256* ifc_getCV( CV_POMHIGH ) );
+   #endif    
     // Output-Konfiguration
    DB_PRINT( "Wadr | Typ | CV's  | Mode | Par1 | Par2 | Par3 | Status |",0 );
     for( byte i=0; i<WeichenZahl; i++ ) {

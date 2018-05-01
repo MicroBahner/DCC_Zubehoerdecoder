@@ -147,15 +147,17 @@ void ifc_setCV( uint16_t address, uint8_t value ) {
 }
 
 uint16_t ifc_getAddr(){
-    // return Dcc.getAddr(); wegen Fehler in Lib bei Adressen>255, die Adresse selbst berechenen
-      uint8_t   CV29Value ;
-  
-    CV29Value = Dcc.getCV( CV_29_CONFIG ) ;
+    #if defined(NMRADCC_VERSION) && NMRADCC_VERSION >= 200
+    return Dcc.getAddr(); 
+    #else 
+    // wegen Fehler in älteren Versionen der Lib bei Adressen>255, die Adresse selbst berechenen
+    uint8_t CV29Value = Dcc.getCV( CV_29_CONFIG ) ; 
 
     if( CV29Value & CV29_OUTPUT_ADDRESS_MODE ) 
       return ( Dcc.getCV( CV_ACCESSORY_DECODER_ADDRESS_MSB ) << 8 ) | Dcc.getCV(CV_ACCESSORY_DECODER_ADDRESS_LSB );
     else
       return ( ( Dcc.getCV( CV_ACCESSORY_DECODER_ADDRESS_MSB ) & 0b00000111) << 6 ) | ( Dcc.getCV( CV_ACCESSORY_DECODER_ADDRESS_LSB ) & 0b00111111) ;
+    #endif
 }
 
 void ifc_process() {
