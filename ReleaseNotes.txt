@@ -52,7 +52,7 @@
  *                   -  Die eigen Adresse wird selbst berechent, da die NMRA-DCCLib bis V1.4.2 bei Outputaddressing diese Adresse
  *                      für Adressen > 255 falsch berechnet
  *                   -  Anpassungen an NMRA-DCC Lib 2.0.0
- *                   -  Der Decoder arbeitet jetzt fest mit Output Addressing. CV29 kann nicht verändert werden, da es keine
- *                      sinnvoll änderbaren Einstellungen mehr enthält.
+ *                   (noch nicht realisiert: -  Der Decoder arbeitet jetzt fest mit Output Addressing. CV29 kann nicht verändert werden, da es keine
+ *                      sinnvoll änderbaren Einstellungen mehr enthält.)
  
  *                  

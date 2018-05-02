@@ -1,8 +1,8 @@
-LocoNet2:
+LocoNet2 ( Mit Version 6 in den Master Branch übernommen )
 Erweiterung des Zubehördecoders um eine LocoNet Schnittstelle. 
 Schnittstellenspezifische Declarationen werden in der neuen Datei Interface.h zusammengefasst. In dieser Datei wird per #define auch festgelegt, ob die DCC oder die LocoNet-Schnittstelle eingebunden wird.
 
-LocoNet-ID: Die LocoNetId entspricht derzeit der Pom-Adresse. Bei jedem Neustart wird die Pom-Adresse als LocoNet Id übernommen. Änderungen der Pom-Adresse wirken sich daher erst beim nächsten Neustart aus. 
+LocoNet-ID: Die LocoNetId entspricht derzeit der Pom-Adresse. Wird die Pom-Adresse verändert, so werden die Änderungen nach 2 sec als LocoNetId übernommen. 
 Die Konfigurationsvariablen werden per LocoNet-SV im Format 2 verwaltet. Da die MRRWA-DCC-Lib die CV's anders abspeichert, als die LocoNet Library, sind diese nicht kompatibel. Wird auf einem Arduino von DCC auf LocoNet umgeschaltet (oder umgekehrt) werden die CV's/SV's daher ungültig und müssen auf die defaults aus dem Konfigurations-File zurückgesetzt werden.
 
 Welche Konfig-Datei eingebunden wird, hängt vom Prozessor ab:

@@ -108,8 +108,6 @@
 //----------------------------------------------------------------
 // Hardwareabhängige Konstante ( nicht per CV änderbar)
 //----------------------------------------------------------------
-const byte dccPin       =   2;
-const byte ackPin       =   1;
 
 // Eingänge analog: ( Bei Nano und Mini - Versionen kann hier auch A7 und A6 verwendet werden, um mehr
 //                    digital nutzbare Ports freizubekommen.

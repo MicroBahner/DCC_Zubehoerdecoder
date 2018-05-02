@@ -21,7 +21,7 @@
  *  So sind z.B. bei Servoausgängen die Endlagen per CV-Wert einstellbar, bei Lichtsignalen ist die 
  *  Zuordnung der Ausgangszustände zum Signalzustand frei konfigurierbar.
 */
-#define DCC_DECODER_VERSION_ID 0x52
+#define DCC_DECODER_VERSION_ID 0x60
 
 #include "Interface.h"
 #include "src/FuncClasses.h"
@@ -76,8 +76,18 @@
 const byte WeichenZahl = sizeof(iniTyp);
 
 //-------------------------------Definition der CV-Adressen ---------------------------------------
-#define CV_MODEVAL    47  // Initiierungs-CV
-                          // =0x5? wenn die CV-Werte initiiert sind. Bits 0..3 für Betriebsarten
+#define CV_INIVAL     45  // Valid-Flag
+#define CV_MODEVAL    47  // Initiierungs-CV,  Bits 0..3 für Betriebsarten
+// Da die SV-Adressen ( LocoNet ) und die CV-Adressen (DCC ) von den jeweiligen Libs um zwei versetzt
+// adressiert werden, sind die EEPROM-Werte beim Wechsel des Interfaces ungültig. Deshalb muss in diesem
+// Fall das EEPROM neu initiiert werden. Wegen des Versatzes um 2 wird das Valid-Flag in 2 
+// Speicherzellen geschrieben, so dass das Valid-Flag des jeweils anderen Interfaces sicher zerstört wird.
+#ifdef LOCONET
+    #define VALIDFLG  0xA0 // Wenn das Interface sich ändert, muss alles neu initiiert werden.
+                           // Low Nibble muss 0 sein ( wg. MODEVAL-Bits )
+#else
+    #define VALIDFLG  0x50
+#endif
 #define CV_POMLOW     48  // Adresse für die POM-Programmierung
 #define CV_POMHIGH    49
 #define CV_FUNCTION   50  // Start der Blöcke für die Funktionskonfiguration
@@ -190,6 +200,12 @@ void setup() {
            while ( !Serial && (millis()<wait) );
         }
         #endif
+        #ifdef LOCONET
+           DB_PRINT(  ">>>>>>>>>> Neustart: (SV45/47): 0x%x 0x%x ", ifc_getCV( CV_INIVAL ), ifc_getCV( CV_MODEVAL ) );
+        #else
+           DB_PRINT(  ">>>>>>>>>> Neustart: (CV45/47): 0x%x 0x%x ", ifc_getCV( CV_INIVAL ), ifc_getCV( CV_MODEVAL ) );
+        #endif    
+
      Serial.print( "Betr:" ); Serial.print(temp);Serial.print(" -> Mode=" );
       switch ( progMode ) {
         case NORMALMODE:
@@ -212,8 +228,8 @@ void setup() {
 
     //-------------------------------------
     // CV's initiieren
-    if ( (ifc_getCV( CV_MODEVAL )&0xf0) != ( iniMode&0xf0 ) || analogRead(resModeP) < 100 ) {
-        // In modeVal steht kein sinnvoller Wert ( oder resModeP ist auf 0 ),
+    if ( (ifc_getCV( CV_MODEVAL )&0xf0) != VALIDFLG || ifc_getCV(CV_INIVAL) != VALIDFLG || analogRead(resModeP) < 100 ) {
+        // In modeVal oder ManufactId steht kein korrekter Wert ( oder resModeP ist auf 0 ),
         // alles initiieren mit den Defaultwerten
         // Wird über DCC ein 'factory-Reset' empfangen wird modeVal zurückgesetzt, was beim nächsten
         // Start zum initiieren führt.
@@ -571,7 +587,8 @@ void iniCv( byte mode ) {
         // allgemeine CV's
         ifc_setCV( (int) CV_POMLOW, PomAddr%256 );
         ifc_setCV( (int) CV_POMHIGH, PomAddr/256 );
-        ifc_setCV( (int) CV_MODEVAL, iniMode );
+        ifc_setCV( (int) CV_INIVAL, VALIDFLG );
+        ifc_setCV( (int) CV_MODEVAL, VALIDFLG | (iniMode&0xf) );
         // Funktionsspezifische CV's
         for ( byte i = 0; i<WeichenZahl; i++ ) {
             DB_PRINT("fktSpezCv: %d,Typ=%d", i, iniTyp[i] );
@@ -800,19 +817,19 @@ void DBprintCV(void) {
     // für Debug-Zwecke den gesamten genutzten CV-Speicher ausgeben
     // Standard-Adressen
    DB_PRINT( "--------- Debug-Ausgabe CV-Werte ---------", 0 );
-   DB_PRINT( "Version: %d, ManufactId: %d", ifc_getCV( cvVersionId ), ifc_getCV( cvManufactId ) );
+   DB_PRINT( "Version: %x, ManufactId: %d", ifc_getCV( cvVersionId ), ifc_getCV( cvManufactId ) );
     
     // Decoder-Konfiguration global
    #ifdef LOCONET
-   DB_PRINT(  "Initwert (SV47)   : 0x%x (%d) ", ifc_getCV( CV_MODEVAL ), ifc_getCV( CV_MODEVAL ) );
+   DB_PRINT(  "Initval (SV45/47) : 0x%x 0x%x ", ifc_getCV( CV_INIVAL ), ifc_getCV( CV_MODEVAL ) );
     DB_PRINT( "Konfig   (SV29)   : 0x%X", ifc_getCV( cv29Config ) );
     DB_PRINT( "Adresse:(SV17/18) : %d", ifc_getCV( cvAccDecAddressLow )+ifc_getCV( cvAccDecAddressHigh )*256);
     DB_PRINT( "LoconetId(SV48/49): %d"   , ifc_getCV( CV_POMLOW) + 256* ifc_getCV( CV_POMHIGH ) );
    #else
-   DB_PRINT(  "Initwert (CV47)  : 0x%x (%d) ", ifc_getCV( CV_MODEVAL ), ifc_getCV( CV_MODEVAL ) );
-    DB_PRINT( "Konfig   (CV29)  : 0x%X", ifc_getCV( cv29Config ) );
-    DB_PRINT( "Adresse:(CV1/9)  : %d", ifc_getCV( cvAccDecAddressLow )+ifc_getCV( cvAccDecAddressHigh )*256);
-    DB_PRINT( "PoM-Adr.(CV48/49): %d"   , ifc_getCV( CV_POMLOW) + 256* ifc_getCV( CV_POMHIGH ) );
+   DB_PRINT(  "Initwert (CV45/47): 0x%x 0x%x ", ifc_getCV( CV_INIVAL ), ifc_getCV( CV_MODEVAL ) );
+    DB_PRINT( "Konfig   (CV29)   : 0x%X", ifc_getCV( cv29Config ) );
+    DB_PRINT( "Adresse:(CV1/9)   : %d", ifc_getCV( cvAccDecAddressLow )+ifc_getCV( cvAccDecAddressHigh )*256);
+    DB_PRINT( "PoM-Adr.(CV48/49) : %d"   , ifc_getCV( CV_POMLOW) + 256* ifc_getCV( CV_POMHIGH ) );
    #endif    
     // Output-Konfiguration
    DB_PRINT( "Wadr | Typ | CV's  | Mode | Par1 | Par2 | Par3 | Status |",0 );
