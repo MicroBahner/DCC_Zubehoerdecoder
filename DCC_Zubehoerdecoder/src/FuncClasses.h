@@ -5,7 +5,7 @@
  * Die Instanziierung muss im setup() mit 'new' erfolgen.
  */
 #include <MobaTools.h>
-#include "DebugDefs.h"
+#include "../interface.h"
 
 #define NC 0xff    // nicht verwendeten Funktionsausgängen kann der Port NC zugeweisen werden.
 // Da die Prüfung auf ungültige Pin-Nummern in den Arduino-internen Implementierungen je nach Prozessor
@@ -18,15 +18,14 @@ const byte MODE=0, PAR1=1, PAR2=2, PAR3=3, STATE=4 ;
 // Werden die Klassen nicht im Zusammenhang mit der nmradcc Lib verwendet,
 // so kann der Zugriff auf die Konfigurationsvariablen hier angepasst werden
 // ( gegebenenfalls auch direkter EEPROM Zugriff )
-//#define NMRADCC
-#ifdef NMRADCC
-    #include <NmraDcc.h>
-    extern NmraDcc Dcc;
-    #define getParam( parAdr ) Dcc.getCV( _cvAdr+parAdr )
-    #define setParam( parAdr, value ) Dcc.setCV( _cvAdr+parAdr, value )
-    #define setState( value )  Dcc.setCV( _cvAdr+STATE, value )
+#define NMRA
+#ifdef NMRA
+    #define getParam( parAdr ) ifc_getCV( _cvAdr+parAdr )
+    #define setParam( parAdr, value ) ifc_setCV( _cvAdr+parAdr, value )
+    #define setState( value )  ifc_setCV( _cvAdr+STATE, value )
 #else
     // Zugriff auf die Konfig-Parameter direkt über EEPROM:
+    // ( nicht möglich bei LocoNet Interface )
     #include <EEPROM.h>
     #define getParam( parAdr ) EEPROM.read( _cvAdr+parAdr )
     #define setParam( parAdr, value ) EEPROM.update( _cvAdr+parAdr, value )
@@ -34,6 +33,7 @@ const byte MODE=0, PAR1=1, PAR2=2, PAR3=3, STATE=4 ;
 #endif
 //======================  allgemeine Hilfsfunktionen ==================================
 // Ausblenden der nicht belegten (NC) Ports
+/* verschoben nach interface.h
 #ifdef __STM32F1__
 void _pinMode( byte port, WiringPinMode mode );
 #else
@@ -41,7 +41,7 @@ void _pinMode( byte port, byte mode );
 #endif
 
 void _digitalWrite( byte port, byte state ) ;
-
+*/
 //========================= Funktionsklassen  =========================================
 
 //---------------------- FCOIL -------------------------------------------

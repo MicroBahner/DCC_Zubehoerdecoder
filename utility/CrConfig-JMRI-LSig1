@@ -1,0 +1,38 @@
+#!/bin/bash
+# Model-Name des Decoders in JMRI ( Buchstaben,Zahlen und _ ):
+declare model=Lsig1
+# Konfiguration des Decoders (Funktionen):
+# Bitte keine Zeilen lösche, nur den Wert hinter dem = anpassen
+# Hinter den Funktionsnamen dürfen keine Leerzeichen stehen und
+# es dürfen keine Lücken entstehen. Nicht verwendete Funktionen bleiben am Ende frei
+declare INITYP1=FSIGNAL2
+declare INITYP2=FSIGNAL0
+declare INITYP3=FSIGNAL2
+declare INITYP4=FSIGNAL0
+declare INITYP5=FVORSIG
+declare INITYP6=FSIGNAL0
+declare INITYP7=FSIGNAL2
+declare INITYP8=FSIGNAL2
+declare INITYP9=
+declare INITYP10=
+declare INITYP11=
+declare INITYP12=
+# ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+# ------------ Ende des Benutzeranpassbaren Bereiches ---------------------------------
+echo "Datei $model.tmp erzeugen"
+echo "#define _MODEL $model"> $model.tmp
+echo "#define INITYP1 $INITYP1">> $model.tmp
+echo "#define INITYP2 $INITYP2">>  $model.tmp
+echo "#define INITYP3 $INITYP3">>  $model.tmp
+echo "#define INITYP4 $INITYP4">>  $model.tmp
+echo "#define INITYP5 $INITYP5">>  $model.tmp
+echo "#define INITYP6 $INITYP6">>  $model.tmp
+echo "#define INITYP7 $INITYP7">>  $model.tmp
+echo "#define INITYP8 $INITYP8">>  $model.tmp
+echo "#define INITYP9 $INITYP9">>  $model.tmp
+echo "#define INITYP10 $INITYP10">>  $model.tmp
+echo "#define INITYP11 $INITYP11">>  $model.tmp
+echo "#define INITYP12 $INITYP12">>  $model.tmp
+gpp -s "\"" +n  --include $model.tmp  -I ./src -I ./  -o Public_Domain_LNSV2_$model.xml ./src/Public_Domain_LNSV2_GPP-Generic.gpp
+# pause
+rm $model.tmp

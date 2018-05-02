@@ -1,0 +1,53 @@
+#define VALIDINI
+#if ( INITYP == FSTATIC )
+  <column>
+    <label> <text>STATIC (FNR) </text>  </label>
+  <!-- ^^^^^^^^^^^Ende FSTATIC ^^^^^^^^^^^^^^^^ -->
+#elif ( INITYP == FSERVO )
+  <column>
+    <label> <text>Servo (FNR)</text> </label>
+
+  <!-- ^^^^^^^^^^^Ende FSERVO ^^^^^^^^^^^^^^^^ -->
+#elif ( INITYP == FCOIL )
+  <column>
+    <label>  <text> Spulenantrieb (FNR)  </text>  </label>
+
+  <!-- ^^^^^^^^^^^Ende FCOIL ^^^^^^^^^^^^^^^^ -->
+#elif ( INITYP == FSIGNAL2 )
+  <column>
+    <label> <text> Signal (FNR)  </text>  </label>
+
+  <!-- ^^^^^^^^^^^Ende FSIGNAL2 ^^^^^^^^^^^^^^^^ -->
+#elif ( INITYP == FSIGNAL0 )
+  <column>
+    <label>  <text> Signal - Extend (FNR)  </text>  </label>
+  <!-- ^^^^^^^^^^^Ende FSIGNAL0 ^^^^^^^^^^^^^^^^ -->
+#elif ( INITYP == FVORSIG )
+  <column>
+    <label> <text> Vorsignal (FNR)  </text>  </label>
+
+  <!-- ^^^^^^^^^^^Ende FVORSIG ^^^^^^^^^^^^^^^^ -->
+#else
+#undef VALIDINI
+#endif
+
+#ifdef VALIDINI
+      <separator/>
+    <display item="Fkt-FNR Fmode"     format="checkbox"/>
+    <display item="Fkt-FNR Fmode-Bit0" format="checkbox"/>
+    <display item="Fkt-FNR Fmode-Bit1" format="checkbox"/>
+    <display item="Fkt-FNR Fmode-Bit2" format="checkbox"/>
+    <display item="Fkt-FNR Fmode-Bit3" format="checkbox"/>
+    <display item="Fkt-FNR Fmode-Bit4" format="checkbox"/>
+    <display item="Fkt-FNR Fmode-Bit5" format="checkbox"/>
+    <display item="Fkt-FNR Fmode-Bit6" format="checkbox"/>
+    <display item="Fkt-FNR Fmode-Bit7" format="checkbox"/>
+      <separator/>
+    <label> <text>Parameter Bytes: </text> </label>
+    <display item="Fkt-FNR Par1" format="checkbox"/>
+    <display item="Fkt-FNR Par2" format="checkbox"/>
+    <display item="Fkt-FNR Par3" format="checkbox"/>
+    <display item="Fkt-FNR Par4" format="checkbox"/>
+  </column>
+  <separator/>
+#endif

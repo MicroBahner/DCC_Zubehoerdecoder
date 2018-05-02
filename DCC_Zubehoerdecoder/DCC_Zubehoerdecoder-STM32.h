@@ -120,8 +120,6 @@
 //----------------------------------------------------------------
 // maple mini: ( ARDUINO_MAPLE_MINI )
 #ifdef ARDUINO_MAPLE_MINI
-const byte dccPin       =   3;
-const byte ackPin       =   18;
 
 // Eingänge analog: ( Bei Nano und Mini - Versionen kann hier auch A7 und A6 verwendet werden, um mehr
 //                    digital nutzbare Ports freizubekommen.
@@ -141,8 +139,6 @@ const byte encode2P     =   7;
 #endif
 
 #ifdef ARDUINO_GENERIC_STM32F103C
-const byte dccPin       =   PB0;
-const byte ackPin       =   PB4;
 const byte betrModeP    =   PA7;     // Analogeingang zur Bestimmung des Betriebsmodus. 
 const byte resModeP     =   PA6;     // Rücksetzen CV-Werte + Mittelstellung Servos
 //#define ENCODER_AKTIV       // Wird diese Zeile auskommentiert, wird der Encoder nicht verwendet. 
