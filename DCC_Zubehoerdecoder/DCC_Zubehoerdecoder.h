@@ -7,17 +7,19 @@
  *  - Lichtsignale 
  *  - Einstellen der Servoendlagen per Drehencoder. 
  *    Der Drehencoder bezieht sich immer auf die zuletzt gestellte Weichenposition .
- *  - Die Betriebsmodi und Startverhalten wird über die Analogeingänge A4/A5 (parametrierbar) eingestellt. Dazu 
- *    müssen dort Pullups eingebaut werden. Jenachdem wieweit die Spannung  heruntergezogen wird werden
- *    die Modi eingestellt:
- *     A5:   5V (offen) normaler Betriebsmodus, kein PoM
- *           3,3V (Spannungsteiler 1:2) PoM immer aktiv, Adresse immer aus defaults
- *           1,6V (Spannungsteiler 2:1) IniMode: CV's werden immer auf init-Werte aus .h-Datei gesetzt
- *           0V Programmiermodus / PoM ( 1. Empfamgenes Telegramm bestimmt Adresse )
- *     A4:   wird A4 auf 0 gezogen , wird der aktuell vom Drehencoder beeinflusste Servo in die  
+ *  - Die Betriebsmodi und das Startverhalten werden über die Analogeingänge A4/A5 ( betrModeP und 
+ *    resModeP, parametrierbar) eingestellt. Dazu müssen dort Pullups eingebaut werden. 
+ *    Je nachdem wieweit die Spannung  heruntergezogen wird werden die Modi eingestellt:
+ *      betrModeP:
+ *        5V (offen) normaler Betriebsmodus, kein PoM
+ *        3,3V (Spannungsteiler 1:2) PoM immer aktiv, Adresse immer aus defaults
+ *        1,6V (Spannungsteiler 2:1) IniMode: CV's werden immer auf init-Werte aus .h-Datei gesetzt
+ *        0V Programmiermodus / PoM ( 1. Empfamgenes Telegramm bestimmt Adresse )
+ *      resModeP:
+ *        wird resModeP auf 0 gezogen , wird der aktuell vom Drehencoder beeinflusste Servo in die  
  *           Mittellage gebracht. Sobald der Encoder wieder bewegt wird, bewegt sich das Servo wieder
  *           zur vorhergehenden Position.
- *           Ist A4 beim Programmstart auf 0, werden alle CV's auf die Defaults zurückgesetzt
+ *           Ist resModeP beim Programmstart auf 0, werden alle CV's auf die Defaults zurückgesetzt
  *                  
  * Eigenschaften:
  * Mehrere (aufeinanderfolgende) Zubehöradressen ansteuerbar. Die mögliche Zahl von Adressen hängt 

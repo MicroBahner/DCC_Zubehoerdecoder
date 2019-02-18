@@ -7,9 +7,6 @@
 #include <MobaTools.h>
 #include "../interface.h"
 
-#define NC 0xff    // nicht verwendeten Funktionsausgängen kann der Port NC zugeweisen werden.
-// Da die Prüfung auf ungültige Pin-Nummern in den Arduino-internen Implementierungen je nach Prozessor
-// unterschiedlich ist, wird im Sketch selbst auf NC geprüft, und gegebenenfalls die Arduino Funktion nicht aufgerufen.
 #define PPWA 3                  // Zahl der Pins je Weichenadresse
 
 // Offset der CV-Adresse bei den Funktionsspezifschen CV-Werten

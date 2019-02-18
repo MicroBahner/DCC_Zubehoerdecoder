@@ -13,6 +13,9 @@
 //#define LOCONET // Wird dies auskommentiert, wird ein DCC-Interface eingebunden
 
 //######################################################################################################
+#define NC 0xff    // nicht verwendeten Funktionsausgängen kann der Port NC zugeweisen werden.
+// Da die Prüfung auf ungültige Pin-Nummern in den Arduino-internen Implementierungen je nach Prozessor
+// unterschiedlich ist, wird im Sketch selbst auf NC geprüft, und gegebenenfalls die Arduino Funktion nicht aufgerufen.
 
 //---------- defines für LocoNet-Interface -----------------------------------------------------------
 #ifdef LOCONET

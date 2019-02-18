@@ -3,10 +3,10 @@
 #ifndef DEBUGDEFS
 #define DEBUGDEFS
 
-//#define DEBUG
+#define DEBUG
 #ifdef DEBUG
-    #define DB_PRINT( x, ... ) { sprintf_P( dbgbuf, (const char*) F( x ), __VA_ARGS__ ) ; Serial.println( dbgbuf ); }
-    #define DB_PRINT_( x, ... ) { sprintf_P( dbgbuf, (const char*) F( x ), __VA_ARGS__ ) ; Serial.print( dbgbuf ); }
+    #define DB_PRINT( x, ... ) { sprintf_P( dbgbuf, (const char*) F( x ), ##__VA_ARGS__ ) ; Serial.println( dbgbuf ); }
+    #define DB_PRINT_( x, ... ) { sprintf_P( dbgbuf, (const char*) F( x ), ##__VA_ARGS__ ) ; Serial.print( dbgbuf ); }
     //#define DB_PRINT( x, ... ) { sprintf( dbgbuf,   x , __VA_ARGS__ ) ; Serial.println( dbgbuf ); }
     extern char dbgbuf[60];
         #ifdef __AVR_MEGA__
