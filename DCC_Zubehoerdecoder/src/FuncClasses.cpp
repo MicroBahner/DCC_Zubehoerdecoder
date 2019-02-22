@@ -148,6 +148,7 @@ Fstatic::Fstatic( int cvAdr, uint8_t ledP[] ) {
     }
     // Grundstellung der Ausgangsports
     _flags.isOn = !getParam( STATE );
+    _flags.blkOn = false;       // Blinken startet mit AUS
     set( getParam( STATE ) );
     /*
     if ( getParam( MODE ) & BLKMODE ) {
@@ -232,10 +233,12 @@ Fservo::Fservo( int cvAdr, uint8_t pins[] ) {
     _pinMode( _outP[REL2P], OUTPUT );
     // Servowerte und Relaisausgang initiieren und ausgeben
     _flags.isAbzw = getParam( STATE );
+    _flags.sollAbzw = _flags.isAbzw ;
     _flags.relOn = _flags.isAbzw;
     _digitalWrite( _outP[REL1P], _flags.relOn );
     _digitalWrite( _outP[REL2P], !_flags.relOn );
-    
+    _flags.sollAct = false;
+    _flags.moving = false;
     if ( _flags.isAbzw ) {
         _weicheS.write( getParam( PAR2 ) );
     } else {

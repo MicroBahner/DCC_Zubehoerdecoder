@@ -21,11 +21,13 @@
  *  So sind z.B. bei Servoausgängen die Endlagen per CV-Wert einstellbar, bei Lichtsignalen ist die 
  *  Zuordnung der Ausgangszustände zum Signalzustand frei konfigurierbar.
 */
-#define DCC_DECODER_VERSION_ID 0x60
+#define DCC_DECODER_VERSION_ID 0x61
 
 #include "Interface.h"
 #include "src/FuncClasses.h"
-
+#ifdef __AVR_MEGA__
+#include <avr/wdt.h>    // für Soft-Reset ( über Watchdog )
+#endif
 
 //------------------------------------------ //
 
@@ -336,7 +338,7 @@ void loop() {
         startMicros = micros();
         loopCnt = 0;
     }*/
-    dccSim();       // Simulation von DCC-Telegrammen
+//    dccSim();       // Simulation von DCC-Telegrammen
     #endif
     
     getEncoder();   // Drehencoder auswerten und Servolage gegebenenfalls anpassen
@@ -750,7 +752,10 @@ void softReset(void){
     DB_PRINT( "RESET", 0 );
     delay(1000);
     #ifdef __AVR_MEGA__
-    asm volatile ("  jmp 0");
+    //asm volatile ("  jmp 0");
+    cli(); //irq's off
+    wdt_enable(WDTO_15MS); //wd on,15ms
+    while(1); //loop              break;
     #endif
     #ifdef __STM32F1__
     nvic_sys_reset();   //System-Reset der STM32-CPU
