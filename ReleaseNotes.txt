@@ -54,5 +54,10 @@
  *                   -  Anpassungen an NMRA-DCC Lib 2.0.0
  *                   (noch nicht realisiert: -  Der Decoder arbeitet jetzt fest mit Output Addressing. CV29 kann nicht verändert werden, da es keine
  *                      sinnvoll änderbaren Einstellungen mehr enthält.)
+ *   Version 6.0.1  Fehlerbeseitigungen / Ergänzungen:
+                    - in der Klasse Servo wurden im Konstruktor die Variablen nicht alle initiiert.
+                    - Das DCC-Ack lässt sich im Konfig-File abschalten. Der in Interface.h definierte Ackpin 
+                      lässt sich dann mit einer beliebigen Ausgangsfunktion nutzen.
+                    Zu den Schaltbildern in der Doku wurden passende Konfig-Files in 'examples' erstellt.
  
  *                  
