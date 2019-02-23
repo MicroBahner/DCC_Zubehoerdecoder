@@ -112,9 +112,9 @@
 // Eingänge analog: ( Bei Nano und Mini - Versionen kann hier auch A7 und A6 verwendet werden, um mehr
 //                    digital nutzbare Ports freizubekommen.
 //                    beim UNO sind A7+A6 nicht vorhanden! )
-const byte betrModeP    =   5;     // Analogeingang zur Bestimmung des Betriebsmodus. Wird nur beim
+const byte betrModeP    = PA7;     // Analogeingang zur Bestimmung des Betriebsmodus. Wird nur beim
                                     // Programmstart eingelesen!
-const byte resModeP     =   4;     // Rücksetzen CV-Werte + Mittelstellung Servos
+const byte resModeP     = PA6;     // Rücksetzen CV-Werte + Mittelstellung Servos
 
 // Eingänge digital (die Ports A0-A5 lassen sich auch digital verwenden): ---------
 
@@ -122,8 +122,8 @@ const byte resModeP     =   4;     // Rücksetzen CV-Werte + Mittelstellung Serv
 //#define ENCODER_AKTIV       // Wird diese Zeile auskommentiert, wird der Encoder nicht verwendet. 
                             // Die Encoder-Ports werden dann ignoriert, und können anderweitig 
                             // verwendet werden.
-const byte encode1P     =   3;     // Eingang Drehencoder zur Justierung.
-const byte encode2P     =   2;
+const byte encode1P     =  NC;     // Eingang Drehencoder zur Justierung.
+const byte encode2P     =  NC;
 // ............................................
 //-------------------------------------------------------------------------------------------------------
 // Betriebswerte ( per CV änderbar ) Diese Daten werden nur im Initiierungsmodus in die CV's geschrieben.
@@ -133,7 +133,9 @@ const byte encode2P     =   2;
 const byte DccAddr          =  17;    // DCC-Decoderadresse
 const byte iniMode          = 0x50 | AUTOADDR /*| ROCOADDR*/;  // default-Betriebsmodus ( CV47 )
 const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV48/49 )
-
+//#define NOACK                     // Diese Zeile aktivieren, wenn keine HW zum CV auslesen vorhanden ist
+                                    // ( kein Ack-Pin ) Der in Interfac.h definierte Pin wird dann zwar als OUTPUT
+                                    // gesetzt, kann aber für beliebige Funktionen in der Tabelle unten genutzt werden
 
 //Konstante für Lichtsignalfunktion
 #define SIG_DARK_TIME   300     // Zeit zwischen Dunkelschalten und Aufblenden des neuen Signalbilds
@@ -145,16 +147,17 @@ const byte modePin      =   33;     // Anzeige Betriebszustand (Normal/Programmi
 
 #define MAX_LEDS 12 // default ist 16. Kann auf die tatsächlich benutzte Zahl reduziert werden, um RAM zu sparen.
                     // Pro Softled werden 19 Byte benötigt
-const byte iniTyp[]     =   {    FCOIL,   FSIGNAL2, FSIGNAL0,   FVORSIG,  FSIGNAL0,          FSTATIC };
-const byte out1Pins[]   =   {       NC,         15,       18,       19,       22,               12 };  // output-pins der Funktionen
-const byte out2Pins[]   =   {       NC,         16,       NC,       20,       NC,               13 };
-const byte out3Pins[]   =   {       NC,         17,       NC,       21,       NC,               NC };
- 
-const byte iniFmode[]     = { CAUTOOFF, LEDINVERT, 0b00000100,        0,        0,  BLKMODE|BLKSOFT };
-const byte iniPar1[]      = {       50, 0b0000010, 0b00000100,   0b0101,   0b1001,               50 };
-const byte iniPar2[]      = {       50, 0b0000001, 0b00001001,   0b1010,      255,               50 };
-const byte iniPar3[]      = {        0,         4,          8,        8,        9,              100 };
-const byte iniPar4[]      = {        0, 0b0000101,          0,        0,        0,                0,}; // nur für Lichtsignale!
+
+const byte iniTyp[]     =   { FSIGNAL2,   FSIGNAL2, FSIGNAL0,    FSIGNAL2, FSIGNAL0,  FSIGNAL0,   FVORSIG,  FSIGNAL0,   FSIGNAL2 };
+const byte out1Pins[]   =   {      PA2,        PB3,      PB6,         PB7,     PA10,      PA14,      PC14,      PA1,        PA15 };  // output-pins der Funktionen
+const byte out2Pins[]   =   {      PA3,        PB5,       NC,         PA8,     PC13,        NC,      PC15,       NC,        PB12 };
+const byte out3Pins[]   =   {       NC,        NC ,       NC,         PA9,       NC,        NC,       PA0,       NC,          NC };
+                                                                                     
+const byte iniFmode[]     = {        0,         0, 0b00000000, 0b0000000, 0b00000000,0b00000000,        0,        0,  0b00000000 };
+const byte iniPar1[]      = {   0b0001, 0b0000001, 0b00001010, 0b0001100, 0b00000110,0b01000000,   0b0101,   0b1001,      0b0001 };
+const byte iniPar2[]      = {   0b0010, 0b0001000, 0b00000000, 0b0010000, 0b00010001,0b00000000,   0b1010,      255,      0b0010 };
+const byte iniPar3[]      = {        0,         0,          0,         7,          0,         0,       15,       16,           0 };
+const byte iniPar4[]      = {        0, 0b0000000,          0, 0b0000101,          0,         0,        0,        0,           0,}; // nur für Lichtsignale!
 
 /*
 const byte iniTyp[]     =   {    FCOIL,   FSIGNAL2, FSIGNAL0,   FVORSIG,   FSERVO,          FSTATIC };

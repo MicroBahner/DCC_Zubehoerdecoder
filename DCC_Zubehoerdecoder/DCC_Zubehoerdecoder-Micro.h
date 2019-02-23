@@ -145,6 +145,9 @@ const uint16_t DccAddr          = 316;    // DCC-Decoderadresse
 const byte iniMode          = 0x50 | AUTOADDR /*| ROCOADDR*/;  // default-Betriebsmodus ( CV47 )
 const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV48/49 )
                                     // mit LocoNet-Schnittstelle ist dies die LocoNetId
+//#define NOACK                     // Diese Zeile aktivieren, wenn keine HW zum CV auslesen vorhanden ist
+                                    // ( kein Ack-Pin ) Der in Interfac.h definierte Pin wird dann zwar als OUTPUT
+                                    // gesetzt, kann aber für beliebige Funktionen in der Tabelle unten genutzt werden
 
 
 // Ausgänge:  mit NC gekennzeichnete Ausgänge werden keinem Port zugeordnet. Damit können Ports gespart werden,
@@ -165,5 +168,3 @@ const byte iniPar2[]      = {       50,       150,    0b00010,    0b00110,      
 const byte iniPar3[]      = {       50,         8,          5,          0,        19,        0 };
 const byte iniPar4[]      = {        0,         0,    0b00101,          0,         0,        0,}; // nur für Lichtsignale!
 //------------------------------------------------------------------------------------
-
-

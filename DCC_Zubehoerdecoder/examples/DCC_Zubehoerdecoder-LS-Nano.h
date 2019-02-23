@@ -142,7 +142,9 @@ const byte encode2P     =   NC;
 const byte DccAddr          =  17;    // DCC-Decoderadresse
 const byte iniMode          = 0x50 | AUTOADDR /*| ROCOADDR*/;  // default-Betriebsmodus ( CV47 )
 const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV48/49 )
-
+#define NOACK                     // Diese Zeile aktivieren, wenn keine HW zum CV auslesen vorhanden ist
+                                    // ( kein Ack-Pin ) Der in Interfac.h definierte Pin wird dann zwar als OUTPUT
+                                    // gesetzt, kann aber für beliebige Funktionen in der Tabelle unten genutzt werden
 
 //Konstante für Lichtsignalfunktion
 #define SIG_DARK_TIME   300     // Zeit zwischen Dunkelschalten und Aufblenden des neuen Signalbilds
@@ -157,7 +159,7 @@ const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmi
                    
 const byte iniTyp[]     =   { FSIGNAL2, FSIGNAL0, FSIGNAL2, FSIGNAL0, FSIGNAL2, FSIGNAL0, FSIGNAL2, FSIGNAL0,  FSIGNAL2, FSIGNAL0  };
 const byte out1Pins[]   =   {       A0,       NC,       A3,       NC,        3,       NC,        6,       NC,         9,       NC  }; 
-const byte out2Pins[]   =   {       A1,       NC,       A4,       NC,       13,       NC,        7,       NC,        10,       NC  };
+const byte out2Pins[]   =   {       A1,       NC,       A4,       NC,        4,       NC,        7,       NC,        10,       NC  };
 const byte out3Pins[]   =   {       A2,       NC,       A5,       NC,        5,       NC,        8,       NC,        11,       NC  };
                                                                                                                                   
 const byte iniFmode[]     = {        0, 0b000100,        0, 0b000100,        0, 0b000100,        0, 0b000100,         0, 0b000100  };

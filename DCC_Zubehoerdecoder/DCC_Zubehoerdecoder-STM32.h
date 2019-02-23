@@ -157,7 +157,9 @@ const byte encode2P     =   PA4;
 const byte DccAddr          =  20;    // DCC-Decoderadresse
 const byte iniMode          = 0x50 | AUTOADDR /*| ROCOADDR*/;  // default-Betriebsmodus ( CV47 )
 const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV48/49 )
-
+//#define NOACK                     // Diese Zeile aktivieren, wenn keine HW zum CV auslesen vorhanden ist
+                                    // ( kein Ack-Pin ) Der in Interfac.h definierte Pin wird dann zwar als OUTPUT
+                                    // gesetzt, kann aber für beliebige Funktionen in der Tabelle unten genutzt werden
 
 
 // Ausgänge:  mit NC gekennzeichnete Ausgänge werden keinem Port zugeordnet. Damit können Ports gespart werden,
@@ -175,8 +177,8 @@ const byte out3Pins[]   =   {       NC,        16,   /*ge*/15,         NC,      
 // Generic STM32F103C 
 #ifdef ARDUINO_GENERIC_STM32F103C
 const byte iniTyp[]     =   {    FSTATIC,  FSERVO,   FSIGNAL2,   FSIGNAL0,    FVORSIG,   FCOIL };
-const byte out1Pins[]   =   {      PA2,       PB3,  /*rt*/PA9, /*rt*/PA10, /*ge*/PC14,     PA0 };  // output-pins der Funktionen
-const byte out2Pins[]   =   {      PA3,       PB5, /*gn*/PC13,  /*ws*/PA8, /*gn*/PC15,     PA1 };
+const byte out1Pins[]   =   {      PA2,       PB3,  /*rt*/PA9, /*rt*/PA10, /*ge*/ PA0,    PA15 };  // output-pins der Funktionen
+const byte out2Pins[]   =   {      PA3,       PB5, /*gn*/PC13,  /*ws*/PA8, /*gn*/ PA1,    PB12 };
 const byte out3Pins[]   =   {       NC,        NC,  /*ge*/PB7,         NC,         NC,      NC };
 #endif
 // Für andere Boards hier einfügen
@@ -187,5 +189,3 @@ const byte iniPar1[]      = {       50,        30,    0b01001,    0b10001,      
 const byte iniPar2[]      = {       50,       150,    0b00010,    0b00110,      0b10,       50 };
 const byte iniPar3[]      = {       30,         8,          0,          0,        19,        0 };
 const byte iniPar4[]      = {        0,         0,    0b00101,          0,         0,        0,}; // nur für Lichtsignale!
-
-

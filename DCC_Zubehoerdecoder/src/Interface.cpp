@@ -124,6 +124,7 @@ const uint8_t manIdValue            = MAN_ID_DIY;
 void ifc_init( uint8_t version, uint8_t progMode, uint8_t cvPomLow ) {
     // nmra-Dcc Lib initiieren
     _pinMode( ackPin, OUTPUT );
+    _digitalWrite( ackPin, LOW );
 
     Dcc.pin( digitalPinToInterrupt(dccPin), dccPin, 1); 
     if ( progMode == NORMALMODE || progMode == INIMODE ) {

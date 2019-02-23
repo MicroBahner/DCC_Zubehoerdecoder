@@ -286,7 +286,7 @@ void setup() {
           case FSIGNAL2:
             // Prüfen ob ein Vorsignal am Mast Dunkelgeschaltet werden muss
             vsIx = getCvPar(wIx,PAR3);
-            if( !(vsIx > 1 && vsIx <= WeichenZahl) ) {
+            if( !(vsIx >= 1 && vsIx <= WeichenZahl) ) {
                 // kein gültiger Vorsignalindex gefunden
                 vsIx = 0;
             }
@@ -374,8 +374,10 @@ void loop() {
 
 
     #ifndef LOCONET
-    // nur DCC: Ackimpuls abschalten--------------------------
-    if ( !AckImpuls.running() ) _digitalWrite( ackPin, LOW );
+        #ifndef NOACK
+        // nur DCC: Ackimpuls abschalten--------------------------
+        if ( !AckImpuls.running() ) _digitalWrite( ackPin, LOW );
+        #endif
     #else
     // nur bei Loconet: prüfen ob Loconet-Id geändert werden soll
     if ( chgLoconetId && !idLoconet.running() ) {
@@ -458,11 +460,11 @@ void ifc_notifyDccAccState( uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAdd
         // eingetragen werden.
         if ( iniTyp[Ix] == FSIGNAL0 ) {
             // es ist eine Signalfolgeadresse
-            dccSoll = dccSoll + 2;
+            dccSoll += 2;
             Ix--;
             if ( iniTyp[Ix] == FSIGNAL0 ) {
                 // ist 2. Folgeadresse
-                 dccSoll = dccSoll + 4;
+                 dccSoll += 2;
                  Ix--;
             }
         } else if ( iniTyp[Ix] == FSERVO ) {
@@ -499,10 +501,12 @@ void ifc_notifyDccAccState( uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAdd
 #ifndef LOCONET
 // wird aufgerufen, wenn die Zentrale ein CV ausliest. Es wird ein 60mA Stromimpuls erzeugt
 void ifc_notifyCVAck ( void ) {
+    #ifndef NOACK
     // Ack-Impuls starten
     //DB_PRINT( "Ack-Pulse" );
     AckImpuls.setTime( 6 );
     _digitalWrite( ackPin, HIGH );
+    #endif
 }
 #endif
 //-----------------------------------------------------

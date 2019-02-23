@@ -124,9 +124,9 @@
 // #define FIXMODE NORMALMODE    // Ist dieses define aktiv, wird der Betriebsmode fest gesetzt, betrModeP wird dann
                         // nicht gelesen und ignoriert. Mögliche Werte:
                         // NORMALMODE, POMMODE, INIMODE, ADDRMODE
-const byte betrModeP    =   A7;     // Analogeingang zur Bestimmung des Betriebsmodus. Wird nur beim
+const byte betrModeP    =   A0;     // Analogeingang zur Bestimmung des Betriebsmodus. Wird nur beim
                                     // Programmstart eingelesen!
-const byte resModeP     =   A6;     // Rücksetzen CV-Werte + Mittelstellung Servos
+const byte resModeP     =   A1;     // Rücksetzen CV-Werte + Mittelstellung Servos
 
 // Eingänge digital (die Ports A0-A5 lassen sich auch digital verwenden): ---------
 
@@ -134,8 +134,8 @@ const byte resModeP     =   A6;     // Rücksetzen CV-Werte + Mittelstellung Ser
 #define ENCODER_AKTIV       // Wird diese Zeile auskommentiert, wird der Encoder nicht verwendet. 
                             // Die Encoder-Ports werden dann ignoriert, und können anderweitig 
                             // verwendet werden.
-const byte encode1P     =   A5;     // Eingang Drehencoder zur Justierung.
-const byte encode2P     =   A4;
+const byte encode1P     =   A2;     // Eingang Drehencoder zur Justierung.
+const byte encode2P     =   A3;
 // ............................................
 //-------------------------------------------------------------------------------------------------------
 // Betriebswerte ( per CV änderbar ) Diese Daten werden nur im Initiierungsmodus in die CV's geschrieben.
@@ -146,25 +146,24 @@ const byte DccAddr          =  20;    // DCC-Decoderadresse
 const byte iniMode          = 0x50 | AUTOADDR /*| ROCOADDR*/;  // default-Betriebsmodus ( CV47 )
 const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV48/49 )
                                     // mit LocoNet-Schnittstelle ist dies die LocoNetId
-//#define NOACK                     // Diese Zeile aktivieren, wenn keine HW zum CV auslesen vorhanden ist
+//#define NOACK                     // Diese Zeile aktivieren, wenn keine HW zum CV auslesen vorhanden ist (nur DCC ).
                                     // ( kein Ack-Pin ) Der in Interfac.h definierte Pin wird dann zwar als OUTPUT
                                     // gesetzt, kann aber für beliebige Funktionen in der Tabelle unten genutzt werden
 
 // Ausgänge:  mit NC gekennzeichnete Ausgänge werden keinem Port zugeordnet. Damit können Ports gespart werden,
 //            z.B. wenn bei einem Servo kein Polarisierungsrelais benötigt wird
-const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmierung) (Led)
+const byte modePin      =   17;     // Anzeige Betriebszustand (Normal/Programmierung) (Led)
 
 #define COILMOD     NOPOSCHK|CAUTOOFF
 #define SERVOMOD    SAUTOOFF|NOPOSCHK|SDIRECT
 #define STATICMOD   CAUTOOFF|BLKSOFT|BLKSTRT    // Wechselblinker mit beiden Leds an beim Start            
-const byte iniTyp[]     =   {    FSTATIC,  FSERVO,   FSIGNAL2,   FSIGNAL0,   FVORSIG,   FCOIL };
-const byte out1Pins[]   =   {       A2,         3,   /*rt*/ 9,   /*rt*/10,  /*ge*/A0,        5 };  // output-pins der Funktionen
-const byte out2Pins[]   =   {       A3,        12,   /*gn*/11,   /*ws*/ 8,  /*gn*/A1,        6 };
-const byte out3Pins[]   =   {       NC,        NC,   /*ge*/ 7,         NC,        NC,       NC };
- 
-const byte iniFmode[]     = {STATICMOD,  SERVOMOD,          0,          0,         0,  COILMOD };
-const byte iniPar1[]      = {       50,        30,    0b01001,    0b10001,      0b01,       50 };
-const byte iniPar2[]      = {       50,       150,    0b00010,    0b00110,      0b10,       50 };
-const byte iniPar3[]      = {       50,         8,          5,          0,        19,        0 };
-const byte iniPar4[]      = {        0,         0,    0b00101,          0,         0,        0,}; // nur für Lichtsignale!
+const byte iniTyp[]   = {   FSERVO,   FSERVO,   FSERVO,   FSERVO,  FSTATIC,  FSTATIC,    FCOIL };
+const byte out1Pins[] = {        1,        0,        3,        5,       16,       14,       10 }; 
+const byte out2Pins[] = {        6,        7,        8,       NC,       NC,       15,        9 };
+
+const byte iniFmode[] = { SAUTOOFF, SAUTOOFF, SAUTOOFF,        0,  BLKMODE,        0, CAUTOOFF };
+const byte iniPar1[]  = {        0,        0,        0,        0,       50,        0,       50 };
+const byte iniPar2[]  = {      180,      180,      180,      180,       50,        0,       50 };
+const byte iniPar3[]  = {        8,        8,        8,        0,      100,        0,        0 };
+const byte iniPar4[]  = {        0,         0,       0,        0,        0,        0,        0 }; // nur für Lichtsignale!
 //------------------------------------------------------------------------------------
