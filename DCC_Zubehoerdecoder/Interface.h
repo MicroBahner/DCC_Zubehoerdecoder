@@ -27,12 +27,15 @@
 //----------- defines für DCC-Interface -----------------------------------------------------------
 #else
     #if defined ( ARDUINO_MAPLE_MINI )
+        // Definitonen für den MapleMini ( mit STM32 Prozessor )
         const byte dccPin       =   3;
         const byte ackPin       =   18;
     #elif defined (ARDUINO_GENERIC_STM32F103C)
+        // Definitionen für generische STM32-Boards 
         const byte dccPin       =   PB0;
         const byte ackPin       =   PB4;
     #else
+        // Definitionen für die 'standard' Arduinos ( UNO, Nano, Mega, Micro, Leonardo )
         const uint8_t dccPin       =   2;
         const uint8_t ackPin       =   4;
     #endif
@@ -62,7 +65,7 @@ extern const uint8_t config29Value;
 extern const uint8_t config29AddrMode;
 extern const uint8_t manIdValue;
 
-void ifc_notifyDccAccState( uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, uint8_t State );
+void ifc_notifyDccAccState( uint16_t Addr, uint8_t OutputAddr, uint8_t State );
 void ifc_notifyCVAck ( void );
 void ifc_notifyCVChange( uint16_t CvAddr, uint8_t Value );
 void ifc_notifyCVResetFactoryDefault(void);

@@ -136,7 +136,9 @@ Fstatic::Fstatic( int cvAdr, uint8_t ledP[] ) {
                 _ledS[i] = new SoftLed;
                 byte att, rise, writ;
                 att=_ledS[i]->attach( _ledP[i] );
-                _ledS[i]->riseTime( 500 );
+                rise = (getParam(MODE) >> 4) * 100;
+                if ( rise == 0 ) rise = 500; // defaultwert
+                _ledS[i]->riseTime( rise );
                 _ledS[i]->write( OFF, LINEAR );
                DB_PRINT( "Softled, pin %d, Att=%d", _ledP[i], att );
             }

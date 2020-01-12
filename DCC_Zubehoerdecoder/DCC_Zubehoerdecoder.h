@@ -67,6 +67,7 @@
  *  CV50    Bit0 = 1: Blinken,  0: statisch
  *          Bit1 = 1: Beim Blinken starten erst beide Leds dann Wechselblinken
  *          Bit2 = 1: mit weichem Auf/Abblenden 
+ *          Bit4..7:  Risetime ( in 50ms Einheiten, 0=default von 500 )
  *  CV51    Einschaltzeit des Blinkens ( 10ms Einheiten )
  *  CV52    Ausschaltzeit des Blinkens ( 10ms Einheiten )
  *  CV53    1. Einschaltzeit beim Start des Blinkens
@@ -142,7 +143,7 @@ const byte encode2P     =   A4;
 // Der Initiierungsmodus lässt sich per Mode-Eingang aktivieren oder er ist automatisch aktiv, wenn keine
 // sinnvollen Werte im CV47 stehen.
 //-------------------------------------------------------------------------------------------------------
-const byte DccAddr          =  20;    // DCC-Decoderadresse
+const int DccAddr           =  20;    // DCC-Decoderadresse
 const byte iniMode          = 0x50 | AUTOADDR /*| ROCOADDR*/;  // default-Betriebsmodus ( CV47 )
 const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV48/49 )
                                     // mit LocoNet-Schnittstelle ist dies die LocoNetId
@@ -154,9 +155,10 @@ const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV
 //            z.B. wenn bei einem Servo kein Polarisierungsrelais benötigt wird
 const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmierung) (Led)
 
+#define STATICRISE  (250/50 << 4) // Softled riseTime = 250 ( max = 750 )
 #define COILMOD     NOPOSCHK|CAUTOOFF
 #define SERVOMOD    SAUTOOFF|NOPOSCHK|SDIRECT
-#define STATICMOD   CAUTOOFF|BLKSOFT|BLKSTRT    // Wechselblinker mit beiden Leds an beim Start            
+#define STATICMOD   CAUTOOFF|BLKSOFT|BLKSTRT|STATICRISE    // Wechselblinker mit beiden Leds an beim Start            
 const byte iniTyp[]     =   {    FSTATIC,  FSERVO,   FSIGNAL2,   FSIGNAL0,   FVORSIG,   FCOIL };
 const byte out1Pins[]   =   {       A2,         3,   /*rt*/ 9,   /*rt*/10,  /*ge*/A0,        5 };  // output-pins der Funktionen
 const byte out2Pins[]   =   {       A3,        12,   /*gn*/11,   /*ws*/ 8,  /*gn*/A1,        6 };

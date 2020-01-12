@@ -125,8 +125,8 @@ CVPair FactoryDefaultCVs [] =
 
 // ----------------------- Variable ---------------------------------------------------
 byte opMode;                    // Bit 0..3 aus modeVal
-byte rocoOffs;                  // 0 bei ROCO-Adressierung, 4 sonst
-byte isOutputAddr;              // Flag ob Output-Adressing
+byte rocoOffs;                  // 4 bei ROCO-Adressierung, 0 sonst
+//byte isOutputAddr=1;            // Flag ob Output-Adressing ab 6.1 immer Ouptu-Adressind
 word weichenAddr;               // Addresse der 1. Weiche (des gesamten Blocks)
 byte ioPins[PPWA*WeichenZahl];  // alle definierten IO's in einem linearen Array
 
@@ -248,7 +248,7 @@ void setup() {
     // Betriebsart auslesen
     opMode = ifc_getCV( CV_MODEVAL) &0x0f;
     rocoOffs = ( opMode & ROCOADDR ) ? 4 : 0;
-    
+    DB_PRINT( "opMode=%d , rocoOffs=%d", opMode, rocoOffs );
 
     // Encoder-Init
     IniEncoder();
@@ -425,28 +425,23 @@ void setPosition( byte wIx, byte sollWert, byte state = 0 ) {
 // Unterprogramme, die von der DCC Library aufgerufen werden:
 //------------------------------------------------
 // Die folgende Funktion wird von ifc_process() aufgerufen, wenn ein Weichentelegramm empfangen wurde
-void ifc_notifyDccAccState( uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, uint8_t State ){
+void ifc_notifyDccAccState( uint16_t Addr, uint8_t OutputAddr, uint8_t State ){
     // Weichenadresse berechnen
     byte i,dccSoll,dccState;
-    word wAddr = Addr+rocoOffs; // Roco zählt ab 0, alle anderen lassen die ersten 4 Weichenadressen frei
-    // Im Programmiermodus bestimmt das erste empfangene Programm die erste Weichenadresse
+    uint16_t wAddr = Addr+rocoOffs; // Roco zählt ab 0, alle anderen lassen die ersten 4 Weichenadressen frei
+    // Im Programmiermodus bestimmt das erste empfangene Telegramm die erste Weichenadresse
     if ( progMode == ADDRMODE ) {
         // Adresse berechnen und speichern
-        if (isOutputAddr ) {
-            weichenAddr = wAddr;
-            ifc_setCV( cvAccDecAddressLow, wAddr%256 );
-            ifc_setCV( cvAccDecAddressHigh, wAddr/256 );
-        } else {
-            ifc_setCV( cvAccDecAddressLow, BoardAddr%64 );
-            ifc_setCV( cvAccDecAddressHigh, BoardAddr/64 );
-            weichenAddr = (ifc_getAddr( )-1)*4 +1 + rocoOffs;
-        }
+        // Decoder ist immer im Output-Adressmode
+        weichenAddr = wAddr;
+        ifc_setCV( cvAccDecAddressLow, wAddr%256 );
+        ifc_setCV( cvAccDecAddressHigh, wAddr/256 );
         progMode = PROGMODE;
         SET_PROGLED;
-       DB_PRINT( "Neu: Boardaddr: %d, 1.Weichenaddr: %d (OutputAdr.=%d)", BoardAddr, weichenAddr,isOutputAddr );
+       DB_PRINT( "Neu: 1.Weichenaddr: %d ", weichenAddr );
     }
     // Testen ob eigene Weichenadresse
-    DB_PRINT( "DecAddr=%d, Weichenadresse: %d , Ausgang: %d, State: %d", BoardAddr, wAddr, OutputAddr, State );
+    DB_PRINT( "Weichenadresse: %d , Ausgang: %d, State: %d", wAddr, OutputAddr, State );
     // Prüfen ob Adresse im Decoderbereich
     if ( wAddr >= weichenAddr && wAddr < (weichenAddr + WeichenZahl) ) {
         // ist eigene Adresse, Sollwert setzen
@@ -545,12 +540,16 @@ void ifc_notifyCVChange( uint16_t CvAddr, uint8_t Value ) {
                 DBprintCV();
             }
         #endif
-    
-        // prüfen ob die Weichenadresse verändert wurde. Dies kann durch Ändern der
-        // Adressierungsart in CV29 oder direkt durch Ändern der Decoderadresse geschehen.
+        if ( CvAddr == cv29Config ) {
+          // CV29 darf nicht verändert werden -> auf default setzen
+          ifc_setCV( cv29Config, config29Value ); // == Accessory-Decoder mit Output-Adressing
+        }
+        // prüfen ob die Weichenadresse verändert wurde. 
+        // Dies kann durch Ändern der Decoderadresse geschehen.
         // Wird die Decoderadresse geändert muss zuerst das MSB (CV9) verändert werden. Mit dem
         // Ändern des LSB (CV1) wird dann die Weichenadresse neu berechnet
-        if ( CvAddr ==  29 || CvAddr ==  cvAccDecAddressLow || CvAddr ==  cvAccDecAddressHigh) setWeichenAddr();
+        //if (CvAddr ==  cvAccDecAddressLow || CvAddr ==  cvAccDecAddressHigh) setWeichenAddr();
+        if (CvAddr ==  cvAccDecAddressLow ) setWeichenAddr();
 
         #ifdef LOCONET
         // Prüfen ob Pom-Adresse geändert wurde. Wenn ja, reset-Timer starten
@@ -742,14 +741,11 @@ void ChkAdjEncode( byte WIndex, byte dccSoll ){
 //////////////////////////////////////////////////////////////////////////
 // Allgemeine Unterprogramme 
 void setWeichenAddr(void) {
-    // Adressmodus aus CV29 auslesen
-    isOutputAddr = ifc_getCV( cv29Config ) & config29AddrMode;
-    // Adresse der 1. Weiche aus Decoderaddresse berechnen
-    if ( isOutputAddr ) 
+    // Decoder ist immer im Ouput-Adressmode
         weichenAddr = ifc_getAddr( );
-    else
-        weichenAddr = (ifc_getAddr( )-1)*4 +1 + rocoOffs ;
-    DB_PRINT("setWadr: isOA=%d, getAdr=%d, wAdr=%d", isOutputAddr, ifc_getAddr(), weichenAddr );
+   /* else
+        weichenAddr = (ifc_getAddr( )-1)*4 +1 + rocoOffs ;*/
+    DB_PRINT("setWadr: getAdr=%d, wAdr=%d", ifc_getAddr(), weichenAddr );
 }
 //--------------------------------------------------------
 void softReset(void){
@@ -796,7 +792,7 @@ void dccSim ( void ) {
                 soll = atoi( strtok( NULL, " ," ) );
                 state = atoi( strtok(NULL, " ,") );
                 DB_PRINT("Sim: AC,%d,%d,%d",adr,soll,state);
-                ifc_notifyDccAccState( adr, adr/4, soll, state );           }
+                ifc_notifyDccAccState( adr, soll, state );           }
         // Empfangspuffer rücksetzen
         rcvIx = 0;
         }

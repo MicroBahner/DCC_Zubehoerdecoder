@@ -67,6 +67,7 @@
  *  CV50    Bit0 = 1: Blinken,  0: statisch
  *          Bit1 = 1: Beim Blinken starten erst beide Leds dann Wechselblinken
  *          Bit2 = 1: mit weichem Auf/Abblenden 
+ *          Bit4..7:  Risetime ( in 50ms Einheiten, 0=default von 500 )
  *  CV51    Einschaltzeit des Blinkens ( 10ms Einheiten )
  *  CV52    Ausschaltzeit des Blinkens ( 10ms Einheiten )
  *  CV53    1. Einschaltzeit beim Start des Blinkens
@@ -154,13 +155,12 @@ const byte encode2P     =   PA4;
 // Der Initiierungsmodus lässt sich per Mode-Eingang aktivieren oder er ist automatisch aktiv, wenn keine
 // sinnvollen Werte im CV47 stehen.
 //-------------------------------------------------------------------------------------------------------
-const byte DccAddr          =  20;    // DCC-Decoderadresse
-const byte iniMode          = 0x50 | AUTOADDR /*| ROCOADDR*/;  // default-Betriebsmodus ( CV47 )
+const int DccAddr           =  20;    // DCC-Decoderadresse
+const byte iniMode          = 0x50 | AUTOADDR | ROCOADDR;  // default-Betriebsmodus ( CV47 )
 const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV48/49 )
 //#define NOACK                     // Diese Zeile aktivieren, wenn keine HW zum CV auslesen vorhanden ist
                                     // ( kein Ack-Pin ) Der in Interfac.h definierte Pin wird dann zwar als OUTPUT
                                     // gesetzt, kann aber für beliebige Funktionen in der Tabelle unten genutzt werden
-
 
 // Ausgänge:  mit NC gekennzeichnete Ausgänge werden keinem Port zugeordnet. Damit können Ports gespart werden,
 //            z.B. wenn bei einem Servo kein Polarisierungsrelais benötigt wird
@@ -178,12 +178,15 @@ const byte out3Pins[]   =   {       NC,        16,   /*ge*/15,         NC,      
 #ifdef ARDUINO_GENERIC_STM32F103C
 const byte iniTyp[]     =   {    FSTATIC,  FSERVO,   FSIGNAL2,   FSIGNAL0,    FVORSIG,   FCOIL };
 const byte out1Pins[]   =   {      PA2,       PB3,  /*rt*/PA9, /*rt*/PA10, /*ge*/ PA0,    PA15 };  // output-pins der Funktionen
-const byte out2Pins[]   =   {      PA3,       PB5, /*gn*/PC13,  /*ws*/PA8, /*gn*/ PA1,    PB12 };
+const byte out2Pins[]   =   {      PA3,       PB5, /*gn*/PB6,  /*ws*/PA8, /*gn*/ PA1,    PB12 };
 const byte out3Pins[]   =   {       NC,        NC,  /*ge*/PB7,         NC,         NC,      NC };
 #endif
 // Für andere Boards hier einfügen
 
-#define STATICMOD    CAUTOOFF|BLKSOFT|BLKSTRT    // Wechselblinker mit beiden Leds an beim Start            
+#define STATICRISE  ((250/50) << 4) // Softled riseTime = 250
+#define COILMOD     NOPOSCHK|CAUTOOFF
+#define SERVOMOD    SAUTOOFF|NOPOSCHK|SDIRECT
+#define STATICMOD   CAUTOOFF|BLKSOFT|BLKSTRT|STATICRISE    // Wechselblinker mit beiden Leds an beim Start            
 const byte iniFmode[]     = {STATICMOD,  SAUTOOFF,          0,          0,         0, NOPOSCHK };
 const byte iniPar1[]      = {       50,        30,    0b01001,    0b10001,      0b01,       20 };
 const byte iniPar2[]      = {       50,       150,    0b00010,    0b00110,      0b10,       50 };

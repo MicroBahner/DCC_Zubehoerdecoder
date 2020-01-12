@@ -94,7 +94,7 @@ uint16_t ifc_getAddr(){
 
 
 void notifySwitchRequest( uint16_t Address, uint8_t Output, uint8_t Direction ) {
-    ifc_notifyDccAccState( Address, Address%4, Direction ? 1 : 0, Output );
+    ifc_notifyDccAccState( Address, Direction ? 1 : 0, Output );
 }
 
 void notifySVChanged(uint16_t Offset){
@@ -165,8 +165,10 @@ void ifc_process() {
     Dcc.process();
 }
 // --- Callback-routinen
-void notifyDccAccState( uint16_t Addr, uint16_t BoardAddr, uint8_t OutputAddr, uint8_t State ) {
-    ifc_notifyDccAccState( Addr, BoardAddr, OutputAddr, State );
+void notifyDccAccTurnoutOutput( uint16_t Addr, uint8_t Direction, uint8_t OutputPower ) {
+    DB_PRINT("Outout: OAddr=%d Dir=%d, OPow=%d", Addr, Direction, OutputPower );
+    //ifc_notifyDccAccState( Addr, BoardAddr, OutputAddr, State );
+    ifc_notifyDccAccState( Addr, Direction, OutputPower );
 }
 
 void notifyCVAck ( ) {
