@@ -1,5 +1,5 @@
 /* Universeller DCC-Decoder für Weichen und (Licht-)Signale
-*  Version 5.0 - Die Funktionalitäten sind als Klassen definiert 
+*  Version 6.2.0 - Die Funktionalitäten sind als Klassen definiert 
 *  Die Klassenobjekte werden erst im Setup je nach Konfiguration instanziiert
 *  
  * Eigenschaften:
@@ -21,7 +21,7 @@
  *  So sind z.B. bei Servoausgängen die Endlagen per CV-Wert einstellbar, bei Lichtsignalen ist die 
  *  Zuordnung der Ausgangszustände zum Signalzustand frei konfigurierbar.
 */
-#define DCC_DECODER_VERSION_ID 0x61
+#define DCC_DECODER_VERSION_ID 0x62
 
 #include "Interface.h"
 #include "src/FuncClasses.h"

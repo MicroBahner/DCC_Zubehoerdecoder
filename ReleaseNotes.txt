@@ -52,12 +52,17 @@
  *                   -  Die eigen Adresse wird selbst berechent, da die NMRA-DCCLib bis V1.4.2 bei Outputaddressing diese Adresse
  *                      für Adressen > 255 falsch berechnet
  *                   -  Anpassungen an NMRA-DCC Lib 2.0.0
- *                   (noch nicht realisiert: -  Der Decoder arbeitet jetzt fest mit Output Addressing. CV29 kann nicht verändert werden, da es keine
- *                      sinnvoll änderbaren Einstellungen mehr enthält.)
+ *                   (noch nicht realisiert:) -  Der Decoder arbeitet jetzt fest mit Output Addressing. 
+                        CV29 kann nicht verändert werden, da es keine sinnvoll änderbaren Einstellungen mehr enthält.)
  *   Version 6.0.1  Fehlerbeseitigungen / Ergänzungen:
                     - in der Klasse Servo wurden im Konstruktor die Variablen nicht alle initiiert.
                     - Das DCC-Ack lässt sich im Konfig-File abschalten. Der in Interface.h definierte Ackpin 
                       lässt sich dann mit einer beliebigen Ausgangsfunktion nutzen.
                     Zu den Schaltbildern in der Doku wurden passende Konfig-Files in 'examples' erstellt.
  
- *                  
+ *   Version 6.2.0  - Der Decoder unterstützt bei DCC nur noch den Output-Mode. CV29 ist nicht änderbar
+                    - Für die Zubehörtelegramme wird der aktuelle CallBack der NmraDCC Lib verwendet.
+                    - Bei FSTATIC lässt sich die RiseTime für das Blinken der LED in den Bits 4-7 des Statusbytes in
+                      Schritten von 50ms ( 50...750ms) einstellen. Bei '0' gilt der voreingestellte Wert wie bisher (500ms).
+                    - Der Datentyp für die Dcc-Adresse wurde auf 'int' vergrößert. Damit können Adressen bis zum DCC-Maximum 
+                      vergeben werden.
