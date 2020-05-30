@@ -1,6 +1,6 @@
-/* Interface des Zubehördecoders
-** Alle Interface-abhängigen ( Loconet oder DCC ) Programmkomponenten werden hier
-** zusammengefasst, und neutrale Aufrufe für die Funktionalitäten im Sketch zur Verfügung gestellt.
+/* Interface des ZubehÃ¶rdecoders
+** Alle Interface-abhÃ¤ngigen ( Loconet oder DCC ) Programmkomponenten werden hier
+** zusammengefasst, und neutrale Aufrufe fÃ¼r die FunktionalitÃ¤ten im Sketch zur VerfÃ¼gung gestellt.
 */
 #include "../Interface.h"
 #include "DebugDefs.h"
@@ -103,7 +103,7 @@ void notifySVChanged(uint16_t Offset){
 }
 
 #else
-#error "Der Zubehördecoder mit LocoNet Interface läuft nicht auf dieser Platform"
+#error "Der ZubehÃ¶rdecoder mit LocoNet Interface lÃ¤uft nicht auf dieser Platform"
 #endif
 
 #else
@@ -151,7 +151,7 @@ uint16_t ifc_getAddr(){
     #if defined(NMRADCC_VERSION) && NMRADCC_VERSION >= 200
     return Dcc.getAddr(); 
     #else 
-    // wegen Fehler in älteren Versionen der Lib bei Adressen>255, die Adresse selbst berechenen
+    // wegen Fehler in Ã¤lteren Versionen der Lib bei Adressen>255, die Adresse selbst berechenen
     uint8_t CV29Value = Dcc.getCV( CV_29_CONFIG ) ; 
 
     if( CV29Value & CV29_OUTPUT_ADDRESS_MODE ) 

@@ -1,11 +1,11 @@
-/* DIY Zubehördecoder
+/* DIY ZubehÃ¶rdecoder
  *
- * Klassen für die einzelnen Funktionen FSERVO, FCOIL, FSIGNAL, FSTATIC
- * Für jede im Konfig-File definierte Funktion muss ein passendes Objekt instanziiert werden.
+ * Klassen fÃ¼r die einzelnen Funktionen FSERVO, FCOIL, FSIGNAL, FSTATIC
+ * FÃ¼r jede im Konfig-File definierte Funktion muss ein passendes Objekt instanziiert werden.
  * Die Instanziierung muss im setup() mit 'new' erfolgen.
  */
 #include <MobaTools.h>
-#include "../interface.h"
+#include "../Interface.h"
 
 #define PPWA 3                  // Zahl der Pins je Weichenadresse
 
@@ -21,8 +21,8 @@ const byte MODE=0, PAR1=1, PAR2=2, PAR3=3, STATE=4 ;
     #define setParam( parAdr, value ) ifc_setCV( _cvAdr+parAdr, value )
     #define setState( value )  ifc_setCV( _cvAdr+STATE, value )
 #else
-    // Zugriff auf die Konfig-Parameter direkt über EEPROM:
-    // ( nicht möglich bei LocoNet Interface )
+    // Zugriff auf die Konfig-Parameter direkt Ã¼ber EEPROM:
+    // ( nicht mÃ¶glich bei LocoNet Interface )
     #include <EEPROM.h>
     #define getParam( parAdr ) EEPROM.read( _cvAdr+parAdr )
     #define setParam( parAdr, value ) EEPROM.update( _cvAdr+parAdr, value )
@@ -42,10 +42,10 @@ void _digitalWrite( byte port, byte state ) ;
 //========================= Funktionsklassen  =========================================
 
 //---------------------- FCOIL -------------------------------------------
-// Flags für CV 'MODE'
+// Flags fÃ¼r CV 'MODE'
 #define CAUTOOFF 0x01   // Die Impulsdauer wird intern begrenzt
-#define NOPOSCHK 0x08   // Die Ausgänge reagieren auch auf einen Befehl, wenn die aktuelle
-                        // Postion nicht verändert wird.
+#define NOPOSCHK 0x08   // Die AusgÃ¤nge reagieren auch auf einen Befehl, wenn die aktuelle
+                        // Postion nicht verÃ¤ndert wird.
  
  class Fcoil {
      public:
@@ -57,10 +57,10 @@ void _digitalWrite( byte port, byte state ) ;
     private:
     EggTimer _pulseT;
     struct {
-        bool pulseON   :1 ;            // Flag ob Pausentimer läuft
+        bool pulseON   :1 ;            // Flag ob Pausentimer lÃ¤uft
         bool sollOut   :1;
         bool sollCoil  :1;       // anzusteuernde Spule
-        bool sollAct   :1;       // Sollwert wurde noch nicht übernommen
+        bool sollAct   :1;       // Sollwert wurde noch nicht Ã¼bernommen
         bool istCoil   :1;
     }_flags;
     #define GERADE  0x0             // Bit 0
@@ -72,10 +72,10 @@ void _digitalWrite( byte port, byte state ) ;
  };
 
 //------------------------FSTATIC -------------------------------------------- 
-// Flags für CV 'MODE':
-#define BLKMODE 0x01    // Ausgänge blinken
-#define BLKSTRT 0x02    // Starten mit beide Ausgängen EIN
-#define BLKSOFT 0x04    // Ausgänge als Softleds
+// Flags fÃ¼r CV 'MODE':
+#define BLKMODE 0x01    // AusgÃ¤nge blinken
+#define BLKSTRT 0x02    // Starten mit beide AusgÃ¤ngen EIN
+#define BLKSOFT 0x04    // AusgÃ¤nge als Softleds
 
 
  class Fstatic {
@@ -100,11 +100,11 @@ void _digitalWrite( byte port, byte state ) ;
  };
 
 //------------------------ FSERVO -------------------------------------------- 
-// Flags für CV 'MODE'
+// Flags fÃ¼r CV 'MODE'
 #define SAUTOOFF 0x01   // Impulse werden nach erreichen der Endlage abgeschaltet
-#define SDIRECT  0x02   // FDer Servo reagiert auch während der Bewegung auf einen Umschaltbefehl
-#define NOPOSCHK 0x08   // Die Ausgänge reagieren auch auf einen Befehl, wenn die aktuelle
-                        // Postion nicht verändert wird.
+#define SDIRECT  0x02   // FDer Servo reagiert auch wÃ¤hrend der Bewegung auf einen Umschaltbefehl
+#define NOPOSCHK 0x08   // Die AusgÃ¤nge reagieren auch auf einen Befehl, wenn die aktuelle
+                        // Postion nicht verÃ¤ndert wird.
 class Fservo {
     public:
     Fservo( int cvAdr, uint8_t pins[] );
@@ -112,34 +112,34 @@ class Fservo {
     void set( bool sollWert );       // neuen Schaltbefehl erhalten
 	bool isMoving ();					// Abfrage ob Servo in Bewegung
 	uint8_t getPos();					// aktuellen Status der Weiche ermitteln (GERADE/ABZW)
-	void adjust( uint8_t mode, uint8_t value );	// Servoparamter ändern
-		#define ADJPOS		0			// für Endagenjustierung: value = neue Position
-		#define ADJPOSEND	1			// neue Endlage in CV übernehmen
-		#define ADJSPEED	2			// Servogeschwindigkeit ändern
+	void adjust( uint8_t mode, uint8_t value );	// Servoparamter Ã¤ndern
+		#define ADJPOS		0			// fÃ¼r Endagenjustierung: value = neue Position
+		#define ADJPOSEND	1			// neue Endlage in CV Ã¼bernehmen
+		#define ADJSPEED	2			// Servogeschwindigkeit Ã¤ndern
     void center( uint8_t mode );
-		#define ABSOLUT	 0 		// Servo auf 90° stellen
+		#define ABSOLUT	 0 		// Servo auf 90Â° stellen
 		#define RELATIVE 1		// Mittelstellung zwischen den programmierten Endpunkten
         
     private:
     Servo8  _weicheS;
     uint16_t _cvAdr = 0;            // Adresse des CV-Blocks mit den Funktionsparametern
-    uint8_t *_outP;           		// Array mit Pins der Ausgänge
+    uint8_t *_outP;           		// Array mit Pins der AusgÃ¤nge
 		#define SERVOP	0
 		#define REL1P	1
 		#define REL2P	2
     struct {
         bool relOn    :1 ;           // Ausgangszustand der Relais  
         bool moving   :1 ;           // Servo in Bewegung
-        bool sollAbzw :1 ;           // Vorgabe für neue Servostellung
-        bool sollAct  :1 ;           // Sollwert wurde noch nicht übernommen
+        bool sollAbzw :1 ;           // Vorgabe fÃ¼r neue Servostellung
+        bool sollAct  :1 ;           // Sollwert wurde noch nicht Ã¼bernommen
         bool isAbzw   :1 ;           // Servo steht auf 'Abweig'
     } _flags;
  
  };
 //------------------------ FSIGNAL -------------------------------------------- 
-//Konstante für Lichtsignalfunktion
-// Flags für CV MODE:
-#define LEDINVERT 0x80  // FSIGNAL: SoftledAusgänge invertieren (Bit 7 des Modebyte von FSIGNAL2/3)
+//Konstante fÃ¼r Lichtsignalfunktion
+// Flags fÃ¼r CV MODE:
+#define LEDINVERT 0x80  // FSIGNAL: SoftledAusgÃ¤nge invertieren (Bit 7 des Modebyte von FSIGNAL2/3)
 const byte  LSMODE=0,       BILD1=1,    BILD2=2, VORSIG=3, DARKMASK = 4, 
             SOFTMASK2 = 5,  BILD3=6,    BILD4=7,
             SOFTMASK3=10,   BILD5=11,   BILD6=12;
@@ -151,21 +151,21 @@ const byte  LSMODE=0,       BILD1=1,    BILD2=2, VORSIG=3, DARKMASK = 4,
     Fsignal( int cvAdr, uint8_t pins[], uint8_t adrAnz, Fsignal** vorSig );
 		// adrAnz ist die Zahl der Adressen, die das Signal belegt. Daraus ergibt sich
 		// auch die Zahl der CV-Parameter und die Zahl der Pins
-    void process();                    // muss im loop() regelmäßig aufgerufen werden
+    void process();                    // muss im loop() regelmÃ¤ÃŸig aufgerufen werden
     void set( uint8_t sollWert );      // neuen Signalbefehl erhalten
     void setDark  ( bool darkFlg );    // 'true' schaltet das Signal aus(dunkel), 'false' ein
     
     private:
     void    _clrSignal ();             // SoftLed's ausschalten
     void    _setSignal ();             // aktuelles Signalbild einschalten
-    uint8_t _getHsMask ();             // Maske für Hard/Soft Umschaltung aller Ausgänge bestimmen
-    uint8_t _getSigMask( uint8_t ) ;   // Bitmaske der Ausgänge für aktuelles Signalbild bestimmen
+    uint8_t _getHsMask ();             // Maske fÃ¼r Hard/Soft Umschaltung aller AusgÃ¤nge bestimmen
+    uint8_t _getSigMask( uint8_t ) ;   // Bitmaske der AusgÃ¤nge fÃ¼r aktuelles Signalbild bestimmen
     
     Fsignal **_vorSig;              // Pointer auf Vorsignal am gleichen Mast
-    EggTimer darkT;                 // Dunkelzeit beim Überblenden zwischen Signalbildern
+    EggTimer darkT;                 // Dunkelzeit beim Ãœberblenden zwischen Signalbildern
     uint16_t _cvAdr = 0;            // Adresse des CV-Blocks mit den Funktionsparametern
     uint8_t  _pinAnz;               // Zahl der zugeordnten Ausgangspins : 3(PPWA) je CV-Block 
-    uint8_t *_outP;           		// Array mit Pins der Ausgänge
+    uint8_t *_outP;           		// Array mit Pins der AusgÃ¤nge
     SoftLed **_sigLed;              // Pointer auf Array der Softled Objekte
     struct {
         byte state   :2;            // Status der internen State-Machine
