@@ -1,4 +1,4 @@
-// Definitionen für Debugging über die serielle Schnittstell
+// Definitionen fÃ¼r Debugging Ã¼ber die serielle Schnittstell
 
 #ifndef DEBUGDEFS
 #define DEBUGDEFS
