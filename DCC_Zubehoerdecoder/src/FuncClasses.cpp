@@ -134,7 +134,8 @@ Fstatic::Fstatic( int cvAdr, uint8_t ledP[] ) {
         for ( byte i=0; i<2; i++ ) {
             if ( _ledP[i] != NC ) {
                 _ledS[i] = new SoftLed;
-                byte att, rise, writ;
+                byte att, writ;
+                int rise;
                 att=_ledS[i]->attach( _ledP[i] );
                 rise = (getParam(MODE) >> 4) * 100;
                 if ( rise == 0 ) rise = 500; // defaultwert

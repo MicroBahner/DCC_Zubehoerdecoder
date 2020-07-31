@@ -66,3 +66,8 @@
                       Schritten von 50ms ( 50...750ms) einstellen. Bei '0' gilt der voreingestellte Wert wie bisher (500ms).
                     - Der Datentyp für die Dcc-Adresse wurde auf 'int' vergrößert. Damit können Adressen bis zum DCC-Maximum 
                       vergeben werden.
+
+*   Version 6.3.0  	- Neue Funktionen FSERVO0 und FSERVO1. Damit können 2 Servos koordiniert gesteuert werden.
+					  Den 4 möglichen DCC-Kommandos können die Zustände der 2 Servos beliebig zugeordnet werden.
+					  Dies ist insbesondere für 2-bgriffige Formsignale notwendig.
+					- Fehlerbereinigungen

@@ -130,7 +130,7 @@ const byte encode2P     =  NC;
 // Der Initiierungsmodus lässt sich per Mode-Eingang aktivieren oder er ist automatisch aktiv, wenn keine
 // sinnvollen Werte im CV47 stehen.
 //-------------------------------------------------------------------------------------------------------
-const byte DccAddr          =  17;    // DCC-Decoderadresse
+const int DccAddr          =  17;    // DCC-Decoderadresse
 const byte iniMode          = 0x50 | AUTOADDR /*| ROCOADDR*/;  // default-Betriebsmodus ( CV47 )
 const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV48/49 )
 //#define NOACK                     // Diese Zeile aktivieren, wenn keine HW zum CV auslesen vorhanden ist
