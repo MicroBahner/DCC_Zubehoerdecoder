@@ -5,7 +5,7 @@
  * Die Instanziierung muss im setup() mit 'new' erfolgen.
  */
 #include <MobaTools.h>
-#include "../interface.h"
+#include "../Interface.h"
 
 #define PPWA 3                  // Zahl der Pins je Weichenadresse
 
