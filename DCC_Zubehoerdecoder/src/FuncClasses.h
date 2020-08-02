@@ -166,7 +166,7 @@ const byte  LSMODE=0,       BILD1=1,    BILD2=2, VORSIG=3, DARKMASK = 4,
     uint8_t _getSigMask( uint8_t ) ;   // Bitmaske der Ausgänge für aktuelles Signalbild bestimmen
     
     Fsignal **_vorSig;              // Pointer auf Vorsignal am gleichen Mast
-    EggTimer darkT;                 // Dunkelzeit beim Überblenden zwischen Signalbildern
+    MoToTimer darkT;                 // Dunkelzeit beim Überblenden zwischen Signalbildern
     uint16_t _cvAdr = 0;            // Adresse des CV-Blocks mit den Funktionsparametern
     uint8_t  _pinAnz;               // Zahl der zugeordnten Ausgangspins : 3(PPWA) je CV-Block 
     uint8_t *_outP;           		// Array mit Pins der Ausgänge

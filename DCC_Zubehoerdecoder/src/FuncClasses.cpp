@@ -16,10 +16,6 @@
 
 #include "FuncClasses.h"
 
-#ifdef DEBUG
-char dbgbuf[60];
-#endif
-
 
 //####################  allgemeine Hilfsfunktionen ##############################
 // Ausblenden der nicht belegten (NC) Ports
@@ -441,12 +437,13 @@ void Fsignal::setDark( bool darkFlg ) {
 //..............    
 // Signalbild umschalten
 void Fsignal::set( uint8_t sollWert ) {
-    DB_PRINT( "setSignal, CV%d, Soll=%d, Ist=%d", _cvAdr, sollWert,  _fktStatus.sigBild )
+    DB_PRINT( "setSignal, CV%d, Soll=%d, Ist=%d", _cvAdr, sollWert,  _fktStatus.sigBild );
     if (  _fktStatus.sigBild != sollWert ) {
         // Sollzustand hat sich verändert, püfen ob erlaubter Zustand
         if (  _getSigMask( sollWert) == 0xff )  {
             // Sollzustand hat Signalmaske 0xff -> diesen Zustand ignorieren
             // Sollzustand zurücksetzen
+            DB_PRINT("SigMask(soll) = %02X", _getSigMask( sollWert) );
         } else {
             // Gültiger Zustand, übernehmen, Flag setzen und Timer aufziehen
             _fktStatus.sigBild =  sollWert;
