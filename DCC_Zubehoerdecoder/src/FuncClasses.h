@@ -55,7 +55,7 @@ void _digitalWrite( byte port, byte state ) ;
 
     
     private:
-    EggTimer _pulseT;
+    MoToTimer _pulseT;
     struct {
         bool pulseON   :1 ;            // Flag ob Pausentimer läuft
         bool sollOut   :1;
@@ -105,6 +105,9 @@ void _digitalWrite( byte port, byte state ) ;
 #define SDIRECT  0x02   // FDer Servo reagiert auch während der Bewegung auf einen Umschaltbefehl
 #define NOPOSCHK 0x08   // Die Ausgänge reagieren auch auf einen Befehl, wenn die aktuelle
                         // Postion nicht verändert wird.
+#define SAUTOBACK 0x04  // Servo fährt automatisch in die Grundstellung zurück (nach Zeitablauf)
+#define SAUTOTIME 2000 // Defaultwert ( wenn State-Parameter = 0 ist )
+
 class Fservo {
     public:
     Fservo( int cvAdr, uint8_t pins[] );
@@ -121,7 +124,8 @@ class Fservo {
 		#define RELATIVE 1		// Mittelstellung zwischen den programmierten Endpunkten
         
     private:
-    Servo8  _weicheS;
+    MoToServo  _weicheS;
+    MoToTimer  _autoTime;           // zum automatischen Zurückfahren
     uint16_t _cvAdr = 0;            // Adresse des CV-Blocks mit den Funktionsparametern
     uint8_t *_outP;           		// Array mit Pins der Ausgänge
 		#define SERVOP	0

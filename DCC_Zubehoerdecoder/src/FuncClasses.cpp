@@ -134,7 +134,7 @@ Fstatic::Fstatic( int cvAdr, uint8_t ledP[] ) {
         for ( byte i=0; i<2; i++ ) {
             if ( _ledP[i] != NC ) {
                 _ledS[i] = new SoftLed;
-                byte att, writ;
+                byte att;
                 int rise;
                 att=_ledS[i]->attach( _ledP[i] );
                 rise = (getParam(MODE) >> 4) * 100;
@@ -235,7 +235,8 @@ Fservo::Fservo( int cvAdr, uint8_t pins[] ) {
     _pinMode( _outP[REL1P], OUTPUT );
     _pinMode( _outP[REL2P], OUTPUT );
     // Servowerte und Relaisausgang initiieren und ausgeben
-    _flags.isAbzw = getParam( STATE );
+    if ( getParam(MODE) & SAUTOBACK )  _flags.isAbzw = 0;
+    else                                _flags.isAbzw = getParam( STATE );
     _flags.sollAbzw = _flags.isAbzw ;
     _flags.relOn = _flags.isAbzw;
     _digitalWrite( _outP[REL1P], _flags.relOn );
@@ -260,7 +261,13 @@ void Fservo::set( bool sollAbzw ) {
 void Fservo::process() {
     // Umstellvorgang kontrollieren
     // Diese Methode muss in jedem loop() Durchlauf aufgerufen werden
-
+    if ( _autoTime.expired() && _flags.sollAbzw ) {
+        // Servo steht in Arbeitsstellung und Zeit ist abgelaufen: zurückfahren
+        _flags.sollAbzw = false;
+        _flags.sollAct = true;
+        DB_PRINT( "ServoTimer abgelaufen, _istlAbz=%d", _flags.isAbzw  );
+     }   
+    
     if ( _flags.moving ) {
         // Weiche wird gerade ungestellt, Schaltpunkt Relais und Bewegungsende überwachen
         if ( _flags.sollAbzw != _flags.isAbzw && (getParam( MODE) & SDIRECT) ) {
@@ -275,7 +282,17 @@ void Fservo::process() {
             // Bewegung abgeschlossen, 'MOVING'-Bit löschen und Lage in CV speichern
             _flags.moving = false; 
             _flags.sollAct = false;
-            setState( _flags.isAbzw );
+            if ( getParam( MODE ) & SAUTOBACK ) {
+                if ( _flags.isAbzw ) {
+                    // Bei Arbeitsstellung Timer für Rückfahren starten
+                    if ( getParam(STATE) <= 1 ) _autoTime.setTime(SAUTOTIME);
+                    else                        _autoTime.setTime( getParam(STATE) * 100 );
+                    DB_PRINT("Timer gestartet, Zeit=%d", _autoTime.getTime() );
+                }
+            } else {
+                // ohne Autoback aktuelle Lage speicern
+                setState( _flags.isAbzw );
+            }
             /*if ( getParam( MODE ) & NOPOSCHK ) {
                 // Soll auf 'ungültig' stellen, damit auch neue Telegramme mit gleicher
                 // Position erkannt werden (ausser es wurde schon verändert )
@@ -331,7 +348,8 @@ void Fservo::adjust( uint8_t mode, uint8_t value ) {
         // Justierungswert im CV der aktuellen Position speichern
         if ( _flags.isAbzw ) setParam( PAR2, value );
         else setParam( PAR1, value );
-        // kein break, da weichenservo auch noch auf diese Position gestellt wird.    
+        // kein break, da weichenservo auch noch auf diese Position gestellt wird. 
+        [[fallthrough]];
       case ADJPOS:
         _weicheS.write( value );
         break;
@@ -387,7 +405,7 @@ Fsignal::Fsignal( int cvAdr, uint8_t pins[], uint8_t pinAnz, Fsignal** vorSig ){
                 _sigLed[pIx] = NULL;
             } else {
                 // Bit = 0 -> Softled
-                byte att, rise, writ; // nur für Testzwecke ( DB_PRINT )
+                byte att; // nur für Testzwecke ( DB_PRINT )
                 _sigLed[pIx] = new SoftLed;
                 att=_sigLed[pIx]->attach( _outP[pIx] , getParam( LSMODE ) & LEDINVERT );
                 _sigLed[pIx]->riseTime( SIG_RISETIME );

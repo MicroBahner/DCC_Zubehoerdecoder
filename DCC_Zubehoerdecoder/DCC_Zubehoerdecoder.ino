@@ -1,5 +1,5 @@
 /* Universeller DCC-Decoder für Weichen und (Licht-)Signale
-*  Version 6.2.0 - Die Funktionalitäten sind als Klassen definiert 
+*  Version 6.3.0 - Die Funktionalitäten sind als Klassen definiert 
 *  Die Klassenobjekte werden erst im Setup je nach Konfiguration instanziiert
 *  
  * Eigenschaften:
@@ -11,17 +11,20 @@
  * 3 Ausgänge / Zubehöradresse
  * Einstellbare Funktionalität:
  *  - Servo mit Umschaltrelais zur Weichenpolarisierung
+ *  - logische Kopplung von 2 Servos für 3-begriffige Formsignale
+ *  - Impulsfunktion für Servos ( automatisches Rückkehren in Ausgangslage,
+ *    z.B. für Entkuppler )
  *  - Doppelspulenantriebe
  *  - statische Ausgänge
  *  - blinkende Ausgänge
- *  - Signalfunktionen
+ *  - Lichtsignalfunktionen
  *  
  *  Die Funnktionalität und IO-Zuordnung wird über Tabellen im h-File festgelegt.
  *  Die Konfiguration der einzelnen Funktionen geschieht über CV-Programmierung.
  *  So sind z.B. bei Servoausgängen die Endlagen per CV-Wert einstellbar, bei Lichtsignalen ist die 
  *  Zuordnung der Ausgangszustände zum Signalzustand frei konfigurierbar.
 */
-#define DCC_DECODER_VERSION_ID 0x62
+#define DCC_DECODER_VERSION_ID 0x63
 
 #include "Interface.h"
 #include "src/FuncClasses.h"
@@ -55,7 +58,8 @@
 #define FSIGNAL0    4 // Folgeadresse für Signale
 #define FSIGNAL2    5 // 1. Signaladresse 
 #define FVORSIG     6 // 1. Vorsignaladresse
-#define FMAX        6  
+#define FSERVO0     7 // Folgeadresse bei 2 gekoppelten Servos
+#define FMAX        7  
 
 //---------------------------------------
 //Flags für iniMode:
@@ -104,7 +108,7 @@ const byte WeichenZahl = sizeof(iniTyp);
 enum { WADR_LOW, WADR_HIGH, ROPIN0, ROPIN1, ROPIN2, ROFUNKT } ;
 
 
-#define cvAdr(wIx,par)      CV_FUNCTION+CV_BLKLEN*wIx+par
+#define cvAdr(wIx,par)      (uint16_t)CV_FUNCTION+CV_BLKLEN*wIx+par
 #define getCvPar(wIx,par)   ifc_getCV( cvAdr(wIx,par) )
 #define cvEAdr(wIx,epar)    CV_EXTDATA+epar+CV_ERWLEN*wIx  
 #define getCvExtPar(wIx,epar) ifc_getCV( cvEAdr(wIx,epar) )
@@ -226,7 +230,7 @@ void setup() {
           Serial.println( "??" );
           
       }
-    #endif
+    #endif // Ende #ifdef DEBUG
 
     //-------------------------------------
     // CV's initiieren
@@ -290,6 +294,7 @@ void setup() {
                 // kein gültiger Vorsignalindex gefunden
                 vsIx = 0;
             }
+            [[fallthrough]];
             // die restliche Bearbeitung ist bei Signalen und Vorsignalen gleich
           case FVORSIG:
             {   // Zahl der Ausgangspins (PPWA*Folgeadressen) bestimmen
@@ -470,7 +475,7 @@ void ifc_notifyDccAccState( uint16_t Addr, uint8_t OutputAddr, uint8_t State ){
     }
     // Prüfen ob Vorsignal über Hauptsignaladresse geschaltet werden muss
     for ( i = 0; i < WeichenZahl; i++ ) {
-        int vsAdr;
+        uint16_t vsAdr;
         if ( iniTyp[i] == FVORSIG  ) {
             // Adresse des zugehörigen Hauptsignals bestimmen
             vsAdr = getCvPar(i, PAR3) + 256 * getCvPar(i, STATE);
