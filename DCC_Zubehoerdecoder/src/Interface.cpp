@@ -166,9 +166,16 @@ void ifc_process() {
 }
 // --- Callback-routinen
 void notifyDccAccTurnoutOutput( uint16_t Addr, uint8_t Direction, uint8_t OutputPower ) {
-    DB_PRINT("Outout: OAddr=%d Dir=%d, OPow=%d", Addr, Direction, OutputPower );
-    //ifc_notifyDccAccState( Addr, BoardAddr, OutputAddr, State );
-    ifc_notifyDccAccState( Addr, Direction, OutputPower );
+    // mehrere gleiche Telegramme nicht weiterleiten ( vereinfacht debugging)
+    static uint16_t lastAddr;
+    static uint8_t lastDir;
+    static uint8_t lastOp;
+    if ( lastAddr!=Addr||lastDir!=Direction||lastOp!=OutputPower ) {
+        DB_PRINT("Outout: OAddr=%d Dir=%d, OPow=%d", Addr, Direction, OutputPower );
+        //ifc_notifyDccAccState( Addr, BoardAddr, OutputAddr, State );
+        ifc_notifyDccAccState( Addr, Direction, OutputPower );
+        lastAddr=Addr; lastDir=Direction; lastOp=OutputPower;
+    }
 }
 
 void notifyCVAck ( ) {

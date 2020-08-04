@@ -39,7 +39,7 @@ Fcoil::Fcoil( int cvAdr, uint8_t out1P[] ) {
     // Konstruktor für Doppelspulenantriebe
     _cvAdr = cvAdr;
     _outP = out1P;
-    DB_PRINT( "Fcoil CV=%d, OutPins %d,%d ", _cvAdr, _outP[0], _outP[1] );
+    DBCL_PRINT( "Fcoil CV=%d, OutPins %d,%d ", _cvAdr, _outP[0], _outP[1] );
     
     for ( byte i=0; i<2; i++ ) {
         _pinMode( _outP[i], OUTPUT );
@@ -64,21 +64,21 @@ void Fcoil::process() {
         // Pulseausgägne einschalten
     if (  !_flags.pulseON && !_pulseT.running() &&  _flags.sollAct ) {
         // Aktionen am Ausgang nur wenn kein aktiver Impuls und der Pausentimer nicht läuft
-        DB_PRINT(" Ist=%d, Soll=%d ", _flags.istCoil, _flags.sollCoil );
+        DBCL_PRINT(" Ist=%d, Soll=%d ", _flags.istCoil, _flags.sollCoil );
         if ( ( _flags.istCoil != _flags.sollCoil || (getParam( MODE) & NOPOSCHK) )
                 && _flags.sollOut ) {
             // Weiche soll geschaltet werden
-            DB_PRINT(" State=%d",  _flags.sollOut );
+            DBCL_PRINT(" State=%d",  _flags.sollOut );
             if ( (_flags.sollCoil & 1) == 0 ) {
                 // Out1 aktiv setzen
                 _digitalWrite( _outP[0], HIGH );
                 _digitalWrite( _outP[1], LOW );
-                //DB_PRINT( "Pin%d HIGH, Pin%d LOW", _outP[0], _outP[1] );
+                //DBCL_PRINT( "Pin%d HIGH, Pin%d LOW", _outP[0], _outP[1] );
             } else {
                 // Out2 aktiv setzen
                 _digitalWrite( _outP[1], HIGH );
                 _digitalWrite( _outP[0], LOW );
-                //DB_PRINT( "Pin%d LOW, Pin%d HIGH", _outP[0], _outP[1] );
+                //DBCL_PRINT( "Pin%d LOW, Pin%d HIGH", _outP[0], _outP[1] );
             }
             _flags.pulseON = true;
             if ( getParam( PAR1) > 0 ) _pulseT.setTime( getParam( PAR1) * 10 );
@@ -100,7 +100,7 @@ void Fcoil::process() {
         // Timerabschaltung
         if ( (getParam( PAR1) > 0) && ! _pulseT.running()  ) {
             //  Timerabschaltung ist aktiv und Timer ist abgelaufen
-            //DB_PRINT( "Pin%d LOW, Pin%d LOW", _outP[0], _outP[1] );
+            //DBCL_PRINT( "Pin%d LOW, Pin%d LOW", _outP[0], _outP[1] );
             _flags.pulseON = false;
         }
         
@@ -123,7 +123,7 @@ Fstatic::Fstatic( int cvAdr, uint8_t ledP[] ) {
     // Konstruktor der Klasse für statisches Leuchten bzw. blinken
     _cvAdr = cvAdr;
     _ledP = ledP;
-    DB_PRINT( "Fstatic CV=%d, LedPis %d,%d ", _cvAdr, _ledP[0], _ledP[1] );
+    DBST_PRINT( "Fstatic CV=%d, LedPis %d,%d ", _cvAdr, _ledP[0], _ledP[1] );
     // Modi der Ausgangsports
     if ( getParam( MODE ) & BLKSOFT ) {
         // Ausgangsports als Softleds einrichten
@@ -137,13 +137,13 @@ Fstatic::Fstatic( int cvAdr, uint8_t ledP[] ) {
                 if ( rise == 0 ) rise = 500; // defaultwert
                 _ledS[i]->riseTime( rise );
                 _ledS[i]->write( OFF, LINEAR );
-               DB_PRINT( "Softled, pin %d, Att=%d", _ledP[i], att );
+               DBST_PRINT( "Softled, pin %d, Att=%d", _ledP[i], att );
             }
         }
     } else {
         if ( _ledP[0] != NC ) pinMode( _ledP[0], OUTPUT );
         if ( _ledP[1] != NC ) pinMode( _ledP[1], OUTPUT );
-        DB_PRINT( "Hardled, pins %d,%d ", _ledP[0], _ledP[1] );
+        DBST_PRINT( "Hardled, pins %d,%d ", _ledP[0], _ledP[1] );
     }
     // Grundstellung der Ausgangsports
     _flags.isOn = !getParam( STATE );
@@ -171,13 +171,13 @@ void Fstatic::set( bool sollOn ) {
         } else {                   
             _setLedPin(1, !sollOn );                    
         }
-        DB_PRINT( "Fkt=%d, Soll=%d, Ist=%d", _cvAdr, sollOn, _flags.isOn );
+        DBST_PRINT( "Fkt=%d, Soll=%d, Ist=%d", _cvAdr, sollOn, _flags.isOn );
         _flags.isOn = sollOn;
         setState( _flags.isOn );
         if ( _flags.isOn && ( getParam( MODE ) & BLKMODE ) ) {
             // Funktion wird eingeschaltet und Blinkmode ist aktiv -> Timer setzen
             _pulseT.setTime( getParam( PAR3)*10 );
-            DB_PRINT( "BlkEin %d/%d, Strt=%x", getParam( PAR1) , getParam( PAR2), (getParam( MODE) & BLKSTRT)  );
+            DBST_PRINT( "BlkEin %d/%d, Strt=%x", getParam( PAR1) , getParam( PAR2), (getParam( MODE) & BLKSTRT)  );
             _flags.blkOn = true;
         }
     }
@@ -243,6 +243,8 @@ Fservo::Fservo( int cvAdr, uint8_t pins[], int8_t modeOffs ) {
     _flags.sollAct = false;
     _flags.moving = false;
     _weicheS.write( getParam( posOffset[_istPos] ) );
+    DBSV_PRINT("ServoObj@%04x, Pins=%04x, cvAdr=%d, modeOffs=%d", (uint16_t)this , _outP, _cvAdr, _modeOffs);
+    DBSV_PRINT("ModeByte=%02x", getParam( _modeOffs ) ) ;
    
 }
 
@@ -261,7 +263,7 @@ void Fservo::process() {
         // Servo steht in Arbeitsstellung und Zeit ist abgelaufen: zurückfahren
         _sollPos = 0;
         _flags.sollAct = true;
-        DBSV_PRINT( "ServoTimer abgelaufen, _istlAbz=%d", _istPos  );
+        DBSV_PRINT( "(%04x) ServoTimer abgelaufen, _istlAbz=%d",(uint16_t)this, _istPos  );
      }   
     
     if ( _flags.moving ) {

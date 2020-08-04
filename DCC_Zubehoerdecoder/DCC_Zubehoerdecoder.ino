@@ -83,7 +83,7 @@ const byte WeichenZahl = sizeof(iniTyp);
 
 
 
-#define cvAdr(wIx,par)      (uint16_t)CV_FUNCTION+CV_BLKLEN*wIx+par
+#define cvAdr(wIx,par)      (uint16_t)CV_FUNCTION+CV_BLKLEN*(wIx)+(par)
 #define getCvPar(wIx,par)   ifc_getCV( cvAdr(wIx,par) )
 #define cvEAdr(wIx,epar)    CV_EXTDATA+epar+CV_ERWLEN*wIx  
 #define getCvExtPar(wIx,epar) ifc_getCV( cvEAdr(wIx,epar) )
@@ -264,7 +264,7 @@ void setup() {
                     // nein, 2 Servos mit kombinatorischer Ansteuerung
                     // das 2. Servo greift auf das Modbyte des 1. Servos zu, da das Mod-Byte
                     // des 2. Servos die Stellungskombinatorik enthält
-                    Fptr.servo[wIx] = new Fservo( cvAdr(wIx+1,0) , &ioPins[(wIx+1)*PPWA], -CV_BLKLEN );
+                    Fptr.servo[wIx+1] = new Fservo( cvAdr(wIx+1,0) , &ioPins[(wIx+1)*PPWA], -CV_BLKLEN );
                 }
             }
             break;
@@ -354,7 +354,7 @@ void loop() {
             break;
 
           case FCOIL: //Doppelspulenantriebe ------------------------------------------------------
-           //if ( dccSoll[i] != SOLL_INVALID ) DB_PRINT( "SollCoil=%d", dccSoll[i] );
+           //if ( dccSoll[i] != SOLL_INVALID ) DBCL_PRINT( "SollCoil=%d", dccSoll[i] );
            Fptr.coil[i]->process();
             break;
           case FSTATIC: // Ausgang statisch ein/ausschalten ------------------------------------
@@ -408,7 +408,8 @@ void setPosition( byte wIx, byte sollWert, byte state = 0 ) {
           // prüfen, ob es zwei in Kombination anzusteuernde Servos sind
           if ( iniTyp[wIx+1] == FSERVO0 && out1Pins[wIx] != out1Pins[wIx+1] ) {
             // ja, Positionen aus dem Modbyte des 2. Servos bestimmen.
-            byte pos = ifc_getCV( CV_FUNCTION + CV_BLKLEN*wIx ) >> ( sollWert*2 );
+            byte pos = ifc_getCV( CV_FUNCTION + CV_BLKLEN*(wIx+1) ) >> ( sollWert*2 );
+            DBSV_PRINT("Stellbyte=%02X",pos);
             Fptr.servo[wIx]->set( pos&1 );
             pos >>= 1;
             Fptr.servo[wIx+1]->set( pos&1 );
