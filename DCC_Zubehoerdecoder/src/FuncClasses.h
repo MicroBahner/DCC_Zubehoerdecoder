@@ -112,9 +112,10 @@ class Fservo {
     public:
     Fservo( int cvAdr, uint8_t pins[], int8_t modeOffs=MODE );
     void process();
-    void set( bool sollWert );       // neuen Schaltbefehl erhalten
+    void set( uint8_t sollWert );       // neuen Schaltbefehl erhalten
 	bool isMoving ();					// Abfrage ob Servo in Bewegung
-	uint8_t getPos();					// aktuellen Status der Weiche ermitteln (GERADE/ABZW)
+	uint8_t getPos();					// aktuelle Positionsnr. des Servo ermitteln 
+    uint8_t getCvPos();                 // CV-Wert zur aktuellen Position ermitteln
 	void adjust( uint8_t mode, uint8_t value );	// Servoparamter ändern
 		#define ADJPOS		0			// für Endagenjustierung: value = neue Position
 		#define ADJPOSEND	1			// neue Endlage in CV übernehmen
@@ -124,6 +125,8 @@ class Fservo {
 		#define RELATIVE 1		// Mittelstellung zwischen den programmierten Endpunkten
         
     private:
+    // offset für die CV's der Positionswerte
+    static const uint8_t posOffset[6];
     MoToServo  _weicheS;
     MoToTimer  _autoTime;           // zum automatischen Zurückfahren
     uint16_t _cvAdr = 0;            // Adresse des CV-Blocks mit den Funktionsparametern
@@ -134,12 +137,12 @@ class Fservo {
 		#define SERVOP	0
 		#define REL1P	1
 		#define REL2P	2
+    uint8_t _sollPos;                // Sollposition des Servo ( 0...3 )
+    uint8_t _istPos;                 // istposition des Servo
     struct {
         bool relOn    :1 ;           // Ausgangszustand der Relais  
         bool moving   :1 ;           // Servo in Bewegung
-        bool sollAbzw :1 ;           // Vorgabe für neue Servostellung
         bool sollAct  :1 ;           // Sollwert wurde noch nicht übernommen
-        bool isAbzw   :1 ;           // Servo steht auf 'Abweig'
     } _flags;
  
  };

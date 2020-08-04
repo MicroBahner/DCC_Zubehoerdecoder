@@ -52,6 +52,33 @@ extern byte progMode;
                         // Start aus den defaults geladen
 #define INIALL      5   // Alle CV's m�ssen initiiert werden
 
+//...............Definition der CV-Adressen ..................................
+#define CV_INIVAL     45  // Valid-Flag
+#define CV_MODEVAL    47  // Initiierungs-CV,  Bits 0..3 für Betriebsarten
+// Da die SV-Adressen ( LocoNet ) und die CV-Adressen (DCC ) von den jeweiligen Libs um zwei versetzt
+// adressiert werden, sind die EEPROM-Werte beim Wechsel des Interfaces ungültig. Deshalb muss in diesem
+// Fall das EEPROM neu initiiert werden. Wegen des Versatzes um 2 wird das Valid-Flag in 2 
+// Speicherzellen geschrieben, so dass das Valid-Flag des jeweils anderen Interfaces sicher zerstört wird.
+#ifdef LOCONET
+    #define VALIDFLG  0xA0 // Wenn das Interface sich ändert, muss alles neu initiiert werden.
+                           // Low Nibble muss 0 sein ( wg. MODEVAL-Bits )
+#else
+    #define VALIDFLG  0x50
+#endif
+
+#define CV_POMLOW     48  // Adresse für die POM-Programmierung
+#define CV_POMHIGH    49
+#define CV_FUNCTION   50  // Start der Blöcke für die Funktionskonfiguration
+#define CV_BLKLEN      5  // Länge eines CV-Blocks ( pro Adresse ein Block )
+                          // Die Bedeutung ist weitgehend funktionsspezifisch
+
+// für spätere Erweiterungen wird ein weiterer Satz CV's definiert mit zusätzlichen Informationen
+// (speziell für die Programmierung per LocoNet sinnvoll)
+#define CV_EXTDATA     150
+#define CV_ERWLEN         6     // Blockklänge der Erweiterungsdaten
+//enum { WADR_LOW=0, WADR_HIGH=1, PIN0=2, PIN1=3, PIN2=4, FUNKT=5 } ;
+enum { WADR_LOW, WADR_HIGH, ROPIN0, ROPIN1, ROPIN2, ROFUNKT } ;
+
 extern const byte modePin;
 #define SET_PROGLED digitalWrite( modePin, HIGH )
 #define CLR_PROGLED digitalWrite( modePin, LOW )

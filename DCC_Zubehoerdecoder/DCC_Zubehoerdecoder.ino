@@ -81,31 +81,6 @@
 //-------------------------------------------
 const byte WeichenZahl = sizeof(iniTyp);
 
-//-------------------------------Definition der CV-Adressen ---------------------------------------
-#define CV_INIVAL     45  // Valid-Flag
-#define CV_MODEVAL    47  // Initiierungs-CV,  Bits 0..3 für Betriebsarten
-// Da die SV-Adressen ( LocoNet ) und die CV-Adressen (DCC ) von den jeweiligen Libs um zwei versetzt
-// adressiert werden, sind die EEPROM-Werte beim Wechsel des Interfaces ungültig. Deshalb muss in diesem
-// Fall das EEPROM neu initiiert werden. Wegen des Versatzes um 2 wird das Valid-Flag in 2 
-// Speicherzellen geschrieben, so dass das Valid-Flag des jeweils anderen Interfaces sicher zerstört wird.
-#ifdef LOCONET
-    #define VALIDFLG  0xA0 // Wenn das Interface sich ändert, muss alles neu initiiert werden.
-                           // Low Nibble muss 0 sein ( wg. MODEVAL-Bits )
-#else
-    #define VALIDFLG  0x50
-#endif
-#define CV_POMLOW     48  // Adresse für die POM-Programmierung
-#define CV_POMHIGH    49
-#define CV_FUNCTION   50  // Start der Blöcke für die Funktionskonfiguration
-#define CV_BLKLEN      5  // Länge eines CV-Blocks ( pro Adresse ein Block )
-                          // Die Bedeutung ist weitgehend funktionsspezifisch
-
-// für spätere Erweiterungen wird ein weiterer Satz CV's definiert mit zusätzlichen Informationen
-// (speziell für die Programmierung per LocoNet sinnvoll)
-#define CV_EXTDATA     150
-#define CV_ERWLEN         6     // Blockklänge der Erweiterungsdaten
-//enum { WADR_LOW=0, WADR_HIGH=1, PIN0=2, PIN1=3, PIN2=4, FUNKT=5 } ;
-enum { WADR_LOW, WADR_HIGH, ROPIN0, ROPIN1, ROPIN2, ROFUNKT } ;
 
 
 #define cvAdr(wIx,par)      (uint16_t)CV_FUNCTION+CV_BLKLEN*wIx+par
@@ -143,6 +118,7 @@ union { // für jede Klasse gibt es ein Array, die aber übereinanderliegen, da 
     Fsignal *sig[WeichenZahl];
 }Fptr;    
 
+Fservo *AdjServo = NULL ;   // Pointer auf zu justierenden Servo
 
 byte progMode;      // Merker ob Decoder im Programmiermodus
 // -------- Encoderauswertung ----- Justierung der Servoendlage -----------------------------
@@ -279,7 +255,18 @@ void setup() {
         byte vsIx = 0;  // Vorsignalindex am Mast auf 0 (kein Vorsignal) vorbesetzen
         switch (iniTyp[wIx] )  {
           case FSERVO:
+            // 1. Servo immer einrichten
             Fptr.servo[wIx] = new Fservo( cvAdr(wIx,0) , &ioPins[wIx*PPWA] );
+            // Prüfen ob Servokombination ( Folgetyp = FSERVO0 )
+            if ( wIx+1<WeichenZahl && iniTyp[wIx+1] == FSERVO0 ){
+                // prüfen ob FSERVO0 gleicher Anschlußpin ( =Servo mit mehreren Stellungen )
+                if ( out1Pins[wIx] != out1Pins[wIx+1] ) {
+                    // nein, 2 Servos mit kombinatorischer Ansteuerung
+                    // das 2. Servo greift auf das Modbyte des 1. Servos zu, da das Mod-Byte
+                    // des 2. Servos die Stellungskombinatorik enthält
+                    Fptr.servo[wIx] = new Fservo( cvAdr(wIx+1,0) , &ioPins[(wIx+1)*PPWA], -CV_BLKLEN );
+                }
+            }
             break;
           case FCOIL:
             Fptr.coil[wIx] = new Fcoil( cvAdr(wIx,0) , &ioPins[wIx*PPWA] );
@@ -303,7 +290,7 @@ void setup() {
                     pinZahl+=PPWA;
                     if ( wIx+2<WeichenZahl && iniTyp[wIx+2] == FSIGNAL0 ) pinZahl+=PPWA;
                 }
-                DB_PRINT("Signal %d, PinMax=%d, Vsindex: %d",wIx+1, pinZahl, vsIx );
+                DBSG_PRINT("Signal %d, PinMax=%d, Vsindex: %d",wIx+1, pinZahl, vsIx );
                 if ( vsIx == 0 ) {
                     Fptr.sig[wIx] = new Fsignal( cvAdr(wIx,0) , &ioPins[wIx*PPWA], pinZahl, NULL );
                 } else {
@@ -311,8 +298,8 @@ void setup() {
                 }
             }
             break;
-          default: // auch FSIGNAL0
-            // hier werden gegebenenfalls Signalfolgetypen übersprungen
+          default: // auch FSIGNAL0, FSERVO0
+            // hier werden gegebenenfalls Servo- und Signalfolgetypen übersprungen
             ;
         } // Ende switch Funktionstypen
     } // Ende loop über alle Funktionen
@@ -358,6 +345,12 @@ void loop() {
         switch ( iniTyp[i]  ) {
           case FSERVO: // Servoausgänge ansteuern ----------------------------------------------
             Fptr.servo[i]->process();
+            break;
+          case FSERVO0: // Folgeservo ansteuern ----------------------------------------------
+            // nur, wenn FSERVO0 ein eigener Servo ist ( Servopin != Vorgängerpin )
+            if ( out1Pins[i] != out1Pins[i-1] ){
+                Fptr.servo[i]->process();
+            }
             break;
 
           case FCOIL: //Doppelspulenantriebe ------------------------------------------------------
@@ -412,7 +405,17 @@ void setPosition( byte wIx, byte sollWert, byte state = 0 ) {
     DB_PRINT("Set wIx=%d, soll=%d, state=%d", wIx, sollWert, state);
     switch ( iniTyp[wIx] ) {
         case FSERVO:
-          Fptr.servo[wIx]->set( sollWert );
+          // prüfen, ob es zwei in Kombination anzusteuernde Servos sind
+          if ( iniTyp[wIx+1] == FSERVO0 && out1Pins[wIx] != out1Pins[wIx+1] ) {
+            // ja, Positionen aus dem Modbyte des 2. Servos bestimmen.
+            byte pos = ifc_getCV( CV_FUNCTION + CV_BLKLEN*wIx ) >> ( sollWert*2 );
+            Fptr.servo[wIx]->set( pos&1 );
+            pos >>= 1;
+            Fptr.servo[wIx+1]->set( pos&1 );
+          } else {
+            // Standardservo oder Mehrstellungsservo
+            Fptr.servo[wIx]->set( sollWert );
+          }
           break;
         case FSTATIC:
           Fptr.stat[wIx]->set( sollWert );
@@ -453,24 +456,26 @@ void ifc_notifyDccAccState( uint16_t Addr, uint8_t OutputAddr, uint8_t State ){
         byte Ix = wAddr-weichenAddr;
         dccSoll =  OutputAddr & 0x1;
         dccState = State;
+        
+       
         //DB_PRINT( "Weiche %d, Index %d, Soll %d, Ist %d", wAddr, Ix, dccSoll[Ix],  fktStatus[Ix] );
-        // Bei Signaladressen muss der Sollzustand gegebenenfalls angepasst werden: Bei der ersten
+        // Bei Servo- und Signaladressen muss der Sollzustand gegebenenfalls angepasst werden: Bei der ersten
         // Folgeadresse von 0/1 auf 2/3, bei der 2. Folgeadresse auf 4/5 ( Signale können bis zu 6
-        // Sollzustände haben ). Ausserdem muss dieser geänderte Sollzustand bei der Signalgrundadresse
-        // eingetragen werden.
-        if ( iniTyp[Ix] == FSIGNAL0 ) {
-            // es ist eine Signalfolgeadresse
+        // Sollzustände haben ). Ausserdem muss dieser geänderte Sollzustand an die Grundadresse
+        // übergeben werden.
+        if ( iniTyp[Ix] == FSIGNAL0 || iniTyp[Ix] == FSERVO0 ) {
+            // es ist eine Folgeadresse
             dccSoll += 2;
-            Ix--;
+            Ix--;           // Index auf Grundadresse stellen
             if ( iniTyp[Ix] == FSIGNAL0 ) {
                 // ist 2. Folgeadresse
                  dccSoll += 2;
                  Ix--;
             }
-        } else if ( iniTyp[Ix] == FSERVO ) {
-            // bei Servos prüfen ob gerade Endlagenjustierung aktiv ist
+        } /*else  if ( iniTyp[Ix] == FSERVO || ( iniTyp[Ix] == FSERVO0 && out1Pins[Ix] != out1Pins[Ix-1] ) ) {
+            // bei Servos prüfen ob gerade Endlagenjustierung aktiv ist*/
             ChkAdjEncode( Ix, dccSoll );
-        }
+        //}
         setPosition( Ix, dccSoll, dccState );
     }
     // Prüfen ob Vorsignal über Hauptsignaladresse geschaltet werden muss
@@ -480,7 +485,7 @@ void ifc_notifyDccAccState( uint16_t Addr, uint8_t OutputAddr, uint8_t State ){
             // Adresse des zugehörigen Hauptsignals bestimmen
             vsAdr = getCvPar(i, PAR3) + 256 * getCvPar(i, STATE);
             if ( vsAdr == wAddr ) {
-                DB_PRINT( "Vorsig0 %d, Index %d, Soll %d", wAddr, i, OutputAddr & 0x1 );
+                DBSG_PRINT( "Vorsig0 %d, Index %d, Soll %d", wAddr, i, OutputAddr & 0x1 );
                 setPosition( i, OutputAddr & 0x1 );
                 break; // Schleifendurchlauf abbrechen, es kann nur eine Signaladresse sein
             } else {
@@ -489,7 +494,7 @@ void ifc_notifyDccAccState( uint16_t Addr, uint8_t OutputAddr, uint8_t State ){
                     // Folgeadresse vergleichen
                     if ( vsAdr+1 == wAddr ) { 
                         // Übereinstimmung gefunden, neues Signalbild setzen
-                        DB_PRINT( "Vorsig1 %d, Index %d, Soll %d", wAddr, i, (OutputAddr & 0x1)+2  );
+                        DBSG_PRINT( "Vorsig1 %d, Index %d, Soll %d", wAddr, i, (OutputAddr & 0x1)+2  );
                         setPosition( i, (OutputAddr & 0x1)+2 );
                     }
                 }
@@ -525,7 +530,7 @@ void ifc_notifyCVChange( uint16_t CvAddr, uint8_t Value ) {
                       (CvAddr == cvAdr(i,PAR2) && Fptr.servo[i]->getPos() == ABZW ) ){
                     // Es handelt sich um die aktuelle Position des Servos,
                     // Servo neu positionieren
-                    //DB_PRINT( "Ausg.%d , Pos. %d neu einstellen", i, dccSoll[i] );
+                    //DBSV_PRINT( "Ausg.%d , Pos. %d neu einstellen", i, dccSoll[i] );
                      Fptr.servo[i]->adjust( ADJPOS, Value );
                 } else if ( CvAddr == cvAdr(i,PAR1) ||
                             CvAddr == cvAdr(i,PAR2)  ) {
@@ -533,7 +538,7 @@ void ifc_notifyCVChange( uint16_t CvAddr, uint8_t Value ) {
                       Fptr.servo[i]->set( ! Fptr.servo[i]->getPos() );
                 } else if ( CvAddr == cvAdr(i,PAR3) ) {
                     // die Geschwindigkeit des Servo wurde verändert
-                    //DB_PRINT( "Ausg.%d , Speed. %d neu einstellen", i, Value );
+                    //DBSV_PRINT( "Ausg.%d , Speed. %d neu einstellen", i, Value );
                     Fptr.servo[i]->adjust( ADJSPEED, Value );
                 }
             }
@@ -687,7 +692,7 @@ void getEncoder(  ) {
     #ifdef DEBUG
     // encoderzähler ausgeben
     if ( jogCount != 0 ) {
-        DB_PRINT( "Encoder: %d", jogCount );        
+        DBSV_PRINT( "Encoder: %d", jogCount );        
     }
     #endif
 
@@ -698,18 +703,14 @@ void getEncoder(  ) {
             // Drehencoder wurde bewegt 
             if ( adjPulse == NO_ADJ ) {
                 // ist erster Justierimpuls, aktuelle Position aus CV auslesen
-                if ( Fptr.servo[adjWix]->getPos() == GERADE ) {
-                    adjPulse = ifc_getCV( cvAdr(adjWix,PAR1) );
-                } else {
-                    adjPulse = ifc_getCV( cvAdr(adjWix,PAR2) );
-                }
+                adjPulse = Fptr.servo[adjWix]->getCvPos();
             }
             if ( (jogCount>0 && adjPulse<180) || (jogCount<0 && adjPulse>0) )
                 adjPulse += jogCount; // adjPulse nur im Bereich 0...180 
             Fptr.servo[adjWix]->adjust( ADJPOS, adjPulse );
         } else if ( analogRead( resModeP ) < 500 ) {
             // Mittelstellungstaster gedrückt
-            DB_PRINT("Servo center",0);
+            DBSV_PRINT("Servo center",0);
             Fptr.servo[adjWix]->center(ABSOLUT);
         }
     }

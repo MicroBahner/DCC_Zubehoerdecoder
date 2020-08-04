@@ -218,6 +218,8 @@ void Fstatic::_setLedPin( uint8_t ledI, uint8_t sollWert ) {
 
 //----------------------------- FSERVO --------------------------------------------
 // Ansteuerung von Servo-Antrieben
+// offset für die CV's der Positionswerte
+const uint8_t Fservo::posOffset[6]={PAR1,PAR2,PAR1+CV_BLKLEN,PAR2+CV_BLKLEN,PAR1+2*CV_BLKLEN,PAR2+2*CV_BLKLEN } ;      
 
 Fservo::Fservo( int cvAdr, uint8_t pins[], int8_t modeOffs ) {
     // Konstruktor der ServoKlasse
@@ -232,81 +234,75 @@ Fservo::Fservo( int cvAdr, uint8_t pins[], int8_t modeOffs ) {
     _pinMode( _outP[REL1P], OUTPUT );
     _pinMode( _outP[REL2P], OUTPUT );
     // Servowerte und Relaisausgang initiieren und ausgeben
-    if ( getParam(_modeOffs) & SAUTOBACK )  _flags.isAbzw = 0;
-    else                                _flags.isAbzw = getParam( STATE );
-    _flags.sollAbzw = _flags.isAbzw ;
-    _flags.relOn = _flags.isAbzw;
+    if ( getParam(_modeOffs) & SAUTOBACK )  _istPos = 0;
+    else                                _istPos = getParam( STATE );
+    _sollPos = _istPos ;
+    _flags.relOn = _istPos;
     _digitalWrite( _outP[REL1P], _flags.relOn );
     _digitalWrite( _outP[REL2P], !_flags.relOn );
     _flags.sollAct = false;
     _flags.moving = false;
-    if ( _flags.isAbzw ) {
-        _weicheS.write( getParam( PAR2 ) );
-    } else {
-        _weicheS.write( getParam( PAR1 ) );
-    }
+    _weicheS.write( getParam( posOffset[_istPos] ) );
    
 }
 
 //..............    
-void Fservo::set( bool sollAbzw ) {
+void Fservo::set( uint8_t newPos ) {
     // Befehl 'servo stellen' erhalten
-    _flags.sollAbzw = sollAbzw;
+    if ( newPos > 5 ) newPos = 5;   // maximal 6 Positionswerte
+    _sollPos = newPos;
     _flags.sollAct = true;
 }
 //..............    
 void Fservo::process() {
     // Umstellvorgang kontrollieren
     // Diese Methode muss in jedem loop() Durchlauf aufgerufen werden
-    if ( _autoTime.expired() && _flags.sollAbzw ) {
+    if ( _autoTime.expired() && _sollPos ) {
         // Servo steht in Arbeitsstellung und Zeit ist abgelaufen: zurückfahren
-        _flags.sollAbzw = false;
+        _sollPos = 0;
         _flags.sollAct = true;
-        DB_PRINT( "ServoTimer abgelaufen, _istlAbz=%d", _flags.isAbzw  );
+        DBSV_PRINT( "ServoTimer abgelaufen, _istlAbz=%d", _istPos  );
      }   
     
     if ( _flags.moving ) {
         // Weiche wird gerade ungestellt, Schaltpunkt Relais und Bewegungsende überwachen
-        if ( _flags.sollAbzw != _flags.isAbzw && (getParam( _modeOffs) & SDIRECT) ) {
+        if ( _sollPos != _istPos && (getParam( _modeOffs) & SDIRECT) ) {
             // Es wurde die Servoposition umgeschalten und das Flag SDIRECT ist
             // gesetzt: Bewegung abbrechen und Moving-Bit löschen.
             // Im nächsten loop-Durchlauf wird dann auf die neue Position reagiert
             _weicheS.write( _weicheS.read() );
             _flags.moving = false;; 
         }
-        if ( _weicheS.moving() < 50 ) _flags.relOn = _flags.isAbzw;
+        if ( _weicheS.moving() < 50 ) _flags.relOn = _istPos;
         if ( _weicheS.moving() == 0 ) {
             // Bewegung abgeschlossen, 'MOVING'-Bit löschen und Lage in CV speichern
             _flags.moving = false; 
             _flags.sollAct = false;
             if ( getParam( _modeOffs ) & SAUTOBACK ) {
-                if ( _flags.isAbzw ) {
+                if ( _istPos ) {
                     // Bei Arbeitsstellung Timer für Rückfahren starten
                     if ( getParam(STATE) <= 1 ) _autoTime.setTime(SAUTOTIME);
                     else                        _autoTime.setTime( getParam(STATE) * 100 );
-                    DB_PRINT("Timer gestartet, Zeit=%d", _autoTime.getTime() );
+                    DBSV_PRINT("Timer gestartet, Zeit=%d", _autoTime.getTime() );
                 }
             } else {
                 // ohne Autoback aktuelle Lage speicern
-                setState( _flags.isAbzw );
+                setState( _istPos );
             }
             /*if ( getParam( _modeOffs ) & NOPOSCHK ) {
                 // Soll auf 'ungültig' stellen, damit auch neue Telegramme mit gleicher
                 // Position erkannt werden (ausser es wurde schon verändert )
-                if ( _flags.sollAbzw == _fktStatus ) _flags.sollAbzw = SOLL_INVALID;
-                DB_PRINT( "dccSoll=%d", _flags.sollAbzw );
+                if ( _sollPos == _fktStatus ) _sollPos = SOLL_INVALID;
+                DBSV_PRINT( "dccSoll=%d", _sollPos );
             }*/
         }
-    } else if ( _flags.sollAct  && (_flags.sollAbzw != _flags.isAbzw || (getParam( _modeOffs) & NOPOSCHK))  ) {
+    } else if ( _flags.sollAct  && (_sollPos != _istPos || (getParam( _modeOffs) & NOPOSCHK))  ) {
         // Weiche muss umgestellt werden
-        DB_PRINT( "Weiche stellen, Ist=%d,Soll=%d", _flags.isAbzw, _flags.sollAbzw );
-        _flags.isAbzw = _flags.sollAbzw;    // Istwert auf Sollwert 
+        DBSV_PRINT( "Weiche stellen, Ist=%d,Soll=%d", _istPos, _sollPos );
+        _istPos = _sollPos;    // Istwert auf Sollwert 
         _flags.moving = true;               // und MOVING-Flagt setzen.
-        if ( _flags.sollAbzw  ) {
-            _weicheS.write( getParam( PAR2) );
-        } else {
-            _weicheS.write( getParam( PAR1) );
-        }
+        DBSV_PRINT("Servo-write=%d", getParam( posOffset[_sollPos] ) );
+        _weicheS.write( getParam( posOffset[_sollPos] ) );
     }
     // Relaisausgänge setzen
     if ( _outP[REL2P] == NC ) {
@@ -334,17 +330,21 @@ bool Fservo::isMoving () {
 //..............    
 uint8_t Fservo::getPos(){
     // aktuelle Position des Servos ermitteln
-    return _flags.isAbzw;
+    return _istPos;
+}
+//..............    
+uint8_t Fservo::getCvPos(){
+    // CV Wert für aktuelle Position des Servos ermitteln
+    return getParam( posOffset[_istPos] );
 }
 //..............    
 void Fservo::adjust( uint8_t mode, uint8_t value ) {
     // Servoparameter ändern
-    DB_PRINT( "adjust: mode=%d, val=%d", mode, value );
+    DBSV_PRINT( "adjust: mode=%d, val=%d", mode, value );
     switch ( mode ) {
       case ADJPOSEND:
         // Justierungswert im CV der aktuellen Position speichern
-        if ( _flags.isAbzw ) setParam( PAR2, value );
-        else setParam( PAR1, value );
+        setParam( posOffset[_istPos], value );
         // kein break, da weichenservo auch noch auf diese Position gestellt wird. 
         [[fallthrough]];
       case ADJPOS:
@@ -353,7 +353,7 @@ void Fservo::adjust( uint8_t mode, uint8_t value ) {
       case ADJSPEED:
         setParam( PAR3, value );
         _weicheS.setSpeed( value );
-      break;
+        break;
     }
 }
 //..............    
@@ -386,7 +386,7 @@ Fsignal::Fsignal( int cvAdr, uint8_t pins[], uint8_t pinAnz, Fsignal** vorSig ){
     _fktStatus.state = SIG_WAIT;
     _fktStatus.dark = false;
      
-    DB_PRINT( "Fsignal CV=%d, Pins %d", _cvAdr, _pinAnz);
+    DBSG_PRINT( "Fsignal CV=%d, Pins %d", _cvAdr, _pinAnz);
     //Modi der Ausgänge setzen ( 3 Ausgänge je Adresse ) (Soft/Hard)
     for ( byte pIx=0; pIx < _pinAnz ; pIx++ ) {
         // Modi der Ausgänge setzen
@@ -395,26 +395,26 @@ Fsignal::Fsignal( int cvAdr, uint8_t pins[], uint8_t pinAnz, Fsignal** vorSig ){
         if ( _outP[pIx] != NC ) {
             // Die CV_s verwalten die pins Adressbezogen ( 1 CV für 3 Pins )
             // sigMode enthält bitcodiert die Info ob harte/weiche Umschaltung
-           //DB_PRINT( "SigMode=%02x, Index= %d, pin=%d, ", sigMode, sigO,outPin);
+           //DBSG_PRINT( "SigMode=%02x, Index= %d, pin=%d, ", sigMode, sigO,outPin);
             if ( sigMode & (1<<pIx) ) {
                 // Bit gesetzt -> harte Umschaltung
                 _pinMode(_outP[pIx], OUTPUT );
                 _sigLed[pIx] = NULL;
             } else {
                 // Bit = 0 -> Softled
-                byte att; // nur für Testzwecke ( DB_PRINT )
+                byte att; // nur für Testzwecke ( DBSG_PRINT )
                 _sigLed[pIx] = new SoftLed;
                 att=_sigLed[pIx]->attach( _outP[pIx] , getParam( LSMODE ) & LEDINVERT );
                 _sigLed[pIx]->riseTime( SIG_RISETIME );
                 _sigLed[pIx]->write( OFF, BULB );
-                DB_PRINT( "Softled, pin %d, Att=%d", _outP[pIx], att );
+                DBSG_PRINT( "Softled, pin %d, Att=%d", _outP[pIx], att );
             }
-            //DB_PRINT( "portTyp[%d][%d] = %d" , sigO&1, wIx+(sigO>>1), portTyp[sigO&1][wIx+(sigO>>1)] );
+            //DBSG_PRINT( "portTyp[%d][%d] = %d" , sigO&1, wIx+(sigO>>1), portTyp[sigO&1][wIx+(sigO>>1)] );
 		}
     }
     _fktStatus.sigBild = 1;
     set( 0 );
-    DB_PRINT( "Konstruktor %d", _cvAdr );
+    DBSG_PRINT( "Konstruktor %d", _cvAdr );
 }
 
 
@@ -424,13 +424,13 @@ void Fsignal::setDark( bool darkFlg ) {
     // Ist das Flag 'true' wird das Signal dunkelgeschaltet
     if ( darkFlg ) {
         // Signal dunkelschalten
-        DB_PRINT("setDark",0);
+        DBSG_PRINT("setDark",0);
         _clrSignal();
         _fktStatus.dark = true;
     } else {
         // Aktuelles Signalbild wieder einschalten
         _fktStatus.dark = false;
-        DB_PRINT("clrDark",0);
+        DBSG_PRINT("clrDark",0);
         _setSignal();
     }
 }
@@ -438,20 +438,20 @@ void Fsignal::setDark( bool darkFlg ) {
 //..............    
 // Signalbild umschalten
 void Fsignal::set( uint8_t sollWert ) {
-    DB_PRINT( "setSignal, CV%d, Soll=%d, Ist=%d", _cvAdr, sollWert,  _fktStatus.sigBild );
+    DBSG_PRINT( "setSignal, CV%d, Soll=%d, Ist=%d", _cvAdr, sollWert,  _fktStatus.sigBild );
     if (  _fktStatus.sigBild != sollWert ) {
         // Sollzustand hat sich verändert, püfen ob erlaubter Zustand
         if (  _getSigMask( sollWert) == 0xff )  {
             // Sollzustand hat Signalmaske 0xff -> diesen Zustand ignorieren
             // Sollzustand zurücksetzen
-            DB_PRINT("SigMask(soll) = %02X", _getSigMask( sollWert) );
+            DBSG_PRINT("SigMask(soll) = %02X", _getSigMask( sollWert) );
         } else {
             // Gültiger Zustand, übernehmen, Flag setzen und Timer aufziehen
             _fktStatus.sigBild =  sollWert;
             _fktStatus.state   = SIG_NEW;
             darkT.setTime( SIG_DARK_TIME ) ;
             _clrSignal(); // aktuelles Signalbild dunkelschalten
-            DB_PRINT("Ende set %d", _cvAdr );
+            DBSG_PRINT("Ende set %d", _cvAdr );
         }
     }
     
@@ -476,7 +476,7 @@ void Fsignal::process() {
             if ( _vorSig != NULL && *_vorSig != NULL  ) {
                 byte darkStates = getParam( DARKMASK );
                 (*_vorSig)->setDark( darkStates & (1<< _fktStatus.sigBild) );
-                DB_PRINT( "darkStates=0x%02x, Signalbild=%d" , darkStates, _fktStatus.sigBild );
+                DBSG_PRINT( "darkStates=0x%02x, Signalbild=%d" , darkStates, _fktStatus.sigBild );
             }
         }
         break;
@@ -502,7 +502,7 @@ uint8_t Fsignal::_getHsMask(){
 uint8_t  Fsignal::_getSigMask( uint8_t sigState ) {
     // sState: Signalzustand
     static int parOffs[] = { 1,2,6,7,11,12,16,17 } ; // max 4 Adressen vorgesehen
-    //DB_PRINT("Fsignal-Freemem %d", freeMemory() );
+    //DBSG_PRINT("Fsignal-Freemem %d", freeMemory() );
    return getParam( parOffs[sigState] );
 }
 
@@ -523,7 +523,7 @@ void Fsignal::_setSignal ( ) {
                      //
     if ( !_fktStatus.dark ) {
         // Signal ist nicht dunkelgeschaltet, Signalbild aufblenden
-        DB_PRINT( "Sig %d EIN (%d)", _cvAdr, _fktStatus.sigBild );
+        DBSG_PRINT( "Sig %d EIN (%d)", _cvAdr, _fktStatus.sigBild );
         // das aktuelle Signalbild steht in _fktStatus.sigBild
         // Ausgangszustände entsprechend Signalzustand bestimmen (CV-Wert)
         sigOutMsk = _getSigMask( _fktStatus.sigBild ) ;
@@ -538,7 +538,7 @@ void Fsignal::_setSignal ( ) {
             }
             sigOutMsk = sigOutMsk >> 1;
         }
-        //DB_PRINT( " Signal %d, Status=0x%02x, Ausgänge: 0x%02x ", wIx, sigZustand, Dcc.getCV( CVBaseAdr[sigZustand] + CVoffs)  );
+        //DBSG_PRINT( " Signal %d, Status=0x%02x, Ausgänge: 0x%02x ", wIx, sigZustand, Dcc.getCV( CVBaseAdr[sigZustand] + CVoffs)  );
     }
 }
  
@@ -546,14 +546,14 @@ void Fsignal::_setSignal ( ) {
 // alle Signallampen ausschalten ( beim Überblenden zwischen Signalbildern )
 void Fsignal::_clrSignal () {
     // alle 'Soft'Leds des Signals ausschalten
-    DB_PRINT( "Sig %d AUS", _cvAdr);
+    DBSG_PRINT( "Sig %d AUS", _cvAdr);
     // nur 'soft' Ausgangszustände löschen
     for ( byte pIx=0; pIx< _pinAnz ; pIx++ ) {
         if ( _sigLed[pIx] != NULL ) _sigLed[pIx]->write( OFF, BULB ); 
     }
     // am Haupsignal gegebenenfalls auch das Vorsignal dunkelschalten
     if ( _vorSig != NULL && *_vorSig != NULL ) {
-        DB_PRINT("Vorsig dunkelschalten",0);
+        DBSG_PRINT("Vorsig dunkelschalten",0);
         (*_vorSig)->setDark( true );
     } 
 }

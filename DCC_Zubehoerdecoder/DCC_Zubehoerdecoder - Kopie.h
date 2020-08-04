@@ -174,17 +174,16 @@ const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmi
 
 #define STATICRISE  (250/50 << 4) // Softled riseTime = 250 ( max = 750 )
 #define COILMOD     NOPOSCHK|CAUTOOFF
-#define SERVOMOD    SAUTOOFF|NOPOSCHK|SDIRECT //|SAUTOBACK
-#define SERVO0MOD   SERVOMOD    // Modbyte für Folgeservo (FSERVO0)
+#define SERVOMOD    SAUTOOFF|NOPOSCHK|SDIRECT|SAUTOBACK
 #define STATICMOD   CAUTOOFF|BLKSOFT|BLKSTRT|STATICRISE    // Wechselblinker mit beiden Leds an beim Start            
-const byte iniTyp[]     =   {    FSERVO,  FSERVO0,   FSIGNAL2,   FSIGNAL0,   FVORSIG,   FCOIL };
-const byte out1Pins[]   =   {       A2,        A2,   /*rt*/ 9,   /*rt*/10,  /*ge*/A0,        5 };  // output-pins der Funktionen
-const byte out2Pins[]   =   {        3,        12,   /*gn*/11,   /*ws*/ 8,  /*gn*/A1,        6 };
+const byte iniTyp[]     =   {    FSTATIC,  FSERVO,   FSIGNAL2,   FSIGNAL0,   FVORSIG,   FCOIL };
+const byte out1Pins[]   =   {       A2,         3,   /*rt*/ 9,   /*rt*/10,  /*ge*/A0,        5 };  // output-pins der Funktionen
+const byte out2Pins[]   =   {       A3,        12,   /*gn*/11,   /*ws*/ 8,  /*gn*/A1,        6 };
 const byte out3Pins[]   =   {       NC,        NC,   /*ge*/ 7,         NC,        NC,       NC };
  
-const byte iniFmode[]     = { SERVOMOD, 0b11100100,          0,          0,         0,  COILMOD };
-const byte iniPar1[]      = {       30,       120,    0b01001,    0b10001,      0b01,       50 };
-const byte iniPar2[]      = {       80,       160,    0b00010,    0b00110,      0b10,       50 };
-const byte iniPar3[]      = {       8,         8,          5,          0,        19,        0 };
+const byte iniFmode[]     = {STATICMOD,  SERVOMOD,          0,          0,         0,  COILMOD };
+const byte iniPar1[]      = {       50,        30,    0b01001,    0b10001,      0b01,       50 };
+const byte iniPar2[]      = {       50,       150,    0b00010,    0b00110,      0b10,       50 };
+const byte iniPar3[]      = {       50,         8,          5,          0,        19,        0 };
 const byte iniPar4[]      = {        0,         0,    0b00101,          0,         0,        0,}; // nur für Lichtsignale!
 //------------------------------------------------------------------------------------
