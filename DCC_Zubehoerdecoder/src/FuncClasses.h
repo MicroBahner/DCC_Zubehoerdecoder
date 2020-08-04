@@ -102,7 +102,7 @@ void _digitalWrite( byte port, byte state ) ;
 //------------------------ FSERVO -------------------------------------------- 
 // Flags für CV 'MODE'
 #define SAUTOOFF 0x01   // Impulse werden nach erreichen der Endlage abgeschaltet
-#define SDIRECT  0x02   // FDer Servo reagiert auch während der Bewegung auf einen Umschaltbefehl
+#define SDIRECT  0x02   // Der Servo reagiert auch während der Bewegung auf einen Umschaltbefehl
 #define NOPOSCHK 0x08   // Die Ausgänge reagieren auch auf einen Befehl, wenn die aktuelle
                         // Postion nicht verändert wird.
 #define SAUTOBACK 0x04  // Servo fährt automatisch in die Grundstellung zurück (nach Zeitablauf)
@@ -110,7 +110,7 @@ void _digitalWrite( byte port, byte state ) ;
 
 class Fservo {
     public:
-    Fservo( int cvAdr, uint8_t pins[] );
+    Fservo( int cvAdr, uint8_t pins[], int8_t modeOffs=MODE );
     void process();
     void set( bool sollWert );       // neuen Schaltbefehl erhalten
 	bool isMoving ();					// Abfrage ob Servo in Bewegung
@@ -127,6 +127,9 @@ class Fservo {
     MoToServo  _weicheS;
     MoToTimer  _autoTime;           // zum automatischen Zurückfahren
     uint16_t _cvAdr = 0;            // Adresse des CV-Blocks mit den Funktionsparametern
+    int8_t   _modeOffs = 0;         // Offset der CV-Adresse für das Mode-byte. Normalerweise ist dies 0
+                                    // Bei der Servo-Kombination für 3begr. Formsignale aber -5 beim 2. Servo,
+                                    // da der auch auf das ModeByte des 1. Servo zugreift.
     uint8_t *_outP;           		// Array mit Pins der Ausgänge
 		#define SERVOP	0
 		#define REL1P	1

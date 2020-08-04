@@ -1,32 +1,32 @@
 /* Universeller DCC-Decoder für Weichen und (Licht-)Signale
-*  Version 6.3.0 - Die Funktionalitäten sind als Klassen definiert 
-*  Die Klassenobjekte werden erst im Setup je nach Konfiguration instanziiert
-*  
- * Eigenschaften:
- * Mehrere (aufeinanderfolgende) Zubehöradressen ansteuerbar
- * Die max. Zahl der Adressen hängt im Wesentlichen von der Zahl der Digitalausgänge ab
- * (max 16 Servos sind konfigurierbar)
- * 1. Adresse per Programmierung einstellbar
- * 
- * 3 Ausgänge / Zubehöradresse
- * Einstellbare Funktionalität:
- *  - Servo mit Umschaltrelais zur Weichenpolarisierung
- *  - logische Kopplung von 2 Servos für 3-begriffige Formsignale
- *  - Impulsfunktion für Servos ( automatisches Rückkehren in Ausgangslage,
- *    z.B. für Entkuppler )
- *  - Doppelspulenantriebe
- *  - statische Ausgänge
- *  - blinkende Ausgänge
- *  - Lichtsignalfunktionen
- *  
- *  Die Funnktionalität und IO-Zuordnung wird über Tabellen im h-File festgelegt.
- *  Die Konfiguration der einzelnen Funktionen geschieht über CV-Programmierung.
- *  So sind z.B. bei Servoausgängen die Endlagen per CV-Wert einstellbar, bei Lichtsignalen ist die 
- *  Zuordnung der Ausgangszustände zum Signalzustand frei konfigurierbar.
+    Version 6.3.0 - Die Funktionalitäten sind als Klassen definiert 
+    Die Klassenobjekte werden erst im Setup je nach Konfiguration instanziiert
+    
+   Eigenschaften:
+   Mehrere (aufeinanderfolgende) Zubehöradressen ansteuerbar
+   Die max. Zahl der Adressen hängt im Wesentlichen von der Zahl der Digitalausgänge ab
+   (max 16 Servos sind konfigurierbar)
+   1. Adresse per Programmierung einstellbar
+   
+   3 Ausgänge / Zubehöradresse
+   Einstellbare Funktionalität:
+    - Servo mit Umschaltrelais zur Weichenpolarisierung
+    - logische Kopplung von 2 Servos für 3-begriffige Formsignale
+    - 1 Servo über 2 Adressen um 4 Positionen anzusteuern
+    - Impulsfunktion für Servos ( automatisches Rückkehren in Ausgangslage,
+      z.B. für Entkuppler )
+    - Doppelspulenantriebe
+    - statische Ausgänge
+    - blinkende Ausgänge
+    - Lichtsignalfunktionen
+    
+    Die Funnktionalität und IO-Zuordnung wird über Tabellen im h-File festgelegt.
+    Die Konfiguration der einzelnen Funktionen geschieht über CV-Programmierung.
+    So sind z.B. bei Servoausgängen die Endlagen per CV-Wert einstellbar, bei Lichtsignalen ist die 
+    Zuordnung der Ausgangszustände zum Signalzustand frei konfigurierbar.
 */
 #define DCC_DECODER_VERSION_ID 0x63
 
-#include "Interface.h"
 #include "src/FuncClasses.h"
 #ifdef __AVR_MEGA__
 #include <avr/wdt.h>    // für Soft-Reset ( über Watchdog )

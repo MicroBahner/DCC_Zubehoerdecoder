@@ -219,19 +219,20 @@ void Fstatic::_setLedPin( uint8_t ledI, uint8_t sollWert ) {
 //----------------------------- FSERVO --------------------------------------------
 // Ansteuerung von Servo-Antrieben
 
-Fservo::Fservo( int cvAdr, uint8_t pins[] ) {
+Fservo::Fservo( int cvAdr, uint8_t pins[], int8_t modeOffs ) {
     // Konstruktor der ServoKlasse
     _outP = pins;
     _cvAdr = cvAdr;
+    _modeOffs = modeOffs;
     // Weichenservo einrichten
     if ( _outP[SERVOP] != NC ) {
-        _weicheS.attach( _outP[SERVOP], getParam( MODE ) & SAUTOOFF );
+        _weicheS.attach( _outP[SERVOP], getParam( _modeOffs ) & SAUTOOFF );
         _weicheS.setSpeed( getParam( PAR3 ) );
     }
     _pinMode( _outP[REL1P], OUTPUT );
     _pinMode( _outP[REL2P], OUTPUT );
     // Servowerte und Relaisausgang initiieren und ausgeben
-    if ( getParam(MODE) & SAUTOBACK )  _flags.isAbzw = 0;
+    if ( getParam(_modeOffs) & SAUTOBACK )  _flags.isAbzw = 0;
     else                                _flags.isAbzw = getParam( STATE );
     _flags.sollAbzw = _flags.isAbzw ;
     _flags.relOn = _flags.isAbzw;
@@ -266,7 +267,7 @@ void Fservo::process() {
     
     if ( _flags.moving ) {
         // Weiche wird gerade ungestellt, Schaltpunkt Relais und Bewegungsende überwachen
-        if ( _flags.sollAbzw != _flags.isAbzw && (getParam( MODE) & SDIRECT) ) {
+        if ( _flags.sollAbzw != _flags.isAbzw && (getParam( _modeOffs) & SDIRECT) ) {
             // Es wurde die Servoposition umgeschalten und das Flag SDIRECT ist
             // gesetzt: Bewegung abbrechen und Moving-Bit löschen.
             // Im nächsten loop-Durchlauf wird dann auf die neue Position reagiert
@@ -278,7 +279,7 @@ void Fservo::process() {
             // Bewegung abgeschlossen, 'MOVING'-Bit löschen und Lage in CV speichern
             _flags.moving = false; 
             _flags.sollAct = false;
-            if ( getParam( MODE ) & SAUTOBACK ) {
+            if ( getParam( _modeOffs ) & SAUTOBACK ) {
                 if ( _flags.isAbzw ) {
                     // Bei Arbeitsstellung Timer für Rückfahren starten
                     if ( getParam(STATE) <= 1 ) _autoTime.setTime(SAUTOTIME);
@@ -289,14 +290,14 @@ void Fservo::process() {
                 // ohne Autoback aktuelle Lage speicern
                 setState( _flags.isAbzw );
             }
-            /*if ( getParam( MODE ) & NOPOSCHK ) {
+            /*if ( getParam( _modeOffs ) & NOPOSCHK ) {
                 // Soll auf 'ungültig' stellen, damit auch neue Telegramme mit gleicher
                 // Position erkannt werden (ausser es wurde schon verändert )
                 if ( _flags.sollAbzw == _fktStatus ) _flags.sollAbzw = SOLL_INVALID;
                 DB_PRINT( "dccSoll=%d", _flags.sollAbzw );
             }*/
         }
-    } else if ( _flags.sollAct  && (_flags.sollAbzw != _flags.isAbzw || (getParam( MODE) & NOPOSCHK))  ) {
+    } else if ( _flags.sollAct  && (_flags.sollAbzw != _flags.isAbzw || (getParam( _modeOffs) & NOPOSCHK))  ) {
         // Weiche muss umgestellt werden
         DB_PRINT( "Weiche stellen, Ist=%d,Soll=%d", _flags.isAbzw, _flags.sollAbzw );
         _flags.isAbzw = _flags.sollAbzw;    // Istwert auf Sollwert 
