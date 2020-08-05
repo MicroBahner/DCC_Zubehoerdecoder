@@ -60,7 +60,7 @@
  *  CV50   Bitmuster, das die Lage der Servos für die 4 möglichen Befehle angibt
  *         Bit=0 Ruhelage ( Position CV51 ) , Bit=1 Arbeitslage ( Position CV52 )
  *         Das niederwertige Bit steuert jeweils das Servo FSERVO,
- *         das höherwertige  Bit steuert das Servo FSERVO2
+ *         das höherwertige  Bit steuert das Servo FSERVO0
  *         Bit76543210
  *                  ++-- OFF 1.Adresse
  *                ++---- ON  1.Adresse
@@ -186,5 +186,5 @@ const byte iniFmode[]     = { SERVOMOD, 0b10110100,          0,          0,     
 const byte iniPar1[]      = {       30,       120,    0b01001,    0b10001,      0b01,       50 };
 const byte iniPar2[]      = {       80,       160,    0b00010,    0b00110,      0b10,       50 };
 const byte iniPar3[]      = {       8,         8,          5,          0,        19,        0 };
-const byte iniPar4[]      = {        0,         0,    0b00101,          0,         0,        0,}; // nur für Lichtsignale!
+const byte iniPar4[]      = {        0,         0,    0b00101,          0,         0,        0,}; // nur für Lichtsignale und AUTOBACK- Servos!
 //------------------------------------------------------------------------------------
