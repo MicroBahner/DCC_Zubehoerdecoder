@@ -64,6 +64,12 @@
         <enumVal> 
           <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
         </enumVal>
+        <label>Auto-Return: </label>
+      </variable>
+      <variable item="Fkt-FNR Fmode-Bit3" CV="CVMODE" mask="XXXXVXXX">
+        <enumVal> 
+          <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
+        </enumVal>
         <label>Kein PosCheck: </label>
       </variable>
       <variable item="Fkt-FNR Fmode" CV="CVMODE" >
@@ -87,6 +93,66 @@
         <label>Status: </label>
       </variable>
         <!-- Ende FSERVO -->
+
+#elif ( INITYP == FSERVO0 )
+<!-- Variable für FSERVO -->
+      <variable item="Fkt-FNR FmodeSel0" CV="CVMODE" mask="XXXXXXVV">
+        <enumVal> 
+          <enumChoice> <choice>noServoactive</choice> </enumChoice> 
+          <enumChoice> <choice>Servo0 active</choice>  </enumChoice>
+          <enumChoice> <choice>Servo1 active</choice>  </enumChoice>
+          <enumChoice> <choice>both active</choice>  </enumChoice>
+        </enumVal>
+        <label>Adr1 OFF: </label>
+      </variable>
+      <variable item="Fkt-FNR FmodeSel1" CV="CVMODE" mask="XXXXVVXX">
+        <enumVal> 
+          <enumChoice> <choice>noServoactive</choice> </enumChoice> 
+          <enumChoice> <choice>Servo0 active</choice>  </enumChoice>
+          <enumChoice> <choice>Servo1 active</choice>  </enumChoice>
+          <enumChoice> <choice>both active</choice>  </enumChoice>
+        </enumVal>
+        <label>Adr1 ON: </label>
+      </variable>
+      <variable item="Fkt-FNR FmodeSel2" CV="CVMODE" mask="XXVVXXXX">
+        <enumVal> 
+          <enumChoice> <choice>noServoactive</choice> </enumChoice> 
+          <enumChoice> <choice>Servo0 active</choice>  </enumChoice>
+          <enumChoice> <choice>Servo1 active</choice>  </enumChoice>
+          <enumChoice> <choice>both active</choice>  </enumChoice>
+        </enumVal>
+        <label>Adr2 Off: </label>
+      </variable>
+      <variable item="Fkt-FNR FmodeSel3" CV="CVMODE" mask="VVXXXXXX">
+        <enumVal> 
+          <enumChoice> <choice>noServoactive</choice> </enumChoice> 
+          <enumChoice> <choice>Servo0 active</choice>  </enumChoice>
+          <enumChoice> <choice>Servo1 active</choice>  </enumChoice>
+          <enumChoice> <choice>both active</choice>  </enumChoice>
+        </enumVal>
+        <label>Adr2 On: </label>
+      </variable>
+      <variable item="Fkt-FNR Fmode" CV="CVMODE" >
+        <hexVal/> 
+        <label>Modebyte(hex): </label>
+      </variable> 
+      <variable item="Fkt-FNR Par1" CV="CVPAR1">
+        <decVal/>
+        <label>Position '0': </label>
+      </variable>
+      <variable item="Fkt-FNR Par2" CV="CVPAR2">
+        <decVal/>
+        <label>Position '1': </label>
+      </variable>
+      <variable item="Fkt-FNR Par3" CV="CVPAR3">
+        <decVal/>
+        <label>Geschwindigkeit: </label>
+      </variable>
+      <variable item="Fkt-FNR Par4" CV="CVPAR4">
+        <decVal/>
+        <label>Status: </label>
+      </variable>
+        <!-- Ende FSERVO0 -->
 
 #elif ( INITYP == FSIGNAL2 )
 <!-- Variable für FSIGNAL2 -->

@@ -8,6 +8,11 @@
     <label> <text>Servo (FNR)</text> </label>
 
   <!-- ^^^^^^^^^^^Ende FSERVO ^^^^^^^^^^^^^^^^ -->
+#elif ( INITYP == FSERVO0 )
+  <column>
+    <label> <text>Servo - Extend (FNR)</text> </label>
+
+  <!-- ^^^^^^^^^^^Ende FSERVO0 ^^^^^^^^^^^^^^^^ -->
 #elif ( INITYP == FCOIL )
   <column>
     <label>  <text> Spulenantrieb (FNR)  </text>  </label>
@@ -34,7 +39,11 @@
 #ifdef VALIDINI
       <separator/>
     <display item="Fkt-FNR Fmode"     format="checkbox"/>
-    <display item="Fkt-FNR Fmode-Bit0" format="checkbox"/>
+    <display item="Fkt-FNR FmodeSel0"     format="selection box"/>
+    <display item="Fkt-FNR FmodeSel1"     format="selection box"/>
+    <display item="Fkt-FNR FmodeSel2"     format="selection box"/>
+    <display item="Fkt-FNR FmodeSel3"     format="selection box"/>
+   <display item="Fkt-FNR Fmode-Bit0" format="checkbox"/>
     <display item="Fkt-FNR Fmode-Bit1" format="checkbox"/>
     <display item="Fkt-FNR Fmode-Bit2" format="checkbox"/>
     <display item="Fkt-FNR Fmode-Bit3" format="checkbox"/>

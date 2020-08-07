@@ -45,13 +45,36 @@
  *  CV50    Bit0 = 1: AutoOff der Servoimpulse bei Stillstand des Servo
  *          Bit1 = 1: 'Direct-Mode' auch während der Servobewegung wird auf einen erneuten
  *                    Stellbefehl reagiert, und gegebenenfalls sofort die Drehrichtung geändert
+ *          Bit2 = 1: Automatiche Rückkehren in die Ausgangslage nach Zeit in CV54
  *          Bit3 = 1: kein Überprüfung auf Servoposition bei Empfang eines DCC-Befehls
  *                    bei AUTOOFF und gleicher Position werden wieder Impulse ausgegeben
  *  CV51    Position des Servo für Weichenstellung '0' ( in Grad, 0...180 )
  *  CV52    Position des Servo für Weichenstellung '1' ( in Grad, 0...180 )
  *  CV53    Geschwindigkeit des Servo
  *  CV54    aktuelle Weichenstellung ( nicht manuell verändern! )
+ *  CV54    Wenn CV50 Bit4= 1: Zeit in 0,1Sek. Einheiten bis zum automatisch zurückbewegen.
+ *          In diesem Fall startet das Servo beim Einschalten grundsätzlich in der Grundstellung
  *  
+ *  FSERVO0 verbundene Servos, muss unittelbar hinter FSERVO stehen ( Folgeadresse )
+ *         Ist die Pinnr identisch zum Eintrag unter FSERVO, so wird nur 1 Servo eingerichtet, 
+ *         dass auf 4 Positionen gestellt werden kann. Die Einträge von CV50 und CV53/54 sind
+ *         dann im FSERVO0 Eintag belanglos.
+ *         Enthält FSERVO0 eine unterschiedliche Pinnr für das Servo, so werden zwei Servos
+ *         eingerichtet. Das Modusbyte von FSERVO gilt dann fur beide. Die Lage der Servos kann
+ *         den DCC-Kommandos frei zugeordnet werden. Damit können z.B. 3-begriffige Formsignale 
+ *         gesteuert werdem.
+ *  CV50   Bitmuster, das die Lage der Servos für die 4 möglichen Befehle angibt
+ *         Bit=0 Ruhelage ( Position CV51 ) , Bit=1 Arbeitslage ( Position CV52 )
+ *         Das niederwertige Bit steuert jeweils das Servo FSERVO,
+ *         das höherwertige  Bit steuert das Servo FSERVO0
+ *         Bit76543210
+ *                  ++-- OFF 1.Adresse
+ *                ++---- ON  1.Adresse
+ *              ++-------OFF 2.Adresse
+ *            ++-------- ON  2.Adresse
+ *  CV51 .. 54 wie bei FSERVO        
+ *            
+ *            
  *  FCOIL Doppelspulenantrieb: ( derzeit nur mit automatischer Abschaltung )
  *  CV50    Bit0 = 1: Spulenausgang nur automatisch abschalten
  *               = 0: Spulenausgang auch über DCC-Befehl abschalten
@@ -67,7 +90,7 @@
  *  CV50    Bit0 = 1: Blinken,  0: statisch
  *          Bit1 = 1: Beim Blinken starten erst beide Leds dann Wechselblinken
  *          Bit2 = 1: mit weichem Auf/Abblenden 
- *          Bit4..7:  Risetime ( in 50ms Einheiten, 0=default )
+ *          Bit4..7:  Risetime ( in 50ms Einheiten, 0=default von 500 )
  *  CV51    Einschaltzeit des Blinkens ( 10ms Einheiten )
  *  CV52    Ausschaltzeit des Blinkens ( 10ms Einheiten )
  *  CV53    1. Einschaltzeit beim Start des Blinkens
@@ -155,6 +178,7 @@ const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV
 //            z.B. wenn bei einem Servo kein Polarisierungsrelais benötigt wird
 const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmierung) (Led)
 
+#ifdef V6.2Values
 #define STATICRISE  (250/50 << 4) // Softled riseTime = 250
 #define COILMOD     NOPOSCHK|CAUTOOFF
 #define SERVOMOD    SAUTOOFF|NOPOSCHK|SDIRECT
@@ -170,3 +194,21 @@ const byte iniPar2[]      = {       50,       150,    0b00010,    0b00110,      
 const byte iniPar3[]      = {       50,         8,          5,          0,        19,        0 };
 const byte iniPar4[]      = {        0,         0,    0b00101,          0,         0,        0,}; // nur für Lichtsignale!
 //------------------------------------------------------------------------------------
+#else
+#define STATICRISE  (250/50 << 4) // Softled riseTime = 250
+#define COILMOD     NOPOSCHK|CAUTOOFF
+#define SERVOMOD    SAUTOOFF|NOPOSCHK|SDIRECT //|SAUTOBACK
+#define SERVO0MOD   SERVOMOD    // Modbyte für Folgeservo (FSERVO0)
+#define STATICMOD   CAUTOOFF|BLKSOFT|BLKSTRT|STATICRISE    // Wechselblinker mit beiden Leds an beim Start            
+const byte iniTyp[]     =   {    FSERVO,  FSERVO0,   FSIGNAL2,   FSIGNAL0,   FVORSIG,   FCOIL };
+const byte out1Pins[]   =   {       A0,        A1,   /*rt*/ 9,   /*rt*/10,  /*ge*/12,       14 };  // output-pins der Funktionen
+const byte out2Pins[]   =   {        3,         5,   /*gn*/11,   /*ws*/ 8,  /*gn*/13,       15 };
+const byte out3Pins[]   =   {       NC,        NC,   /*ge*/ 7,         NC,        NC,       NC };
+ 
+const byte iniFmode[]     = {SERVOMOD,  0b11000100,          0,          0,         0,  COILMOD };
+const byte iniPar1[]      = {       30,       110,    0b01001,    0b10001,      0b01,       50 };
+const byte iniPar2[]      = {       80,       160,    0b00010,    0b00110,      0b10,       50 };
+const byte iniPar3[]      = {        8,         8,          5,          0,        19,        0 };
+const byte iniPar4[]      = {        0,         0,    0b00101,          0,         0,        0,}; // nur für Lichtsignale!
+//------------------------------------------------------------------------------------
+#endif

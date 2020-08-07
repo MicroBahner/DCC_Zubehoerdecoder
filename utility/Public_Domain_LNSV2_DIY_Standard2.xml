@@ -18,7 +18,7 @@
   
   <decoder>
     <family name="LNSV2-using boards" mfg="Public-domain and DIY">
-      <model model="DIY_Standard"/>
+      <model model="DIY_Standard2"/>
     </family>
     <programming direct="no" paged="no" register="no" ops="no">
         <mode>LOCONETSV2MODE</mode>
@@ -119,27 +119,39 @@
       <!-- Variable für Funktion 2 -->
                                                       
 <!-- Variable für FSERVO -->
-      <variable item="Fkt-2 Fmode-Bit0" CV="55" mask="XXXXXXVV">
+      <variable item="Fkt-2 FmodeSel0" CV="55" mask="XXXXXXVV">
         <enumVal> 
-          <enumChoice> <choice>0</choice> </enumChoice> <enumChoice> <choice>1</choice> <choice>2</choice> </enumChoice> <enumChoice> <choice>3</choice>  </enumChoice>
+          <enumChoice> <choice>noServoactive</choice> </enumChoice> 
+          <enumChoice> <choice>Servo0 active</choice>  </enumChoice>
+          <enumChoice> <choice>Servo1 active</choice>  </enumChoice>
+          <enumChoice> <choice>both active</choice>  </enumChoice>
         </enumVal>
         <label>Adr1 OFF: </label>
       </variable>
-      <variable item="Fkt-2 Fmode-Bit1" CV="55" mask="XXXXVVXX">
+      <variable item="Fkt-2 FmodeSel1" CV="55" mask="XXXXVVXX">
         <enumVal> 
-          <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
+          <enumChoice> <choice>noServoactive</choice> </enumChoice> 
+          <enumChoice> <choice>Servo0 active</choice>  </enumChoice>
+          <enumChoice> <choice>Servo1 active</choice>  </enumChoice>
+          <enumChoice> <choice>both active</choice>  </enumChoice>
         </enumVal>
         <label>Adr1 ON: </label>
       </variable>
-      <variable item="Fkt-2 Fmode-Bit2" CV="55" mask="XXVVXXXX">
+      <variable item="Fkt-2 FmodeSel2" CV="55" mask="XXVVXXXX">
         <enumVal> 
-          <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
+          <enumChoice> <choice>noServoactive</choice> </enumChoice> 
+          <enumChoice> <choice>Servo0 active</choice>  </enumChoice>
+          <enumChoice> <choice>Servo1 active</choice>  </enumChoice>
+          <enumChoice> <choice>both active</choice>  </enumChoice>
         </enumVal>
         <label>Adr2 Off: </label>
       </variable>
-      <variable item="Fkt-2 Fmode-Bit3" CV="55" mask="XXVVXXXX">
+      <variable item="Fkt-2 FmodeSel3" CV="55" mask="VVXXXXXX">
         <enumVal> 
-          <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
+          <enumChoice> <choice>noServoactive</choice> </enumChoice> 
+          <enumChoice> <choice>Servo0 active</choice>  </enumChoice>
+          <enumChoice> <choice>Servo1 active</choice>  </enumChoice>
+          <enumChoice> <choice>both active</choice>  </enumChoice>
         </enumVal>
         <label>Adr2 On: </label>
       </variable>
@@ -413,7 +425,11 @@
 
       <separator/>
     <display item="Fkt-1 Fmode"     format="checkbox"/>
-    <display item="Fkt-1 Fmode-Bit0" format="checkbox"/>
+    <display item="Fkt-1 FmodeSel0"     format="selection box"/>
+    <display item="Fkt-1 FmodeSel1"     format="selection box"/>
+    <display item="Fkt-1 FmodeSel2"     format="selection box"/>
+    <display item="Fkt-1 FmodeSel3"     format="selection box"/>
+   <display item="Fkt-1 Fmode-Bit0" format="checkbox"/>
     <display item="Fkt-1 Fmode-Bit1" format="checkbox"/>
     <display item="Fkt-1 Fmode-Bit2" format="checkbox"/>
     <display item="Fkt-1 Fmode-Bit3" format="checkbox"/>
@@ -438,7 +454,11 @@
 
       <separator/>
     <display item="Fkt-2 Fmode"     format="checkbox"/>
-    <display item="Fkt-2 Fmode-Bit0" format="checkbox"/>
+    <display item="Fkt-2 FmodeSel0"     format="selection box"/>
+    <display item="Fkt-2 FmodeSel1"     format="selection box"/>
+    <display item="Fkt-2 FmodeSel2"     format="selection box"/>
+    <display item="Fkt-2 FmodeSel3"     format="selection box"/>
+   <display item="Fkt-2 Fmode-Bit0" format="checkbox"/>
     <display item="Fkt-2 Fmode-Bit1" format="checkbox"/>
     <display item="Fkt-2 Fmode-Bit2" format="checkbox"/>
     <display item="Fkt-2 Fmode-Bit3" format="checkbox"/>
@@ -463,7 +483,11 @@
 
       <separator/>
     <display item="Fkt-3 Fmode"     format="checkbox"/>
-    <display item="Fkt-3 Fmode-Bit0" format="checkbox"/>
+    <display item="Fkt-3 FmodeSel0"     format="selection box"/>
+    <display item="Fkt-3 FmodeSel1"     format="selection box"/>
+    <display item="Fkt-3 FmodeSel2"     format="selection box"/>
+    <display item="Fkt-3 FmodeSel3"     format="selection box"/>
+   <display item="Fkt-3 Fmode-Bit0" format="checkbox"/>
     <display item="Fkt-3 Fmode-Bit1" format="checkbox"/>
     <display item="Fkt-3 Fmode-Bit2" format="checkbox"/>
     <display item="Fkt-3 Fmode-Bit3" format="checkbox"/>
@@ -487,7 +511,11 @@
 
       <separator/>
     <display item="Fkt-4 Fmode"     format="checkbox"/>
-    <display item="Fkt-4 Fmode-Bit0" format="checkbox"/>
+    <display item="Fkt-4 FmodeSel0"     format="selection box"/>
+    <display item="Fkt-4 FmodeSel1"     format="selection box"/>
+    <display item="Fkt-4 FmodeSel2"     format="selection box"/>
+    <display item="Fkt-4 FmodeSel3"     format="selection box"/>
+   <display item="Fkt-4 Fmode-Bit0" format="checkbox"/>
     <display item="Fkt-4 Fmode-Bit1" format="checkbox"/>
     <display item="Fkt-4 Fmode-Bit2" format="checkbox"/>
     <display item="Fkt-4 Fmode-Bit3" format="checkbox"/>
@@ -512,7 +540,11 @@
 
       <separator/>
     <display item="Fkt-5 Fmode"     format="checkbox"/>
-    <display item="Fkt-5 Fmode-Bit0" format="checkbox"/>
+    <display item="Fkt-5 FmodeSel0"     format="selection box"/>
+    <display item="Fkt-5 FmodeSel1"     format="selection box"/>
+    <display item="Fkt-5 FmodeSel2"     format="selection box"/>
+    <display item="Fkt-5 FmodeSel3"     format="selection box"/>
+   <display item="Fkt-5 Fmode-Bit0" format="checkbox"/>
     <display item="Fkt-5 Fmode-Bit1" format="checkbox"/>
     <display item="Fkt-5 Fmode-Bit2" format="checkbox"/>
     <display item="Fkt-5 Fmode-Bit3" format="checkbox"/>
@@ -537,7 +569,11 @@
 
       <separator/>
     <display item="Fkt-6 Fmode"     format="checkbox"/>
-    <display item="Fkt-6 Fmode-Bit0" format="checkbox"/>
+    <display item="Fkt-6 FmodeSel0"     format="selection box"/>
+    <display item="Fkt-6 FmodeSel1"     format="selection box"/>
+    <display item="Fkt-6 FmodeSel2"     format="selection box"/>
+    <display item="Fkt-6 FmodeSel3"     format="selection box"/>
+   <display item="Fkt-6 Fmode-Bit0" format="checkbox"/>
     <display item="Fkt-6 Fmode-Bit1" format="checkbox"/>
     <display item="Fkt-6 Fmode-Bit2" format="checkbox"/>
     <display item="Fkt-6 Fmode-Bit3" format="checkbox"/>

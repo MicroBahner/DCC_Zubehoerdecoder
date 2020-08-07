@@ -45,13 +45,36 @@
  *  CV50    Bit0 = 1: AutoOff der Servoimpulse bei Stillstand des Servo
  *          Bit1 = 1: 'Direct-Mode' auch während der Servobewegung wird auf einen erneuten
  *                    Stellbefehl reagiert, und gegebenenfalls sofort die Drehrichtung geändert
+ *          Bit2 = 1: Automatiche Rückkehren in die Ausgangslage nach Zeit in CV54
  *          Bit3 = 1: kein Überprüfung auf Servoposition bei Empfang eines DCC-Befehls
  *                    bei AUTOOFF und gleicher Position werden wieder Impulse ausgegeben
  *  CV51    Position des Servo für Weichenstellung '0' ( in Grad, 0...180 )
  *  CV52    Position des Servo für Weichenstellung '1' ( in Grad, 0...180 )
  *  CV53    Geschwindigkeit des Servo
  *  CV54    aktuelle Weichenstellung ( nicht manuell verändern! )
+ *  CV54    Wenn CV50 Bit4= 1: Zeit in 0,1Sek. Einheiten bis zum automatisch zurückbewegen.
+ *          In diesem Fall startet das Servo beim Einschalten grundsätzlich in der Grundstellung
  *  
+ *  FSERVO0 verbundene Servos, muss unittelbar hinter FSERVO stehen ( Folgeadresse )
+ *         Ist die Pinnr identisch zum Eintrag unter FSERVO, so wird nur 1 Servo eingerichtet, 
+ *         dass auf 4 Positionen gestellt werden kann. Die Einträge von CV50 und CV53/54 sind
+ *         dann im FSERVO0 Eintag belanglos.
+ *         Enthält FSERVO0 eine unterschiedliche Pinnr für das Servo, so werden zwei Servos
+ *         eingerichtet. Das Modusbyte von FSERVO gilt dann fur beide. Die Lage der Servos kann
+ *         den DCC-Kommandos frei zugeordnet werden. Damit können z.B. 3-begriffige Formsignale 
+ *         gesteuert werdem.
+ *  CV50   Bitmuster, das die Lage der Servos für die 4 möglichen Befehle angibt
+ *         Bit=0 Ruhelage ( Position CV51 ) , Bit=1 Arbeitslage ( Position CV52 )
+ *         Das niederwertige Bit steuert jeweils das Servo FSERVO,
+ *         das höherwertige  Bit steuert das Servo FSERVO0
+ *         Bit76543210
+ *                  ++-- OFF 1.Adresse
+ *                ++---- ON  1.Adresse
+ *              ++-------OFF 2.Adresse
+ *            ++-------- ON  2.Adresse
+ *  CV51 .. 54 wie bei FSERVO        
+ *            
+ *            
  *  FCOIL Doppelspulenantrieb: ( derzeit nur mit automatischer Abschaltung )
  *  CV50    Bit0 = 1: Spulenausgang nur automatisch abschalten
  *               = 0: Spulenausgang auch über DCC-Befehl abschalten
@@ -81,7 +104,7 @@
  *          und welche Ausgänge weich überblenden (Bit=0)
  *  CV51    Bitmuster der Ausgänge für Befehl 1.Adresse 0 (rot)
  *  CV52    Bitmuster der Ausgänge für Befehl 1.Adresse 1 (grün)
- *  CV53    Index des Vorsignals am gleichen Mast ( 0 …. )
+ *  CV53    Index des Vorsignals am gleichen Mast ( 1 …. )
  *  CV54    Bitmuster der Zustände, bei denen das Vorsignal dunkel ist:
  *              Bit 0: Befehl 1.Adresse 0 (rot)
  *              Bit 1: Befehl 1.Adresse 1 (grün)
