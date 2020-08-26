@@ -98,37 +98,37 @@
 <!-- Variable für FSERVO -->
       <variable item="Fkt-FNR FmodeSel0" CV="CVMODE" mask="XXXXXXVV">
         <enumVal> 
-          <enumChoice> <choice>noServoactive</choice> </enumChoice> 
-          <enumChoice> <choice>Servo0 active</choice>  </enumChoice>
-          <enumChoice> <choice>Servo1 active</choice>  </enumChoice>
-          <enumChoice> <choice>both active</choice>  </enumChoice>
+          <enumChoice> <choice>Pos0/Pos0</choice> </enumChoice> 
+          <enumChoice> <choice>Pos1/Pos0</choice>  </enumChoice>
+          <enumChoice> <choice>Pos0/Pos1</choice>  </enumChoice>
+          <enumChoice> <choice>Pos1/Pos1</choice>  </enumChoice>
         </enumVal>
         <label>Adr1 OFF: </label>
       </variable>
       <variable item="Fkt-FNR FmodeSel1" CV="CVMODE" mask="XXXXVVXX">
         <enumVal> 
-          <enumChoice> <choice>noServoactive</choice> </enumChoice> 
-          <enumChoice> <choice>Servo0 active</choice>  </enumChoice>
-          <enumChoice> <choice>Servo1 active</choice>  </enumChoice>
-          <enumChoice> <choice>both active</choice>  </enumChoice>
+          <enumChoice> <choice>Pos0/Pos0</choice> </enumChoice> 
+          <enumChoice> <choice>Pos1/Pos0</choice>  </enumChoice>
+          <enumChoice> <choice>Pos0/Pos1</choice>  </enumChoice>
+          <enumChoice> <choice>Pos1/Pos1</choice>  </enumChoice>
         </enumVal>
         <label>Adr1 ON: </label>
       </variable>
       <variable item="Fkt-FNR FmodeSel2" CV="CVMODE" mask="XXVVXXXX">
         <enumVal> 
-          <enumChoice> <choice>noServoactive</choice> </enumChoice> 
-          <enumChoice> <choice>Servo0 active</choice>  </enumChoice>
-          <enumChoice> <choice>Servo1 active</choice>  </enumChoice>
-          <enumChoice> <choice>both active</choice>  </enumChoice>
+          <enumChoice> <choice>Pos0/Pos0</choice> </enumChoice> 
+          <enumChoice> <choice>Pos1/Pos0</choice>  </enumChoice>
+          <enumChoice> <choice>Pos0/Pos1</choice>  </enumChoice>
+          <enumChoice> <choice>Pos1/Pos1</choice>  </enumChoice>
         </enumVal>
         <label>Adr2 Off: </label>
       </variable>
       <variable item="Fkt-FNR FmodeSel3" CV="CVMODE" mask="VVXXXXXX">
         <enumVal> 
-          <enumChoice> <choice>noServoactive</choice> </enumChoice> 
-          <enumChoice> <choice>Servo0 active</choice>  </enumChoice>
-          <enumChoice> <choice>Servo1 active</choice>  </enumChoice>
-          <enumChoice> <choice>both active</choice>  </enumChoice>
+          <enumChoice> <choice>Pos0/Pos0</choice> </enumChoice> 
+          <enumChoice> <choice>Pos1/Pos0</choice>  </enumChoice>
+          <enumChoice> <choice>Pos0/Pos1</choice>  </enumChoice>
+          <enumChoice> <choice>Pos1/Pos1</choice>  </enumChoice>
         </enumVal>
         <label>Adr2 On: </label>
       </variable>
