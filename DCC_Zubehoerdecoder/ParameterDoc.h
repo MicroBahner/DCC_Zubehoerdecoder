@@ -6,7 +6,7 @@
  *  - statische/blinkende Ausgänge 
  *  - Lichtsignale 
  *  - Einstellen der Servoendlagen per Drehencoder. 
- *    Der Drehencoder bezieht sich immer auf die zuletzt gestellte Weichenposition .
+ *    Der Drehencoder bezieht sich immer auf die zuletzt gestellte Adresse und Position.
  *  - Die Betriebsmodi und das Startverhalten werden über die Analogeingänge A4/A5 ( betrModeP und 
  *    resModeP, parametrierbar) eingestellt. Dazu müssen dort Pullups eingebaut werden. 
  *    Je nachdem wieweit die Spannung  heruntergezogen wird werden die Modi eingestellt:
@@ -42,11 +42,11 @@
  *  ...
  *  Bedeutung der CV's bei den verschiedenen Funktione (CV-Nummern für 1. Weichenadresse)
  *  FSERVO Servo:
- *  CV50    Bit0 = 1: AutoOff der Servoimpulse bei Stillstand des Servo
- *          Bit1 = 1: 'Direct-Mode' auch während der Servobewegung wird auf einen erneuten
+ *  CV50    Bit0 = 1: (SAUTOOFF) AutoOff der Servoimpulse bei Stillstand des Servo
+ *          Bit1 = 1: (SDIRECT) 'Direct-Mode' auch während der Servobewegung wird auf einen erneuten
  *                    Stellbefehl reagiert, und gegebenenfalls sofort die Drehrichtung geändert
- *          Bit2 = 1: Automatiche Rückkehren in die Ausgangslage nach Zeit in CV54
- *          Bit3 = 1: kein Überprüfung auf Servoposition bei Empfang eines DCC-Befehls
+ *          Bit2 = 1: (SAUTOBACK) Automatiche Rückkehren in die Ausgangslage nach Zeit in CV54
+ *          Bit3 = 1: (NOPOSCHK) kein Überprüfung auf Servoposition bei Empfang eines DCC-Befehls
  *                    bei AUTOOFF und gleicher Position werden wieder Impulse ausgegeben
  *  CV51    Position des Servo für Weichenstellung '0' ( in Grad, 0...180 )
  *  CV52    Position des Servo für Weichenstellung '1' ( in Grad, 0...180 )
@@ -76,9 +76,9 @@
  *            
  *            
  *  FCOIL Doppelspulenantrieb: ( derzeit nur mit automatischer Abschaltung )
- *  CV50    Bit0 = 1: Spulenausgang nur automatisch abschalten
+ *  CV50    Bit0 = 1: (CAUTOOFF) Spulenausgang nur automatisch abschalten
  *               = 0: Spulenausgang auch über DCC-Befehl abschalten
- *          Bit3 = 1: kein Überprüfung auf Weichenposition. Gegebenenfalls wird auch an gleichen
+ *          Bit3 = 1: (NOPOSCHK) kein Überprüfung auf Weichenposition. Gegebenenfalls wird auch an gleichen
  *                    Anschluss wiederholt ein Puls ausgegeben
  *  CV51    Einschaltdauer der Spule  ( in 10ms Einheiten ) 
  *          0= keine automatische Abschaltung, Bit0 im Modebyte muss 0 sein
@@ -87,9 +87,9 @@
  *  CV54    aktuelle Weichenstellung ( nicht manuell verändern! )
  *  
  *  FSTATIC statischer/Blinkender Ausgang 
- *  CV50    Bit0 = 1: Blinken,  0: statisch
- *          Bit1 = 1: Beim Blinken starten erst beide Leds dann Wechselblinken
- *          Bit2 = 1: mit weichem Auf/Abblenden 
+ *  CV50    Bit0 = 1: (BLKMODE) Blinken,  0: statisch
+ *          Bit1 = 1: (BLKSTRT) Beim Blinken starten erst beide Leds dann Wechselblinken
+ *          Bit2 = 1: (BLKSOFT) mit weichem Auf/Abblenden 
  *          Bit4..7:  Risetime ( in 50ms Einheiten, 0=default von 500 )
  *  CV51    Einschaltzeit des Blinkens ( 10ms Einheiten )
  *  CV52    Ausschaltzeit des Blinkens ( 10ms Einheiten )

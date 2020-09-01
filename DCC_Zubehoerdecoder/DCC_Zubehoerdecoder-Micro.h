@@ -46,7 +46,7 @@ const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV
 //            z.B. wenn bei einem Servo kein Polarisierungsrelais benötigt wird
 const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmierung) (Led)
 
-#ifdef V6.2Values
+#ifdef V62Values
 #define STATICRISE  (250/50 << 4) // Softled riseTime = 250
 #define COILMOD     NOPOSCHK|CAUTOOFF
 #define SERVOMOD    SAUTOOFF|NOPOSCHK|SDIRECT
@@ -60,7 +60,7 @@ const byte iniFmode[]     = {STATICMOD,  SERVOMOD,          0,          0,      
 const byte iniPar1[]      = {       50,        30,    0b01001,    0b10001,      0b01,       50 };
 const byte iniPar2[]      = {       50,       150,    0b00010,    0b00110,      0b10,       50 };
 const byte iniPar3[]      = {       50,         8,          5,          0,        19,        0 };
-const byte iniPar4[]      = {        0,         0,    0b00101,          0,         0,        0,}; // nur für Lichtsignale!
+const byte iniPar4[]      = {        0,         0,    0b00101,          0,         0,        0 }; // nur für Lichtsignale!
 //------------------------------------------------------------------------------------
 #else
 #define STATICRISE  (250/50 << 4) // Softled riseTime = 250
@@ -77,6 +77,6 @@ const byte iniFmode[]     = {SERVOMOD,  0b11000100,          0,          0,     
 const byte iniPar1[]      = {       30,       110,    0b01001,    0b10001,      0b01,       50 };
 const byte iniPar2[]      = {       80,       160,    0b00010,    0b00110,      0b10,       50 };
 const byte iniPar3[]      = {        8,         8,          5,          0,        19,        0 };
-const byte iniPar4[]      = {        0,         0,    0b00101,          0,         0,        0,}; // nur für Lichtsignale!
+const byte iniPar4[]      = {        0,         0,    0b00101,          0,         0,        0 }; // nur für Lichtsignale!
 //------------------------------------------------------------------------------------
 #endif

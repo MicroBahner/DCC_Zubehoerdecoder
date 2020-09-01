@@ -119,13 +119,22 @@ union { // für jede Klasse gibt es ein Array, die aber übereinanderliegen, da 
 }Fptr;    
 
 Fservo *AdjServo = NULL ;   // Pointer auf zu justierenden Servo
-
+// Typkennung für verbundene Adressen (Adressen mit Folgeeinträgen bei Servos oder Lichtsignalen
+// Diese Kennung wird immer nur bei der Grundadresse eingetragen
+enum combine_t:byte { NOCOM,        // keine Folgeadresse vorhanden, Defaultwert
+                      SERVO4POS,    // Servo mit 4 Positionen
+                      SERVO_DOUBLE, // 2 verbundene Servos
+                      SIGNAL2ADR,   // Lichtsignal mit 4 Signalbildern
+                      SIGNAL3ADR }; // Lichtsignal mit 6 Signalbildern
+combine_t adressTyp[WeichenZahl];
+;
 byte progMode;      // Merker ob Decoder im Programmiermodus
 // -------- Encoderauswertung ----- Justierung der Servoendlage -----------------------------
 # ifdef ENCODER_AKTIV
 // Die zuletzt empfangene Weichenposition kann per Encoder justiert werden. 
 // Die Werte werden gespeichert, sobald eine ander Weichenposition empfangen wird.
-byte adjWix;        // Weichenindex, der z.Z. vom Encoder beeinflusst wird.
+//byte adjWix;        // Weichenindex, der z.Z. vom Encoder beeinflusst wird.
+byte adjPos;        // Position des Servo, das vom Encoder beeiflusst wird
 byte adjPulse;      // per Encoder aktuell eingestellte Servoposition
 #define NO_ADJ 255  // Wert von adjPulse solange keine Änderung erfolgt ist
 #endif
@@ -237,7 +246,6 @@ void setup() {
     
     setWeichenAddr(); // 1. Weichenadresse berechnen
         
-    DBprintCV(); // im Debug-Mode alle CV-Werte ausgeben
     #ifdef DEBUG
     byte *heap_start = new( byte );
     #endif
@@ -253,6 +261,7 @@ void setup() {
     for ( byte wIx=0; wIx<WeichenZahl; wIx++ ) {
         // Funktionsobjekte instanziieren und initiieren
         byte vsIx = 0;  // Vorsignalindex am Mast auf 0 (kein Vorsignal) vorbesetzen
+        adressTyp[wIx] = NOCOM;  // Standard ist keine Folgeadresse
         switch (iniTyp[wIx] )  {
           case FSERVO:
             // 1. Servo immer einrichten
@@ -265,6 +274,9 @@ void setup() {
                     // das 2. Servo greift auf das Modbyte des 1. Servos zu, da das Mod-Byte
                     // des 2. Servos die Stellungskombinatorik enthält
                     Fptr.servo[wIx+1] = new Fservo( cvAdr(wIx+1,0) , &ioPins[(wIx+1)*PPWA], -CV_BLKLEN );
+                    adressTyp[wIx] = SERVO_DOUBLE;
+                } else {
+                    adressTyp[wIx] = SERVO4POS;
                 }
             }
             break;
@@ -288,7 +300,12 @@ void setup() {
                 byte pinZahl = PPWA; 
                 if ( wIx+1<WeichenZahl && iniTyp[wIx+1] == FSIGNAL0 ){
                     pinZahl+=PPWA;
-                    if ( wIx+2<WeichenZahl && iniTyp[wIx+2] == FSIGNAL0 ) pinZahl+=PPWA;
+                    if ( wIx+2<WeichenZahl && iniTyp[wIx+2] == FSIGNAL0 ) {
+                        pinZahl+=PPWA;
+                        adressTyp[wIx] = SIGNAL3ADR;    // Lichtsignal mit 3 Adressen
+                    } else {
+                        adressTyp[wIx] = SIGNAL2ADR;    // Lichtsignal mit 2 Adressen                        
+                    }
                 }
                 DBSG_PRINT("Signal %d, PinMax=%d, Vsindex: %d",wIx+1, pinZahl, vsIx );
                 if ( vsIx == 0 ) {
@@ -304,6 +321,7 @@ void setup() {
         } // Ende switch Funktionstypen
     } // Ende loop über alle Funktionen
 
+    DBprintCV(); // im Debug-Mode alle CV-Werte ausgeben
 #ifdef DEBUG
     byte *heap_end = new( byte );
 #ifdef __AVR_MEGA__
@@ -345,14 +363,11 @@ void loop() {
         switch ( iniTyp[i]  ) {
           case FSERVO: // Servoausgänge ansteuern ----------------------------------------------
             Fptr.servo[i]->process();
-            break;
-          case FSERVO0: // Folgeservo ansteuern ----------------------------------------------
-            // nur, wenn FSERVO0 ein eigener Servo ist ( Servopin != Vorgängerpin )
-            if ( out1Pins[i] != out1Pins[i-1] ){
-                Fptr.servo[i]->process();
+            if ( adressTyp[i] == SERVO_DOUBLE ) {
+                //FolgeServo ansteuern
+                Fptr.servo[i+1]->process();
             }
             break;
-
           case FCOIL: //Doppelspulenantriebe ------------------------------------------------------
            //if ( dccSoll[i] != SOLL_INVALID ) DBCL_PRINT( "SollCoil=%d", dccSoll[i] );
            Fptr.coil[i]->process();
@@ -365,6 +380,7 @@ void loop() {
             Fptr.sig[i]->process();
             break;
           case FSIGNAL0:
+          case FSERVO0: 
             // Signalfolgetypen überspringen
             ;
         } // - Ende Switch Funktionstypen-------------------------------------------
@@ -406,7 +422,7 @@ void setPosition( byte wIx, byte sollWert, byte state = 0 ) {
     switch ( iniTyp[wIx] ) {
         case FSERVO:
           // prüfen, ob es zwei in Kombination anzusteuernde Servos sind
-          if ( iniTyp[wIx+1] == FSERVO0 && out1Pins[wIx] != out1Pins[wIx+1] ) {
+          if ( adressTyp[wIx] == SERVO_DOUBLE ) {
             // ja, Positionen aus dem Modbyte des 2. Servos bestimmen.
             byte pos = ifc_getCV( CV_FUNCTION + CV_BLKLEN*(wIx+1) ) >> ( sollWert*2 );
             DBSV_PRINT("Stellbyte=%02X",pos);
@@ -431,7 +447,7 @@ void setPosition( byte wIx, byte sollWert, byte state = 0 ) {
     }
 }
 //////////////////////////////////////////////////////////////
-// Unterprogramme, die von der DCC Library aufgerufen werden:
+// Unterprogramme, die von der DCC bzw. LocoNet Library aufgerufen werden:
 //------------------------------------------------
 // Die folgende Funktion wird von ifc_process() aufgerufen, wenn ein Weichentelegramm empfangen wurde
 void ifc_notifyDccAccState( uint16_t Addr, uint8_t OutputAddr, uint8_t State ){
@@ -473,10 +489,11 @@ void ifc_notifyDccAccState( uint16_t Addr, uint8_t OutputAddr, uint8_t State ){
                  dccSoll += 2;
                  Ix--;
             }
-        } /*else  if ( iniTyp[Ix] == FSERVO || ( iniTyp[Ix] == FSERVO0 && out1Pins[Ix] != out1Pins[Ix-1] ) ) {
-            // bei Servos prüfen ob gerade Endlagenjustierung aktiv ist*/
-            ChkAdjEncode( Ix, dccSoll );
-        //}
+        }
+        // Prüfen ob gerade ein Servo justiert wird, und gebenenfalls die Justierung beenden 
+        ChkAdjEncode( Ix, dccSoll );
+
+        // angesteuerte Adresse einstellen
         setPosition( Ix, dccSoll, dccState );
     }
     // Prüfen ob Vorsignal über Hauptsignaladresse geschaltet werden muss
@@ -637,7 +654,7 @@ void IniEncoder( void ) {
     // Encoder initiieren
     _pinMode( encode1P, INPUT_PULLUP );
     _pinMode( encode2P, INPUT_PULLUP );
-    adjWix = WeichenZahl;
+    AdjServo = NULL;
     adjPulse = NO_ADJ;
     #endif
 }
@@ -697,22 +714,24 @@ void getEncoder(  ) {
     }
     #endif
 
-    if ( adjWix < WeichenZahl && !Fptr.servo[adjWix]->isMoving() ) {
-        // es gibt eine aktuell zu justierende Weiche, die sich nicht
+    if ( AdjServo != NULL && !AdjServo->isMoving() ) {
+        // es gibt eine aktuell zu justierendes Servo, das sich nicht
         // gerade bewegt
         if ( jogCount != 0 ) {
             // Drehencoder wurde bewegt 
             if ( adjPulse == NO_ADJ ) {
-                // ist erster Justierimpuls, aktuelle Position aus CV auslesen
-                adjPulse = Fptr.servo[adjWix]->getCvPos();
+                // ist erster Justierimpuls, Servo auf aktuelle Justierposition stellen
+                // und aktuelle Position aus CV auslesen
+                AdjServo->set( adjPos );
+                adjPulse = AdjServo->getCvPos();
             }
             if ( (jogCount>0 && adjPulse<180) || (jogCount<0 && adjPulse>0) )
                 adjPulse += jogCount; // adjPulse nur im Bereich 0...180 
-            Fptr.servo[adjWix]->adjust( ADJPOS, adjPulse );
+            AdjServo->adjust( ADJPOS, adjPulse );
         } else if ( analogRead( resModeP ) < 500 ) {
             // Mittelstellungstaster gedrückt
             DBSV_PRINT("Servo center",0);
-            Fptr.servo[adjWix]->center(ABSOLUT);
+            AdjServo->center(ABSOLUT);
         }
     }
     jogCount = 0;
@@ -721,22 +740,33 @@ void getEncoder(  ) {
 
 void ChkAdjEncode( byte WIndex, byte dccSoll ){
     #ifdef ENCODER_AKTIV
+    // Prüfen, ob die Folgeadresse zweier verbundener Servos angesprochen wurde
+    if ( adressTyp[WIndex] == SERVO_DOUBLE && dccSoll > 1 ) {
+        // Folgeadresse wurde angesprochen, Index auf dieses Servo stellen
+        WIndex++;
+        dccSoll -= 2;
+    }
     // nach dem Empfang einer Weichenadresse wird geprüft, ob eine vorherige Justierung gespeichert werden
     // muss. Die empfangene Weichenadresse wird als neue Justieradresse gespeichert wenn es sich um einen
     // Servoantrieb handelt.
     if ( adjPulse != NO_ADJ ) {
-        // Es wurde justiert, testen ob gespeichert werden muss (Weichenwechsel)
-        if ( WIndex != adjWix || Fptr.servo[adjWix]->getPos() != dccSoll ) {
+        // Es wurde justiert, testen ob gespeichert werden muss (Servowechsel)
+        if ( Fptr.servo[WIndex] != AdjServo || adjPos != dccSoll ) {
             // Weiche wurde umgeschaltet, oder eine andere Weiche betätigt -> Justierung speichern
             localCV = true; // keine Bearbeitung in Callback-Routine NotifyCvChange
-            Fptr.servo[adjWix]->adjust(ADJPOSEND,adjPulse);
+            AdjServo->adjust(ADJPOSEND,adjPulse);
             adjPulse = NO_ADJ;
+            AdjServo = NULL;
             localCV = false;
         }
     }
-    adjWix = WIndex;
-    if ( adjWix < WeichenZahl ) 
-        if ( iniTyp[ adjWix ] != FSERVO ) adjWix = WeichenZahl;
+    if ( iniTyp[ WIndex ] == FSERVO || iniTyp[ WIndex] == FSERVO0 ) {
+        // die neue Adresse bezieht sich auf einen Servo
+        AdjServo = Fptr.servo[WIndex];
+        adjPos = dccSoll;
+    } else {
+        AdjServo = NULL;
+    }
     #endif
     DB_PRINT("chkAdj-Freemem %d", freeMemory() );
 
@@ -846,7 +876,7 @@ void DBprintCV(void) {
     // Output-Konfiguration
    DB_PRINT( "Wadr | Typ | CV's  | Mode | Par1 | Par2 | Par3 | Status |",0 );
     for( byte i=0; i<WeichenZahl; i++ ) {
-       DB_PRINT( "%4d |%4d | %2d-%2d | %4d | %4d | %4d | %4d | %3d " , weichenAddr+i, iniTyp[i],
+       DB_PRINT( "%4d |%2d/%1d | %2d-%2d | %4d | %4d | %4d | %4d | %3d " , weichenAddr+i, iniTyp[i],adressTyp[i],
                                                                  cvAdr(i,MODE),  cvAdr(i,STATE),
                                                                  getCvPar(i,MODE),
                                                                  getCvPar(i,PAR1),

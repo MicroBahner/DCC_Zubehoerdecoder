@@ -337,7 +337,7 @@ uint8_t Fservo::getPos(){
 //..............    
 uint8_t Fservo::getCvPos(){
     // CV Wert für aktuelle Position des Servos ermitteln
-    return getParam( posOffset[_istPos] );
+    return getParam( posOffset[_sollPos] );
 }
 //..............    
 void Fservo::adjust( uint8_t mode, uint8_t value ) {
