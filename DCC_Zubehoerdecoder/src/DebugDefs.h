@@ -3,7 +3,7 @@
 #ifndef DEBUGDEFS
 #define DEBUGDEFS
 
-#define DEBUG
+//#define DEBUG
 //#define SERVODBG
 //#define SIGNALDBG
 //#define COILDBG
