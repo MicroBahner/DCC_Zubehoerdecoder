@@ -72,6 +72,7 @@
 #include "DCC_Zubehoerdecoder-STM32.h"
 #elif defined(__AVR_ATmega32U4__)
 #include "DCC_Zubehoerdecoder-Micro.h"
+//#include "TestKOnf\DCC_Zubehoerdecoder-Micro-Servos.h"
 #else
 #include "DCC_Zubehoerdecoder.h"
 //#include "TestKOnf\DCC_Zubehoerdecoder-LS-Nano.h"
@@ -264,8 +265,6 @@ void setup() {
         adressTyp[wIx] = NOCOM;  // Standard ist keine Folgeadresse
         switch (iniTyp[wIx] )  {
           case FSERVO:
-            // 1. Servo immer einrichten
-            Fptr.servo[wIx] = new Fservo( cvAdr(wIx,0) , &ioPins[wIx*PPWA] );
             // Prüfen ob Servokombination ( Folgetyp = FSERVO0 )
             if ( wIx+1<WeichenZahl && iniTyp[wIx+1] == FSERVO0 ){
                 // prüfen ob FSERVO0 gleicher Anschlußpin ( =Servo mit mehreren Stellungen )
@@ -273,11 +272,17 @@ void setup() {
                     // nein, 2 Servos mit kombinatorischer Ansteuerung
                     // das 2. Servo greift auf das Modbyte des 1. Servos zu, da das Mod-Byte
                     // des 2. Servos die Stellungskombinatorik enthält
-                    Fptr.servo[wIx+1] = new Fservo( cvAdr(wIx+1,0) , &ioPins[(wIx+1)*PPWA], -CV_BLKLEN );
+                     Fptr.servo[wIx] = new Fservo( cvAdr(wIx,0) , &ioPins[wIx*PPWA], 2 );
+                    Fptr.servo[wIx+1] = new Fservo( cvAdr(wIx+1,0) , &ioPins[(wIx+1)*PPWA], 2, -CV_BLKLEN );
                     adressTyp[wIx] = SERVO_DOUBLE;
                 } else {
+                    // Servo mit 4 Positionen
                     adressTyp[wIx] = SERVO4POS;
+                    Fptr.servo[wIx] = new Fservo( cvAdr(wIx,0) , &ioPins[wIx*PPWA], 4 );
                 }
+            } else {
+                //Standard-Servo
+                Fptr.servo[wIx] = new Fservo( cvAdr(wIx,0) , &ioPins[wIx*PPWA], 2 );
             }
             break;
           case FCOIL:

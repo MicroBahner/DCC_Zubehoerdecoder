@@ -219,11 +219,13 @@ void Fstatic::_setLedPin( uint8_t ledI, uint8_t sollWert ) {
 //----------------------------- FSERVO --------------------------------------------
 // Ansteuerung von Servo-Antrieben
 // offset für die CV's der Positionswerte
-const uint8_t Fservo::posOffset[6]={PAR1,PAR2,PAR1+CV_BLKLEN,PAR2+CV_BLKLEN,PAR1+2*CV_BLKLEN,PAR2+2*CV_BLKLEN } ;      
+const uint8_t Fservo::posOffset[6]={PAR1,PAR2,PAR1+CV_BLKLEN,PAR2+CV_BLKLEN,PAR1+2*CV_BLKLEN,PAR2+2*CV_BLKLEN } ;   
+const uint8_t _relIx[] = {1,2,4,5}; //Index der relais-Pins im Pin-Array   
 
-Fservo::Fservo( int cvAdr, uint8_t pins[], int8_t modeOffs ) {
+Fservo::Fservo( int cvAdr, uint8_t pins[], uint8_t posZahl, int8_t modeOffs ) {
     // Konstruktor der ServoKlasse
     _outP = pins;
+    _posZahl = posZahl;
     _cvAdr = cvAdr;
     _modeOffs = modeOffs;
     // Weichenservo einrichten
@@ -231,15 +233,22 @@ Fservo::Fservo( int cvAdr, uint8_t pins[], int8_t modeOffs ) {
         _weicheS.attach( _outP[SERVOP], getParam( _modeOffs ) & SAUTOOFF );
         _weicheS.setSpeed( getParam( PAR3 ) );
     }
-    _pinMode( _outP[REL1P], OUTPUT );
-    _pinMode( _outP[REL2P], OUTPUT );
+    for ( uint8_t i = 0; i<posZahl; i++ ) {
+        _pinMode( _outP[_relIx[i]], OUTPUT );
+    }
     // Servowerte und Relaisausgang initiieren und ausgeben
     if ( getParam(_modeOffs) & SAUTOBACK )  _istPos = 0;
-    else                                _istPos = getParam( STATE );
+    else                                    _istPos = getParam( STATE );
     _sollPos = _istPos ;
     _flags.relOn = _istPos;
-    _digitalWrite( _outP[REL1P], _flags.relOn );
-    _digitalWrite( _outP[REL2P], !_flags.relOn );
+    if ( posZahl > 2 ) {
+        // 4-Position-Servo: Relais immer entsprechend aktueller Position setzen
+        _digitalWrite( _outP[_relIx[_istPos]], ON );
+    } else {
+        // Servo mit 2 Positionen ( Mittenumschaltung oder 2 Relais mit Positions-Schaltung )
+        _digitalWrite( _outP[REL1P], _flags.relOn );
+        _digitalWrite( _outP[REL2P], !_flags.relOn );
+    }
     _flags.sollAct = false;
     _flags.moving = false;
     _weicheS.write( getParam( posOffset[_istPos] ) );
@@ -251,8 +260,10 @@ Fservo::Fservo( int cvAdr, uint8_t pins[], int8_t modeOffs ) {
 //..............    
 void Fservo::set( uint8_t newPos ) {
     // Befehl 'servo stellen' erhalten
-    if ( newPos > 5 ) newPos = 5;   // maximal 6 Positionswerte
+    DBSV_PRINT( "Servo.set: new:%d, max:%d", newPos, _posZahl );
+    if ( newPos >= _posZahl ) newPos = _posZahl-1;   // maximalZhal der Positionswerte
     _sollPos = newPos;
+    DBSV_PRINT( "Servo.set: new:%d, soll:%d", newPos, _sollPos );
     _flags.sollAct = true;
 }
 //..............    
@@ -307,18 +318,18 @@ void Fservo::process() {
         _weicheS.write( getParam( posOffset[_sollPos] ) );
     }
     // Relaisausgänge setzen
-    if ( _outP[REL2P] == NC ) {
+    if ( _outP[REL2P] == NC && _posZahl == 2  ) {
         // Variante mit einem Relais, wird in Bewegungsmitte umgeschaltet
         _digitalWrite( _outP[REL1P], _flags.relOn );
     } else {
-        // Variante mit 2 Relais, während der Bewegung beide Relais abschalten
+        // Variante mit 2 oder 4 Relais, während der Bewegung alle Relais abschalten
         if ( _flags.moving ) {
-            _digitalWrite( _outP[REL1P], OFF );
-            _digitalWrite( _outP[REL2P], OFF );
+            for ( byte i=0; i<_posZahl; i++ ) {
+                _digitalWrite( _outP[_relIx[i]], OFF );
+            }
         } else {
             // im Stillstand des Servos entsprechend relaisout schalten
-            _digitalWrite( _outP[REL1P], _flags.relOn );
-            _digitalWrite( _outP[REL2P], !_flags.relOn );
+            _digitalWrite( _outP[_relIx[_sollPos]], ON );
         }
     }
     

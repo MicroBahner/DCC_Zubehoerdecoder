@@ -110,7 +110,7 @@ void _digitalWrite( byte port, byte state ) ;
 
 class Fservo {
     public:
-    Fservo( int cvAdr, uint8_t pins[], int8_t modeOffs=MODE );
+    Fservo( int cvAdr, uint8_t pins[], uint8_t posZahl, int8_t modeOffs=MODE );
     void process();
     void set( uint8_t sollWert );       // neuen Schaltbefehl erhalten
 	bool isMoving ();					// Abfrage ob Servo in Bewegung
@@ -137,6 +137,7 @@ class Fservo {
 		#define SERVOP	0
 		#define REL1P	1
 		#define REL2P	2
+    uint8_t _posZahl;                //Zahl der anfahrbaren Positionen ( 2 oder 4 )
     uint8_t _sollPos;                // Sollposition des Servo ( 0...3 )
     uint8_t _istPos;                 // istposition des Servo
     struct {
