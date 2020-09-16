@@ -68,15 +68,15 @@ const byte iniPar4[]      = {        0,         0,    0b00101,          0,      
 #define SERVOMOD    SAUTOOFF|NOPOSCHK|SDIRECT //|SAUTOBACK
 #define SERVO0MOD   SERVOMOD    // Modbyte für Folgeservo (FSERVO0)
 #define STATICMOD   CAUTOOFF|BLKSOFT|BLKSTRT|STATICRISE    // Wechselblinker mit beiden Leds an beim Start            
-const byte iniTyp[]     =   {    FSERVO,  FSERVO0,   FSIGNAL2,   FSIGNAL0,   FVORSIG,   FCOIL };
-const byte out1Pins[]   =   {       A0,        A1,   /*rt*/ 9,   /*rt*/10,  /*ge*/12,       14 };  // output-pins der Funktionen
-const byte out2Pins[]   =   {        3,         5,   /*gn*/11,   /*ws*/ 8,  /*gn*/13,       15 };
-const byte out3Pins[]   =   {       NC,        NC,   /*ge*/ 7,         NC,        NC,       NC };
- 
-const byte iniFmode[]     = {SERVOMOD,  0b11000100,          0,          0,         0,  COILMOD };
-const byte iniPar1[]      = {       30,       110,    0b01001,    0b10001,      0b01,       50 };
-const byte iniPar2[]      = {       80,       160,    0b00010,    0b00110,      0b10,       50 };
-const byte iniPar3[]      = {        8,         8,          5,          0,        19,        0 };
-const byte iniPar4[]      = {        0,         0,    0b00101,          0,         0,        0 }; // nur für Lichtsignale!
+const byte iniTyp[]     =   {    FSERVO,  FSERVO0,   FSIGNAL2,   FSIGNAL0,   FVORSIG,   FCOIL ,      FSERVO,  FSERVO0 };
+const byte out1Pins[]   =   {       A0,        A1,   /*rt*/ 9,   /*rt*/10,  /*ge*/12,        0,          3,         3 };  // output-pins der Funktionen
+const byte out2Pins[]   =   {        5,         6,   /*gn*/11,   /*ws*/ 8,  /*gn*/13,        1,         14,        16 };
+const byte out3Pins[]   =   {       NC,        NC,   /*ge*/ 7,         NC,        NC,       NC,         15,        17 };
+                                                                                                
+const byte iniFmode[]     = {SERVOMOD,  0b11000100,          0,          0,         0,  COILMOD, SERVOMOD,  0b11000100};
+const byte iniPar1[]      = {       30,       110,    0b01001,    0b10001,      0b01,       50,         30,       110 };
+const byte iniPar2[]      = {       80,       160,    0b00010,    0b00110,      0b10,       50,         80,       160 };
+const byte iniPar3[]      = {        8,         8,          5,          0,        19,        0,          8,         8 };
+const byte iniPar4[]      = {        0,         0,    0b00101,          0,         0,        0,          0,         0 }; // nur für Lichtsignale!
 //------------------------------------------------------------------------------------
 #endif
