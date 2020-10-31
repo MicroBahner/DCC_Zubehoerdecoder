@@ -105,8 +105,8 @@ void Fcoil::process() {
         }
         
         if ( _flags.pulseON == false ) {
-            digitalWrite( _outP[0], LOW );
-            digitalWrite( _outP[1], LOW );
+            _digitalWrite( _outP[0], LOW );
+            _digitalWrite( _outP[1], LOW );
             // Timer für Pulspause setzen
             if ( getParam( PAR2) > 0 ) _pulseT.setTime( getParam( PAR2) * 10 );
         }
@@ -141,8 +141,8 @@ Fstatic::Fstatic( int cvAdr, uint8_t ledP[] ) {
             }
         }
     } else {
-        if ( _ledP[0] != NC ) pinMode( _ledP[0], OUTPUT );
-        if ( _ledP[1] != NC ) pinMode( _ledP[1], OUTPUT );
+        _pinMode( _ledP[0], OUTPUT );
+        _pinMode( _ledP[1], OUTPUT );
         DBST_PRINT( "Hardled, pins %d,%d ", _ledP[0], _ledP[1] );
     }
     // Grundstellung der Ausgangsports
@@ -212,7 +212,7 @@ void Fstatic::_setLedPin( uint8_t ledI, uint8_t sollWert ) {
     // den LED ausgang 1/2 setzen. je nach Konfiguration als Softled oder hart
     if ( ledI <2 ) {
         if ( _ledS[ledI] != NULL ) _ledS[ledI]->write( sollWert);
-        else if ( _ledP[ledI] != NC ) digitalWrite( _ledP[ledI], sollWert );
+        else _digitalWrite( _ledP[ledI], sollWert );
     }
 }
 
@@ -544,7 +544,7 @@ void Fsignal::_setSignal ( ) {
         for ( byte i=0; i< _pinAnz ; i++ ) {
             if ( _sigLed[i] == NULL ) {
                 // Standard-Ausgang
-                digitalWrite( _outP[i], sigOutMsk&1 );
+                _digitalWrite( _outP[i], sigOutMsk&1 );
             } else {
                 // Softled-Ausgang
                 _sigLed[i]->write( sigOutMsk&1, LINEAR );
