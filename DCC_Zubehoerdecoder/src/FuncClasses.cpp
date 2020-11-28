@@ -235,6 +235,7 @@ Fservo::Fservo( int cvAdr, uint8_t pins[], uint8_t posZahl, int8_t modeOffs ) {
     }
     for ( uint8_t i = 0; i<posZahl; i++ ) {
         _pinMode( _outP[_relIx[i]], OUTPUT );
+        digitalWrite( _outP[_relIx[i]], LOW );      // notwendig für STM32/PA15 ( dieser Port ist HIGH nach pinMode )
     }
     // Servowerte und Relaisausgang initiieren und ausgeben
     if ( getParam(_modeOffs) & SAUTOBACK )  _istPos = 0;
@@ -252,7 +253,7 @@ Fservo::Fservo( int cvAdr, uint8_t pins[], uint8_t posZahl, int8_t modeOffs ) {
     _flags.sollAct = false;
     _flags.moving = false;
     _weicheS.write( getParam( posOffset[_istPos] ) );
-    DBSV_PRINT("ServoObj@%04x, Pins=%04x, cvAdr=%d, modeOffs=%d", (uint16_t)this , _outP, _cvAdr, _modeOffs);
+    DBSV_PRINT("ServoObj@%04x, Pins=%04x, cvAdr=%d, modeOffs=%d", (uint32_t)this , _outP, _cvAdr, _modeOffs);
     DBSV_PRINT("ModeByte=%02x", getParam( _modeOffs ) ) ;
    
 }
@@ -274,7 +275,7 @@ void Fservo::process() {
         // Servo steht in Arbeitsstellung und Zeit ist abgelaufen: zurückfahren
         _sollPos = 0;
         _flags.sollAct = true;
-        DBSV_PRINT( "(%04x) ServoTimer abgelaufen, _istlAbz=%d",(uint16_t)this, _istPos  );
+        DBSV_PRINT( "(%04x) ServoTimer abgelaufen, _istlAbz=%d",(uint32_t)this, _istPos  );
      }   
     
     if ( _flags.moving ) {
@@ -437,13 +438,13 @@ void Fsignal::setDark( bool darkFlg ) {
     // Ist das Flag 'true' wird das Signal dunkelgeschaltet
     if ( darkFlg ) {
         // Signal dunkelschalten
-        DBSG_PRINT("setDark",0);
+        DBSG_PRINT("setDark");
         _clrSignal();
         _fktStatus.dark = true;
     } else {
         // Aktuelles Signalbild wieder einschalten
         _fktStatus.dark = false;
-        DBSG_PRINT("clrDark",0);
+        DBSG_PRINT("clrDark");
         _setSignal();
     }
 }
@@ -566,7 +567,7 @@ void Fsignal::_clrSignal () {
     }
     // am Haupsignal gegebenenfalls auch das Vorsignal dunkelschalten
     if ( _vorSig != NULL && *_vorSig != NULL ) {
-        DBSG_PRINT("Vorsig dunkelschalten",0);
+        DBSG_PRINT("Vorsig dunkelschalten");
         (*_vorSig)->setDark( true );
     } 
 }

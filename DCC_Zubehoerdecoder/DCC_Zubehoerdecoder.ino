@@ -226,7 +226,7 @@ void setup() {
         // Wird über DCC ein 'factory-Reset' empfangen wird modeVal zurückgesetzt, was beim nächsten
         // Start zum initiieren führt.
         //
-        DB_PRINT( "Init-ALL!!",0);
+        DB_PRINT( "Init-ALL!!");
         iniCv( INIALL );
     } else if ( progMode == INIMODE ) {
         iniCv( INIMODE );
@@ -735,7 +735,7 @@ void getEncoder(  ) {
             AdjServo->adjust( ADJPOS, adjPulse );
         } else if ( analogRead( resModeP ) < 500 ) {
             // Mittelstellungstaster gedrückt
-            DBSV_PRINT("Servo center",0);
+            DBSV_PRINT("Servo center");
             AdjServo->center(ABSOLUT);
         }
     }
@@ -773,8 +773,9 @@ void ChkAdjEncode( byte WIndex, byte dccSoll ){
         AdjServo = NULL;
     }
     #endif
+    #ifdef __AVR_MEGA__
     DB_PRINT("chkAdj-Freemem %d", freeMemory() );
-
+    #endif
 }
 
 
@@ -791,7 +792,7 @@ void setWeichenAddr(void) {
 }
 //--------------------------------------------------------
 void softReset(void){
-    DB_PRINT( "RESET", 0 );
+    DB_PRINT( "RESET" );
     delay(1000);
     #ifdef __AVR_MEGA__
     //asm volatile ("  jmp 0");
@@ -863,7 +864,7 @@ int freeMemory() {
 void DBprintCV(void) {
     // für Debug-Zwecke den gesamten genutzten CV-Speicher ausgeben
     // Standard-Adressen
-   DB_PRINT( "--------- Debug-Ausgabe CV-Werte ---------", 0 );
+   DB_PRINT( "--------- Debug-Ausgabe CV-Werte ---------" );
    DB_PRINT( "Version: %x, ManufactId: %d", ifc_getCV( cvVersionId ), ifc_getCV( cvManufactId ) );
     
     // Decoder-Konfiguration global
@@ -879,7 +880,7 @@ void DBprintCV(void) {
     DB_PRINT( "PoM-Adr.(CV48/49) : %d"   , ifc_getCV( CV_POMLOW) + 256* ifc_getCV( CV_POMHIGH ) );
    #endif    
     // Output-Konfiguration
-   DB_PRINT( "Wadr | Typ | CV's  | Mode | Par1 | Par2 | Par3 | Status |",0 );
+   DB_PRINT( "Wadr | Typ | CV's  | Mode | Par1 | Par2 | Par3 | Status |" );
     for( byte i=0; i<WeichenZahl; i++ ) {
        DB_PRINT( "%4d |%2d/%1d | %2d-%2d | %4d | %4d | %4d | %4d | %3d " , weichenAddr+i, iniTyp[i],adressTyp[i],
                                                                  cvAdr(i,MODE),  cvAdr(i,STATE),
