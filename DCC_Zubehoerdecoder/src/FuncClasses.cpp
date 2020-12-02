@@ -515,9 +515,10 @@ uint8_t Fsignal::_getHsMask(){
 // Ausgangsmaske für Signalbild sigState bestimmen
 uint8_t  Fsignal::_getSigMask( uint8_t sigState ) {
     // sState: Signalzustand
-    static int parOffs[] = { 1,2,6,7,11,12,16,17 } ; // max 4 Adressen vorgesehen
+    //static int parOffs[] = { 1,2,6,7,11,12,16,17 } ; // max 4 Adressen vorgesehen
+    byte parOffs = ((sigState>>1) * CV_BLKLEN ) + (sigState&1)  +1;
     //DBSG_PRINT("Fsignal-Freemem %d", freeMemory() );
-   return getParam( parOffs[sigState] );
+   return getParam( parOffs );
 }
 
 //..............    

@@ -69,7 +69,7 @@ extern byte progMode;
 #define CV_POMLOW     48  // Adresse für die POM-Programmierung
 #define CV_POMHIGH    49
 #define CV_FUNCTION   50  // Start der Blöcke für die Funktionskonfiguration
-#define CV_BLKLEN      5  // Länge eines CV-Blocks ( pro Adresse ein Block )
+#define CV_BLKLEN     10  // Länge eines CV-Blocks ( pro Adresse ein Block )
                           // Die Bedeutung ist weitgehend funktionsspezifisch
 
 // für spätere Erweiterungen wird ein weiterer Satz CV's definiert mit zusätzlichen Informationen

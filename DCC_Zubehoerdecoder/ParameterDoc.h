@@ -110,20 +110,32 @@
  *              Bit 1: Befehl 1.Adresse 1 (grün)
  *              Bit 2: Befehl 2.Adresse 0 (rot)
  *              u.s.w.
+ *  CV55    Bitmuster der blinkenden Leds für Befehl 1.Adresse 0 (rot)
+ *  CV56    Bitmuster der blinkenden Leds für Befehl 1.Adresse 1 (grün)
+ *  CV57-58 reserved
+ *  CV59    Blinktakt ( 10ms-Einheiten ) 
+ 
  *  FSIGNAL0 1. Folgeadresse (optional)
- *  CV55    Bit 2.. 0 Bitmuster hard/soft gibt an, welche Ausgänge 'hart' umschalten (Bit=1)
+ *  CV60    Bit 2.. 0 Bitmuster hard/soft gibt an, welche Ausgänge 'hart' umschalten (Bit=1)
  *          und Welche Ausgänge weich überblenden (Bit=0)
- *  CV56    Bitmuster der Ausgänge für Befehl 2.Adresse 0 (rot)
- *  CV57    Bitmuster der Ausgänge für Befehl 2.Adresse 1 (grün)
- *  CV58    reserved
- *  CV59    reserved
+ *  CV61    Bitmuster der Ausgänge für Befehl 2.Adresse 0 (rot)
+ *  CV62    Bitmuster der Ausgänge für Befehl 2.Adresse 1 (grün)
+ *  CV63    reserved
+ *  CV64    reserved
+ *  CV65    Bitmuster der blinkenden Leds für Befehl 2.Adresse 0 (rot)
+ *  CV66    Bitmuster der blinkenden Leds für Befehl 2.Adresse 1 (grün)
+ *  CV67-69 reserved
+ 
  *  FSIGNAL0 2. Folgeadresse (optional)
- *  CV60     Bit 2.. 0 Bitmuster hard/soft gibt an, welche Ausgänge 'hart' umschalten (Bit=1)
- *           und Welche Ausgänge weich überblenden (Bit=0)
- *  CV61     Bitmuster der Ausgänge für Befehl 3.Adresse 0 (rot)
- *  CV62     Bitmuster der Ausgänge für Befehl 3.Adresse 1 (grün)
- *  CV63     reserved
- *  CV64     reserved
+ *  CV70    Bit 2.. 0 Bitmuster hard/soft gibt an, welche Ausgänge 'hart' umschalten (Bit=1)
+ *          und Welche Ausgänge weich überblenden (Bit=0)
+ *  CV71    Bitmuster der Ausgänge für Befehl 3.Adresse 0 (rot)
+ *  CV72    Bitmuster der Ausgänge für Befehl 3.Adresse 1 (grün)
+ *  CV73    reserved
+ *  CV74    reserved
+ *  CV75    Bitmuster der blinkenden Leds für Befehl 3.Adresse 0 (rot)
+ *  CV76    Bitmuster der blinkenden Leds für Befehl 3.Adresse 1 (grün)
+ *  CV77-79 reserved
  *  
  *  FVORSIG Vorsignalfunktion
  *          weitgehend wie FSIGNAL2 ausser:

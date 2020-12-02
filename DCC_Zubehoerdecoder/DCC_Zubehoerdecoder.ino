@@ -25,7 +25,7 @@
     So sind z.B. bei Servoausgängen die Endlagen per CV-Wert einstellbar, bei Lichtsignalen ist die 
     Zuordnung der Ausgangszustände zum Signalzustand frei konfigurierbar.
 */
-#define DCC_DECODER_VERSION_ID 0x63
+#define DCC_DECODER_VERSION_ID 0x70
 
 #include "src/FuncClasses.h"
 #ifdef __AVR_MEGA__
@@ -74,9 +74,10 @@
 #include "DCC_Zubehoerdecoder-Micro.h"
 //#include "TestKOnf\DCC_Zubehoerdecoder-Micro-Servos.h"
 #else
-#include "DCC_Zubehoerdecoder.h"
+//#include "DCC_Zubehoerdecoder.h"
 //#include "TestKOnf\DCC_Zubehoerdecoder-LS-Nano.h"
 //#include "examples\DCC_Zubehoerdecoder-Micro.h"
+#include "examples\DCC_Zubehoerdecoder-Bsp1.h"
 #endif
 //-------------------------------------------------------------------------------
 //-------------------------------------------
@@ -220,7 +221,7 @@ void setup() {
 
     //-------------------------------------
     // CV's initiieren
-    if ( (ifc_getCV( CV_MODEVAL )&0xf0) != VALIDFLG || ifc_getCV(CV_INIVAL) != VALIDFLG || analogRead(resModeP) < 100 ) {
+    if ( (ifc_getCV( CV_MODEVAL )&0xf0) != VALIDFLG || ifc_getCV(CV_INIVAL) != VALIDFLG || analogRead(resModeP) < 100 || (ifc_getCV(cvVersionId) < 0x70 ) ) {
         // In modeVal oder ManufactId steht kein korrekter Wert ( oder resModeP ist auf 0 ),
         // alles initiieren mit den Defaultwerten
         // Wird über DCC ein 'factory-Reset' empfangen wird modeVal zurückgesetzt, was beim nächsten

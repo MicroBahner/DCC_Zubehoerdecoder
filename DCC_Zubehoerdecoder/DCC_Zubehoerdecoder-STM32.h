@@ -49,7 +49,7 @@ const byte encode2P     =   PA4;
 // Der Initiierungsmodus lässt sich per Mode-Eingang aktivieren oder er ist automatisch aktiv, wenn keine
 // sinnvollen Werte im CV47 stehen.
 //-------------------------------------------------------------------------------------------------------
-const int DccAddr           =  20;    // DCC-Decoderadresse
+const int DccAddr           =  1;    // DCC-Decoderadresse
 const byte iniMode          = 0x50 | AUTOADDR; // | ROCOADDR;  // default-Betriebsmodus ( CV47 )
 const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV48/49 )
 //#define NOACK                     // Diese Zeile aktivieren, wenn keine HW zum CV auslesen vorhanden ist
@@ -84,5 +84,11 @@ const byte out3Pins[]   =   {       NC,        NC,  /*ge*/PB7,         NC,      
 const byte iniFmode[]     = { SERVOMOD,0b11000100,          0,          0,         0, NOPOSCHK, SERVOMOD,  0b11000100 };
 const byte iniPar1[]      = {       30,       110,    0b01001,    0b10001,      0b01,       20,         30,       110  };
 const byte iniPar2[]      = {       80,       160,    0b00010,    0b00110,      0b10,       50,         80,       160  };
-const byte iniPar3[]      = {        8,         8,          0,          0,        19,        0,          8,         8  };
-const byte iniPar4[]      = {        0,         0,    0b00101,          0,         0,        0,          0,         0 ,}; // nur für Lichtsignale!
+const byte iniPar3[]      = {        8,         8,          5,          0,        19,        0,          8,         8  };
+const byte iniPar4[]      = {        0,         0,    0b00101,          0,         0,        0,          0,         0  }; // nur für Lichtsignale!
+// Erweiterte Parameter ( ab V7.0 )
+const byte iniPar5[]      = {        0,         0,          0,          0,         0,         0,         0,         0 };
+const byte iniPar6[]      = {        0,         0,          0,          0,         0,         0,         0,         0  };
+const byte iniPar7[]      = {        0,         0,          0,          0,         0,         0,         0,         0  };
+const byte iniPar8[]      = {        0,         0,          0,          0,         0,         0,         0,         0  };
+const byte iniPar9[]      = {        0,         0,          0,          0,         0,         0,         0,         0  }; // nur für Lichtsignale!

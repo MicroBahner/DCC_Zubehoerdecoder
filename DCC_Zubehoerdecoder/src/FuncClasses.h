@@ -87,7 +87,7 @@ void _digitalWrite( byte port, byte state ) ;
 
     private:
     void _setLedPin( uint8_t ledI, uint8_t sollWert );
-    EggTimer _pulseT;
+    MoToTimer _pulseT;
     
     uint16_t _cvAdr;            // Adresse des CV-Blocks mit den Funktionsparametern
     SoftLed *_ledS[2] = { NULL, NULL };      // Softled-Objekte
@@ -167,6 +167,7 @@ const byte  LSMODE=0,       BILD1=1,    BILD2=2, VORSIG=3, DARKMASK = 4,
     void setDark  ( bool darkFlg );    // 'true' schaltet das Signal aus(dunkel), 'false' ein
     
     private:
+    MoToTimer _blinkT;                 // Timer für blinkende Signalbilder
     void    _clrSignal ();             // SoftLed's ausschalten
     void    _setSignal ();             // aktuelles Signalbild einschalten
     uint8_t _getHsMask ();             // Maske für Hard/Soft Umschaltung aller Ausgänge bestimmen
