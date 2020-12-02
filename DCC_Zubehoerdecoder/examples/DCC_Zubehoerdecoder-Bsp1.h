@@ -52,6 +52,7 @@ const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmi
 const byte iniTyp[]   = {   FSERVO,   FSERVO,   FSERVO,   FSERVO,  FSTATIC,  FSTATIC,    FCOIL };
 const byte out1Pins[] = {       A0,       A1,       11,       12,        7,        8,       10 }; 
 const byte out2Pins[] = {        3,        5,       NC,       NC,        6,       NC,        9 };
+const byte out3Pins[] = {       NC,       NC,       NC,       NC,       NC,       NC,       NC };
 
 const byte iniFmode[] = { SAUTOOFF, SAUTOOFF, SAUTOOFF,        0,  BLKMODE,        0, CAUTOOFF };
 const byte iniPar1[]  = {        0,        0,        0,        0,       50,        0,       50 };
