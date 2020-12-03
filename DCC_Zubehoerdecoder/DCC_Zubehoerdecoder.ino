@@ -1,5 +1,5 @@
 /* Universeller DCC-Decoder für Weichen und (Licht-)Signale
-    Version 6.3.0 - Die Funktionalitäten sind als Klassen definiert 
+    Version 7.0.0 - Die Funktionalitäten sind als Klassen definiert 
     Die Klassenobjekte werden erst im Setup je nach Konfiguration instanziiert
     
    Eigenschaften:
