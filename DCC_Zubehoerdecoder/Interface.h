@@ -59,11 +59,12 @@ extern byte progMode;
 // adressiert werden, sind die EEPROM-Werte beim Wechsel des Interfaces ungültig. Deshalb muss in diesem
 // Fall das EEPROM neu initiiert werden. Wegen des Versatzes um 2 wird das Valid-Flag in 2 
 // Speicherzellen geschrieben, so dass das Valid-Flag des jeweils anderen Interfaces sicher zerstört wird.
+// VALID-Flag ist ab V7 geändert, damit bei Wechsel von V6 <-> V7 die CV's initiiert werden ( andere Aufteilung )
 #ifdef LOCONET
-    #define VALIDFLG  0xA0 // Wenn das Interface sich ändert, muss alles neu initiiert werden.
+    #define VALIDFLG  0xB0 // Wenn das Interface sich ändert, muss alles neu initiiert werden.
                            // Low Nibble muss 0 sein ( wg. MODEVAL-Bits )
 #else
-    #define VALIDFLG  0x50
+    #define VALIDFLG  0x60
 #endif
 
 #define CV_POMLOW     48  // Adresse für die POM-Programmierung

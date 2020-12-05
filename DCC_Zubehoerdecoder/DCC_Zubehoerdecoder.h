@@ -34,6 +34,8 @@ const byte encode2P     =   A4;
 // Der Initiierungsmodus lässt sich per Mode-Eingang aktivieren oder er ist automatisch aktiv, wenn keine
 // sinnvollen Werte im CV47 stehen.
 //-------------------------------------------------------------------------------------------------------
+//#define EXTENDED_CV       // CV-Werte ab V7.0 ( 10 CV per Adresse )
+
 const int DccAddr           =  20;    // DCC-Decoderadresse
 const byte iniMode          = 0x50 | AUTOADDR /*| ROCOADDR*/;  // default-Betriebsmodus ( CV47 )
 const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV48/49 )
@@ -55,10 +57,24 @@ const byte iniTyp[]     =   {    FSERVO,  FSERVO0,   FSIGNAL2,   FSIGNAL0,   FVO
 const byte out1Pins[]   =   {       A2,        A3,   /*rt*/ 9,   /*rt*/10,  /*ge*/A0,        5 };  // output-pins der Funktionen
 const byte out2Pins[]   =   {        3,        12,   /*gn*/11,   /*ws*/ 8,  /*gn*/A1,        6 };
 const byte out3Pins[]   =   {       NC,        NC,   /*ge*/ 7,         NC,        NC,       NC };
- 
-const byte iniFmode[]     = { SERVOMOD, 0b11000100,          0,          0,         0,  COILMOD };
+
+#ifdef EXTENDED_CV  // neues Format - 10 CV/Adresse
+const byte iniCVx[10][sizeof(iniTyp)]  = {
+/* iniFmode (CV50,60,... */ { SERVOMOD,0b11100100,          0,          0,         0,  COILMOD },
+/* iniPar1 (CV51,61,... */  {       30,       110,    0b01001,    0b10001,      0b01,       50 },
+/* iniPar2 (CV52,62,... */  {       80,       160,    0b00010,    0b00110,      0b10,       50 },
+/* iniPar3 (CV53,63,... */  {       8,          8,          5,          0,        19,        0 },
+/* iniPar4 (CV54,64,... */  {       0,          0,    0b00101,          0,         0,        0 }, 
+/* iniPar5 (CV55,65,... */  {       0,          0,          0,          0,         0,        0 },
+/* iniPar6 (CV56,66,... */  {       0,          0,          0,          0,         0,        0 },
+/* iniPar7 (CV57,67,... */  {       0,          0,          0,          0,         0,        0 },
+/* iniPar8 (CV58,68,... */  {       0,          0,          0,          0,         0,        0 },
+/* iniState (CV59,69,... */ {       0,          0,          0,          0,         0,        0 }}; // Status-Werte
+//------------------------------------------------------------------------------------
+#else // für Test auf altes Format 
+const byte iniFmode[]     = { SERVOMOD, 0b11100100,          0,          0,         0,  COILMOD };
 const byte iniPar1[]      = {       30,       110,    0b01001,    0b10001,      0b01,       50 };
 const byte iniPar2[]      = {       80,       160,    0b00010,    0b00110,      0b10,       50 };
 const byte iniPar3[]      = {       8,         8,          5,          0,        19,        0 };
 const byte iniPar4[]      = {        0,         0,    0b00101,          0,         0,        0,}; // nur für Lichtsignale und AUTOBACK- Servos!
-//------------------------------------------------------------------------------------
+#endif

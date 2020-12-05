@@ -59,7 +59,8 @@
 #define FSIGNAL2    5 // 1. Signaladresse 
 #define FVORSIG     6 // 1. Vorsignaladresse
 #define FSERVO0     7 // Folgeadresse bei 2 gekoppelten Servos
-#define FMAX        7  
+#define F2SERVO     8 // Klasse zur Steuerung von 2 Servos über eine Adresse
+#define FMAX        8  
 
 //---------------------------------------
 //Flags für iniMode:
@@ -74,10 +75,10 @@
 #include "DCC_Zubehoerdecoder-Micro.h"
 //#include "TestKOnf\DCC_Zubehoerdecoder-Micro-Servos.h"
 #else
-//#include "DCC_Zubehoerdecoder.h"
+#include "DCC_Zubehoerdecoder.h"
 //#include "TestKOnf\DCC_Zubehoerdecoder-LS-Nano.h"
 //#include "examples\DCC_Zubehoerdecoder-Micro.h"
-#include "examples\DCC_Zubehoerdecoder-Bsp1.h"
+//#include "examples\DCC_Zubehoerdecoder-Bsp1.h"
 #endif
 //-------------------------------------------------------------------------------
 //-------------------------------------------
@@ -114,6 +115,7 @@ byte ioPins[PPWA*WeichenZahl];  // alle definierten IO's in einem linearen Array
 // Pointer auf die Funktionsobjekte
 union { // für jede Klasse gibt es ein Array, die aber übereinanderliegen, da pro Weichenadresse
         // nur ein Objekt möglich ist
+    F2servo *servo2[WeichenZahl];
     Fservo  *servo[WeichenZahl];
     Fcoil   *coil[WeichenZahl];    
     Fstatic *stat[WeichenZahl];   
@@ -615,41 +617,48 @@ void ifc_notifyDccReset( uint8_t hardReset ) {
 /////////////////////////////////////////////////////////////////////////
 // Initiieren der CV-Werte
 void iniCv( byte mode ) {
-        localCV= true; // keine auswertung in ifc_notifyCVchange
-        // Standard-CV's
-        DB_PRINT("iniCV: %d", mode );
-        for ( byte i=0; i<(sizeof(FactoryDefaultCVs) / sizeof(CVPair)); i++ ) {
-                ifc_setCV( FactoryDefaultCVs[i].CV, FactoryDefaultCVs[i].Value);
-        }
-        // Decoderspezifische CV's
+    localCV= true; // keine auswertung in ifc_notifyCVchange
+    // Standard-CV's
+    DB_PRINT("iniCV: %d", mode );
+    for ( byte i=0; i<(sizeof(FactoryDefaultCVs) / sizeof(CVPair)); i++ ) {
+            ifc_setCV( FactoryDefaultCVs[i].CV, FactoryDefaultCVs[i].Value);
+    }
+    // Decoderspezifische CV's
 
-        // allgemeine CV's
-        ifc_setCV( (int) CV_POMLOW, PomAddr%256 );
-        ifc_setCV( (int) CV_POMHIGH, PomAddr/256 );
-        ifc_setCV( (int) CV_INIVAL, VALIDFLG );
-        ifc_setCV( (int) CV_MODEVAL, VALIDFLG | (iniMode&0xf) );
-        // Funktionsspezifische CV's
-        for ( byte i = 0; i<WeichenZahl; i++ ) {
-            DB_PRINT("fktSpezCv: %d,Typ=%d", i, iniTyp[i] );
+    // allgemeine CV's
+    ifc_setCV( (int) CV_POMLOW, PomAddr%256 );
+    ifc_setCV( (int) CV_POMHIGH, PomAddr/256 );
+    ifc_setCV( (int) CV_INIVAL, VALIDFLG );
+    ifc_setCV( (int) CV_MODEVAL, VALIDFLG | (iniMode&0xf) );
+    // Funktionsspezifische CV's
+    for ( byte i = 0; i<WeichenZahl; i++ ) {
+        DB_PRINT("fktSpezCv: %d,Typ=%d", i, iniTyp[i] );
+        #ifdef EXTENDED_CV  // initiale CV-Werte als 2-dim. Array
+            // 
+            for ( byte pIx = 0; pIx < (CV_BLKLEN-1); pIx++ ) {
+                // Statuswert nicht initiieren   
+                ifc_setCV( cvAdr( i, pIx ), iniCVx[pIx][i] );     
+            }
+            if ( mode == INIALL ) {
+                // Bei INIALL auch alle Statuswerte initiieren
+                ifc_setCV( cvAdr(i,STATE ), iniCVx[CV_BLKLEN-1][i] );
+            } 
+        #else // Konfig-File im V6-Format
             ifc_setCV( cvAdr(i,MODE), iniFmode[i] );
             ifc_setCV( cvAdr(i,PAR1), iniPar1[i] );
             ifc_setCV( cvAdr(i,PAR2), iniPar2[i] );
             ifc_setCV( cvAdr(i,PAR3), iniPar3[i] );
+            ifc_setCV( cvAdr(i,PAR4), iniPar4[i] );     // in V6: Lichtsignalparameter oder Status
+            // restliche CV's ( 5...8 )löschen
+            for ( byte pIx = 5; pIx < (CV_BLKLEN-1); pIx++ ) {
+                ifc_setCV( cvAdr( i, pIx ), 0xFF );
+            }
+            
             if ( mode == INIALL ) {
                 // Bei INIALL auch alle Statuswerte initiieren
-                ifc_setCV( cvAdr(i,STATE), iniPar4[i] );
-            }  else {
-                // bei den Signaltypen immer auch den 5. CV-Wert als Parameter laden
-                switch ( iniTyp[i] ) {
-                  case FSIGNAL2:
-                  case FVORSIG:
-                  case FSIGNAL0:
-                    ifc_setCV( cvAdr(i,STATE), iniPar4[i] );
-                    break;
-                  default:
-                    ;
-            }
-        }
+                ifc_setCV( cvAdr(i,STATE ), iniPar4[i] );
+            } 
+        #endif
     }
     localCV=false;
 }
@@ -881,15 +890,23 @@ void DBprintCV(void) {
     DB_PRINT( "PoM-Adr.(CV48/49) : %d"   , ifc_getCV( CV_POMLOW) + 256* ifc_getCV( CV_POMHIGH ) );
    #endif    
     // Output-Konfiguration
-   DB_PRINT( "Wadr | Typ | CV's  | Mode | Par1 | Par2 | Par3 | Status |" );
+   DB_PRINT_( "Wadr | Typ | CV's  | Mode| Par1| Par2| Par3| Par4|" );
+   DB_PRINT ( " Par5| Par6| Par7| Par8| Status |" );
     for( byte i=0; i<WeichenZahl; i++ ) {
-       DB_PRINT( "%4d |%2d/%1d | %2d-%2d | %4d | %4d | %4d | %4d | %3d " , weichenAddr+i, iniTyp[i],adressTyp[i],
-                                                                 cvAdr(i,MODE),  cvAdr(i,STATE),
-                                                                 getCvPar(i,MODE),
-                                                                 getCvPar(i,PAR1),
-                                                                 getCvPar(i,PAR2),
-                                                                 getCvPar(i,PAR3),
-                                                                 getCvPar(i,STATE) );
+       DB_PRINT_( "%4d |%2d/%1d |%3d-%3d| %3d | %3d | %3d | %3d | %3d " , 
+                weichenAddr+i, iniTyp[i],adressTyp[i],
+                cvAdr(i,MODE),  cvAdr(i,STATE),
+                getCvPar(i,MODE),
+                getCvPar(i,PAR1),
+                getCvPar(i,PAR2),
+                getCvPar(i,PAR3),
+                getCvPar(i,PAR4) );
+       DB_PRINT( "| %3d | %3d | %3d | %3d | %3d " , 
+                getCvPar(i,PAR5),
+                getCvPar(i,PAR6),
+                getCvPar(i,PAR7),
+                getCvPar(i,PAR8),
+                getCvPar(i,STATE) );
     }
     
 }

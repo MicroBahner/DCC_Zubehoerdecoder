@@ -10,7 +10,7 @@
 #define PPWA 3                  // Zahl der Pins je Weichenadresse
 
 // Offset der CV-Adresse bei den Funktionsspezifschen CV-Werten
-const byte MODE=0, PAR1=1, PAR2=2, PAR3=3, STATE=4 ;
+enum :byte { MODE=0, PAR1, PAR2, PAR3, STATE, PAR4, PAR5, PAR6, PAR7, PAR8} ;
 
 // Werden die Klassen nicht im Zusammenhang mit der nmradcc Lib verwendet,
 // so kann der Zugriff auf die Konfigurationsvariablen hier angepasst werden
@@ -147,13 +147,31 @@ class Fservo {
     } _flags;
  
  };
+//------------------------ F2SERVO -------------------------------------------- 
+
+class F2servo {
+    public:
+    F2servo( int cvAdr, uint8_t pins[] );
+    Fservo  *_servo1;
+    Fservo  *_servo2;
+        
+    private:
+    // Pin-Arrays für die 2 Servo Objekte
+    byte    pins1[3];
+    byte    pins2[3];
+ 
+ };
 //------------------------ FSIGNAL -------------------------------------------- 
 //Konstante für Lichtsignalfunktion
 // Flags für CV MODE:
 #define LEDINVERT 0x80  // FSIGNAL: SoftledAusgänge invertieren (Bit 7 des Modebyte von FSIGNAL2/3)
-const byte  LSMODE=0,       BILD1=1,    BILD2=2, VORSIG=3, DARKMASK = 4, 
-            SOFTMASK2 = 5,  BILD3=6,    BILD4=7,
-            SOFTMASK3=10,   BILD5=11,   BILD6=12;
+const byte  LSMODE=0,                 BILD1=1,              BILD2=2, VORSIG=3,  DARKMASK = 4,   // Parameter 1.Adresse
+            BLINK1=5,                 BLINK2=6,
+            SOFTMASK2 = 0+CV_BLKLEN,  BILD3=1+CV_BLKLEN,    BILD4=2+CV_BLKLEN,                  // Parameter 2. Adresse
+            BLINK3=5+CV_BLKLEN,       BLINK4=6+CV_BLKLEN, 
+            SOFTMASK3=0+(2*CV_BLKLEN),BILD5=1+(2*CV_BLKLEN),BILD6=2+(2*CV_BLKLEN),              // Parameter 3. Adresse
+            BLINK5=1+(2*CV_BLKLEN),   BLINK6=2+(2*CV_BLKLEN);
+            
 #define SIG_DARK_TIME   300     // Zeit zwischen Dunkelschalten und Aufblenden des neuen Signalbilds
 #define SIG_RISETIME    500     // Auf/Abblendezeit
  
