@@ -10,7 +10,7 @@
 #define PPWA 3                  // Zahl der Pins je Weichenadresse
 
 // Offset der CV-Adresse bei den Funktionsspezifschen CV-Werten
-enum :byte { MODE=0, PAR1, PAR2, PAR3, STATE, PAR4, PAR5, PAR6, PAR7, PAR8} ;
+enum :byte { MODE=0, PAR1, PAR2, PAR3, PAR4, PAR5, PAR6, PAR7, PAR8, STATE} ;
 
 // Werden die Klassen nicht im Zusammenhang mit der nmradcc Lib verwendet,
 // so kann der Zugriff auf die Konfigurationsvariablen hier angepasst werden
@@ -131,8 +131,13 @@ class Fservo {
     MoToTimer  _autoTime;           // zum automatischen Zurückfahren
     uint16_t _cvAdr = 0;            // Adresse des CV-Blocks mit den Funktionsparametern
     int8_t   _modeOffs = 0;         // Offset der CV-Adresse für das Mode-byte. Normalerweise ist dies 0
-                                    // Bei der Servo-Kombination für 3begr. Formsignale aber -5 beim 2. Servo,
+                                    // Bei der Servo-Kombination für 3begr. Formsignale aber -CV_BLKLEN beim 2. Servo,
                                     // da der auch auf das ModeByte des 1. Servo zugreift.
+    int8_t  _parOffs = 0;           // Offset der CV-Adresse für die Parameter Position und Speed. Bei 2
+                                    // Servos auf einer Adresse leigen die Parameter des 2. Servo ab PAR4
+                                    // Der Offset wird beim Konstruktor über modeOffs mitgegeben:
+                                    // modeOffs < 0: Mode Offset für 2. Servo auf Folgeadresse
+                                    // modeOffs > 0: Parameteroffset für 2. Servo auf gleicher Adresse
     uint8_t *_outP;           		// Array mit Pins der Ausgänge
 		#define SERVOP	0
 		#define REL1P	1
@@ -145,20 +150,6 @@ class Fservo {
         bool moving   :1 ;           // Servo in Bewegung
         bool sollAct  :1 ;           // Sollwert wurde noch nicht übernommen
     } _flags;
- 
- };
-//------------------------ F2SERVO -------------------------------------------- 
-
-class F2servo {
-    public:
-    F2servo( int cvAdr, uint8_t pins[] );
-    Fservo  *_servo1;
-    Fservo  *_servo2;
-        
-    private:
-    // Pin-Arrays für die 2 Servo Objekte
-    byte    pins1[3];
-    byte    pins2[3];
  
  };
 //------------------------ FSIGNAL -------------------------------------------- 

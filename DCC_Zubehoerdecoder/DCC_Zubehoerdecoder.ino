@@ -75,8 +75,9 @@
 #include "DCC_Zubehoerdecoder-Micro.h"
 //#include "TestKOnf\DCC_Zubehoerdecoder-Micro-Servos.h"
 #else
-#include "DCC_Zubehoerdecoder.h"
+//#include "DCC_Zubehoerdecoder.h"
 //#include "TestKOnf\DCC_Zubehoerdecoder-LS-Nano.h"
+#include "TestKOnf\DCC_ZubehoerdecoderF2Servos.h"
 //#include "examples\DCC_Zubehoerdecoder-Micro.h"
 //#include "examples\DCC_Zubehoerdecoder-Bsp1.h"
 #endif
@@ -112,10 +113,18 @@ byte rocoOffs;                  // 4 bei ROCO-Adressierung, 0 sonst
 word weichenAddr;               // Addresse der 1. Weiche (des gesamten Blocks)
 byte ioPins[PPWA*WeichenZahl];  // alle definierten IO's in einem linearen Array
 
+// Struktur für 2 Servos an einer Adresse ( F2SERVO )
+typedef struct {
+    Fservo  *servo1;
+    byte    pins1[3];       // Pinzuordnung für 1. Servo
+    Fservo  *servo2;
+    byte    pins2[3];       // Pinzuordnung für 2.Servo
+} F2Servo_t;
+
 // Pointer auf die Funktionsobjekte
 union { // für jede Klasse gibt es ein Array, die aber übereinanderliegen, da pro Weichenadresse
         // nur ein Objekt möglich ist
-    F2servo *servo2[WeichenZahl];
+    F2Servo_t  *twoServo[WeichenZahl];
     Fservo  *servo[WeichenZahl];
     Fcoil   *coil[WeichenZahl];    
     Fstatic *stat[WeichenZahl];   
@@ -288,6 +297,19 @@ void setup() {
                 Fptr.servo[wIx] = new Fservo( cvAdr(wIx,0) , &ioPins[wIx*PPWA], 2 );
             }
             break;
+          case F2SERVO: // 2 Servos auf einer Adresse
+            Fptr.twoServo[wIx] = new F2Servo_t; // Struktur für die 2 Servos einrichten
+            // Pinnummern in die Strukt schreiben.
+            Fptr.twoServo[wIx]->pins1[0] = out1Pins[wIx];   // Pin Grundservo
+            Fptr.twoServo[wIx]->pins1[1] = out2Pins[wIx];   // Pin MittenRelais für Grundservo
+            Fptr.twoServo[wIx]->pins1[2] = NC;              // keine 2 Relais möglich
+            Fptr.twoServo[wIx]->pins2[0] = out3Pins[wIx];   // Pin 2. Servo
+            Fptr.twoServo[wIx]->pins2[1] = NC;              // keine Relais beim
+            Fptr.twoServo[wIx]->pins2[2] = NC;              // 2. Relais möglich
+            // Servoobjekte anlegen
+            Fptr.twoServo[wIx]->servo1 = new Fservo( cvAdr(wIx,0), Fptr.twoServo[wIx]->pins1, 2 );
+            Fptr.twoServo[wIx]->servo2 = new Fservo( cvAdr(wIx,0), Fptr.twoServo[wIx]->pins2, 2, 3 ); // mit Offset für Paramter
+            break;
           case FCOIL:
             Fptr.coil[wIx] = new Fcoil( cvAdr(wIx,0) , &ioPins[wIx*PPWA] );
             break;
@@ -376,6 +398,10 @@ void loop() {
                 Fptr.servo[i+1]->process();
             }
             break;
+          case F2SERVO: // 2 Servos auf einer Adresse
+            Fptr.twoServo[i]->servo1->process();
+            Fptr.twoServo[i]->servo2->process();
+            break;
           case FCOIL: //Doppelspulenantriebe ------------------------------------------------------
            //if ( dccSoll[i] != SOLL_INVALID ) DBCL_PRINT( "SollCoil=%d", dccSoll[i] );
            Fptr.coil[i]->process();
@@ -441,6 +467,10 @@ void setPosition( byte wIx, byte sollWert, byte state = 0 ) {
             // Standardservo oder Mehrstellungsservo
             Fptr.servo[wIx]->set( sollWert );
           }
+          break;
+        case F2SERVO:   // 2 Servos auf einer Adresse
+          Fptr.twoServo[wIx]->servo1->set( sollWert );
+          Fptr.twoServo[wIx]->servo2->set( sollWert );
           break;
         case FSTATIC:
           Fptr.stat[wIx]->set( sollWert );
@@ -635,9 +665,9 @@ void iniCv( byte mode ) {
         DB_PRINT("fktSpezCv: %d,Typ=%d", i, iniTyp[i] );
         #ifdef EXTENDED_CV  // initiale CV-Werte als 2-dim. Array
             // 
-            for ( byte pIx = 0; pIx < (CV_BLKLEN-1); pIx++ ) {
+            for ( byte pIx = 0; pIx < CV_BLKLEN; pIx++ ) {
                 // Statuswert nicht initiieren   
-                ifc_setCV( cvAdr( i, pIx ), iniCVx[pIx][i] );     
+                if ( pIx != STATE ) ifc_setCV( cvAdr( i, pIx ), iniCVx[pIx][i] );     
             }
             if ( mode == INIALL ) {
                 // Bei INIALL auch alle Statuswerte initiieren

@@ -34,9 +34,9 @@ const byte encode2P     =   A4;
 // Der Initiierungsmodus lässt sich per Mode-Eingang aktivieren oder er ist automatisch aktiv, wenn keine
 // sinnvollen Werte im CV47 stehen.
 //-------------------------------------------------------------------------------------------------------
-//#define EXTENDED_CV       // CV-Werte ab V7.0 ( 10 CV per Adresse )
+#define EXTENDED_CV       // CV-Werte ab V7.0 ( 10 CV per Adresse )
 
-const int DccAddr           =  20;    // DCC-Decoderadresse
+const int DccAddr           =  17;    // DCC-Decoderadresse
 const byte iniMode          = 0x50 | AUTOADDR /*| ROCOADDR*/;  // default-Betriebsmodus ( CV47 )
 const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV48/49 )
                                     // mit LocoNet-Schnittstelle ist dies die LocoNetId
@@ -63,7 +63,7 @@ const byte iniCVx[10][sizeof(iniTyp)]  = {
 /* iniFmode (CV50,60,... */ { SERVOMOD,0b11100100,          0,          0,         0,  COILMOD },
 /* iniPar1 (CV51,61,... */  {       30,       110,    0b01001,    0b10001,      0b01,       50 },
 /* iniPar2 (CV52,62,... */  {       80,       160,    0b00010,    0b00110,      0b10,       50 },
-/* iniPar3 (CV53,63,... */  {       8,          8,          5,          0,        19,        0 },
+/* iniPar3 (CV53,63,... */  {       8,          8,          5,          0,        16,        0 },
 /* iniPar4 (CV54,64,... */  {       0,          0,    0b00101,          0,         0,        0 }, 
 /* iniPar5 (CV55,65,... */  {       0,          0,          0,          0,         0,        0 },
 /* iniPar6 (CV56,66,... */  {       0,          0,          0,          0,         0,        0 },

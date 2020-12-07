@@ -227,11 +227,16 @@ Fservo::Fservo( int cvAdr, uint8_t pins[], uint8_t posZahl, int8_t modeOffs ) {
     _outP = pins;
     _posZahl = posZahl;
     _cvAdr = cvAdr;
-    _modeOffs = modeOffs;
+    _modeOffs=0;
+    _parOffs=0;
+    if ( modeOffs <= 0 )
+        _modeOffs = modeOffs;   // 2. Servo auf Folgeadreese (FSERVO0)
+    else
+        _parOffs = modeOffs;    // 2. Servo auf primärer Adresse (F2SERVO) 
     // Weichenservo einrichten
     if ( _outP[SERVOP] != NC ) {
         _weicheS.attach( _outP[SERVOP], getParam( _modeOffs ) & SAUTOOFF );
-        _weicheS.setSpeed( getParam( PAR3 ) );
+        _weicheS.setSpeed( getParam( PAR3+_parOffs ) );
     }
     for ( uint8_t i = 0; i<posZahl; i++ ) {
         _pinMode( _outP[_relIx[i]], OUTPUT );
@@ -252,7 +257,7 @@ Fservo::Fservo( int cvAdr, uint8_t pins[], uint8_t posZahl, int8_t modeOffs ) {
     }
     _flags.sollAct = false;
     _flags.moving = false;
-    _weicheS.write( getParam( posOffset[_istPos] ) );
+    _weicheS.write( getParam( posOffset[_istPos]+_parOffs ) );
     DBSV_PRINT("ServoObj@%04x, Pins=%04x, cvAdr=%d, modeOffs=%d", (uint32_t)this , _outP, _cvAdr, _modeOffs);
     DBSV_PRINT("ModeByte=%02x", getParam( _modeOffs ) ) ;
    
@@ -315,8 +320,8 @@ void Fservo::process() {
         DBSV_PRINT( "Weiche stellen, Ist=%d,Soll=%d", _istPos, _sollPos );
         _istPos = _sollPos;    // Istwert auf Sollwert 
         _flags.moving = true;               // und MOVING-Flagt setzen.
-        DBSV_PRINT("Servo-write=%d", getParam( posOffset[_sollPos] ) );
-        _weicheS.write( getParam( posOffset[_sollPos] ) );
+        DBSV_PRINT("Servo-write=%d", getParam( posOffset[_sollPos]+_parOffs ) );
+        _weicheS.write( getParam( posOffset[_sollPos]+_parOffs ) );
     }
     // Relaisausgänge setzen
     if ( _outP[REL2P] == NC && _posZahl == 2  ) {
@@ -349,7 +354,7 @@ uint8_t Fservo::getPos(){
 //..............    
 uint8_t Fservo::getCvPos(){
     // CV Wert für aktuelle Position des Servos ermitteln
-    return getParam( posOffset[_sollPos] );
+    return getParam( posOffset[_sollPos]+_parOffs );
 }
 //..............    
 void Fservo::adjust( uint8_t mode, uint8_t value ) {
@@ -358,7 +363,7 @@ void Fservo::adjust( uint8_t mode, uint8_t value ) {
     switch ( mode ) {
       case ADJPOSEND:
         // Justierungswert im CV der aktuellen Position speichern
-        setParam( posOffset[_istPos], value );
+        setParam( posOffset[_istPos]+_parOffs, value );
         // kein break, da weichenservo auch noch auf diese Position gestellt wird. 
         [[fallthrough]];
       case ADJPOS:
