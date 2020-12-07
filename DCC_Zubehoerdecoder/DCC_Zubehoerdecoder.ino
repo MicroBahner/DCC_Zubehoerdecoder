@@ -146,7 +146,7 @@ byte progMode;      // Merker ob Decoder im Programmiermodus
 # ifdef ENCODER_AKTIV
 // Die zuletzt empfangene Weichenposition kann per Encoder justiert werden. 
 // Die Werte werden gespeichert, sobald eine ander Weichenposition empfangen wird.
-//byte adjWix;        // Weichenindex, der z.Z. vom Encoder beeinflusst wird.
+byte adjWix;        // Weichenindex, der z.Z. vom Encoder beeinflusst wird.
 byte adjPos;        // Position des Servo, das vom Encoder beeiflusst wird
 byte adjPulse;      // per Encoder aktuell eingestellte Servoposition
 #define NO_ADJ 255  // Wert von adjPulse solange keine Änderung erfolgt ist
@@ -710,6 +710,7 @@ void getEncoder(  ) {
     static bool dirState, taktState;
     static int lastCnt,jogCount = 0;
     static enum {IDLE0, TAKTHIGH, TAKTLOW } encoderState;
+    static boolean resModeState = HIGH;    //Flankenerkennung Mitteltaster
     // Encoder-Statemachine
     switch ( encoderState ) {
       case IDLE0: // Grundstellung, warten auf Statuswechsel an encode1P
@@ -773,11 +774,32 @@ void getEncoder(  ) {
             if ( (jogCount>0 && adjPulse<180) || (jogCount<0 && adjPulse>0) )
                 adjPulse += jogCount; // adjPulse nur im Bereich 0...180 
             AdjServo->adjust( ADJPOS, adjPulse );
-        } else if ( analogRead( resModeP ) < 500 ) {
+        } else if ( analogRead( resModeP ) < 200 && resModeState == HIGH ) {
             // Mittelstellungstaster gedrückt
-            DBSV_PRINT("Servo center");
-            AdjServo->center(ABSOLUT);
+            resModeState = LOW;
+            if ( iniTyp[adjWix] == F2SERVO ) {
+                // bei Doppelservo wird hier der zu justierende Servo umgeschaltet
+                DBSV_PRINT("Servo wechseln");
+                if ( adjPulse != NO_ADJ ) {
+                    // Es wurde justiert, aktuellen Wert speichern
+                    localCV = true; // keine Bearbeitung in Callback-Routine NotifyCvChange
+                    AdjServo->adjust(ADJPOSEND,adjPulse);
+                    adjPulse = NO_ADJ;
+                    localCV = false;
+                }
+                // auf anderen Servo umschalten
+                if ( AdjServo == Fptr.twoServo[adjWix]->servo1 ) {
+                    AdjServo = Fptr.twoServo[adjWix]->servo2;
+                } else {
+                    AdjServo = Fptr.twoServo[adjWix]->servo1;
+                }
+            } else {
+                // ansonsten wird das Servo in Mittelstellung gefahren
+                DBSV_PRINT("Servo center");
+                AdjServo->center(ABSOLUT);
+            }
         }
+        if ( analogRead( resModeP ) > 700 ) resModeState = HIGH;
     }
     jogCount = 0;
     #endif
@@ -801,6 +823,7 @@ void ChkAdjEncode( byte WIndex, byte dccSoll ){
             localCV = true; // keine Bearbeitung in Callback-Routine NotifyCvChange
             AdjServo->adjust(ADJPOSEND,adjPulse);
             adjPulse = NO_ADJ;
+            adjWix = NO_ADJ;
             AdjServo = NULL;
             localCV = false;
         }
@@ -809,6 +832,11 @@ void ChkAdjEncode( byte WIndex, byte dccSoll ){
         // die neue Adresse bezieht sich auf einen Servo
         AdjServo = Fptr.servo[WIndex];
         adjPos = dccSoll;
+    } else if ( iniTyp[ WIndex ] == F2SERVO ) {
+        // neue Adresse ist ein Doppelservo, start mit Servo 1
+        AdjServo = Fptr.twoServo[WIndex]->servo1;
+        adjPos = dccSoll;
+        adjWix = WIndex;
     } else {
         AdjServo = NULL;
     }
