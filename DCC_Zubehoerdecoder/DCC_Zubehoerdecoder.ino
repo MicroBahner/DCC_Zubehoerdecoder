@@ -309,7 +309,7 @@ void setup() {
             Fptr.twoServo[wIx]->pins2[2] = NC;              // 2. Relais möglich
             // Servoobjekte anlegen
             Fptr.twoServo[wIx]->servo1 = new Fservo( cvAdr(wIx,0), Fptr.twoServo[wIx]->pins1, 2 );
-            Fptr.twoServo[wIx]->servo2 = new Fservo( cvAdr(wIx,0), Fptr.twoServo[wIx]->pins2, 2, 3 ); // mit Offset für Paramter
+            Fptr.twoServo[wIx]->servo2 = new Fservo( cvAdr(wIx,0), Fptr.twoServo[wIx]->pins2, 2, F2OFFSET ); // mit Offset für Paramter
             break;
           case FCOIL:
             Fptr.coil[wIx] = new Fcoil( cvAdr(wIx,0) , &ioPins[wIx*PPWA] );

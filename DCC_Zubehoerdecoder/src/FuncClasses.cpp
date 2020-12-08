@@ -227,12 +227,11 @@ Fservo::Fservo( int cvAdr, uint8_t pins[], uint8_t posZahl, int8_t modeOffs ) {
     _outP = pins;
     _posZahl = posZahl;
     _cvAdr = cvAdr;
-    _modeOffs=0;
+    _modeOffs=modeOffs;
     _parOffs=0;
-    if ( modeOffs <= 0 )
-        _modeOffs = modeOffs;   // 2. Servo auf Folgeadreese (FSERVO0)
-    else
-        _parOffs = modeOffs;    // 2. Servo auf primärer Adresse (F2SERVO) 
+    if ( modeOffs > 0 ) {
+        _parOffs = modeOffs;    // Ist 2. Servo auf primärer Adresse (F2SERVO) 
+    }
     // Weichenservo einrichten
     if ( _outP[SERVOP] != NC ) {
         _weicheS.attach( _outP[SERVOP], getParam( _modeOffs ) & SAUTOOFF );
@@ -240,7 +239,7 @@ Fservo::Fservo( int cvAdr, uint8_t pins[], uint8_t posZahl, int8_t modeOffs ) {
     }
     for ( uint8_t i = 0; i<posZahl; i++ ) {
         _pinMode( _outP[_relIx[i]], OUTPUT );
-        digitalWrite( _outP[_relIx[i]], LOW );      // notwendig für STM32/PA15 ( dieser Port ist HIGH nach pinMode )
+        _digitalWrite( _outP[_relIx[i]], LOW );      // notwendig für STM32/PA15 ( dieser Port ist HIGH nach pinMode )
     }
     // Servowerte und Relaisausgang initiieren und ausgeben
     if ( getParam(_modeOffs) & SAUTOBACK )  _istPos = 0;
@@ -266,10 +265,9 @@ Fservo::Fservo( int cvAdr, uint8_t pins[], uint8_t posZahl, int8_t modeOffs ) {
 //..............    
 void Fservo::set( uint8_t newPos ) {
     // Befehl 'servo stellen' erhalten
-    DBSV_PRINT( "Servo.set: new:%d, max:%d", newPos, _posZahl );
     if ( newPos >= _posZahl ) newPos = _posZahl-1;   // maximalZhal der Positionswerte
     _sollPos = newPos;
-    DBSV_PRINT( "Servo.set: new:%d, soll:%d", newPos, _sollPos );
+    DBSV_PRINT( "Servo.set: new:%d, soll:%d, max:%d", newPos, _sollPos, _posZahl );
     _flags.sollAct = true;
 }
 //..............    
@@ -280,7 +278,7 @@ void Fservo::process() {
         // Servo steht in Arbeitsstellung und Zeit ist abgelaufen: zurückfahren
         _sollPos = 0;
         _flags.sollAct = true;
-        DBSV_PRINT( "(%04x) ServoTimer abgelaufen, _istlAbz=%d",(uint32_t)this, _istPos  );
+        DBSV_PRINT( "(%04lx) ServoTimer abgelaufen, _istlAbz=%d",(uint32_t)this, _istPos  );
      }   
     
     if ( _flags.moving ) {
@@ -300,9 +298,9 @@ void Fservo::process() {
             if ( getParam( _modeOffs ) & SAUTOBACK ) {
                 if ( _istPos ) {
                     // Bei Arbeitsstellung Timer für Rückfahren starten
-                    if ( getParam(STATE) <= 1 ) _autoTime.setTime(SAUTOTIME);
-                    else                        _autoTime.setTime( getParam(STATE) * 100 );
-                    DBSV_PRINT("Timer gestartet, Zeit=%d", _autoTime.getTime() );
+                    if ( getParam(PAR4+_parOffs) <= 1 ) _autoTime.setTime(SAUTOTIME);
+                    else                        _autoTime.setTime( getParam(PAR4+_parOffs) * 100 );
+                    DBSV_PRINT("(%04lx) Timer gestartet, Zeit=%d",(uint32_t)this, _autoTime.getTime() );
                 }
             } else {
                 // ohne Autoback aktuelle Lage speicern

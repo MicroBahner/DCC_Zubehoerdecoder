@@ -107,6 +107,7 @@ void _digitalWrite( byte port, byte state ) ;
                         // Postion nicht verändert wird.
 #define SAUTOBACK 0x04  // Servo fährt automatisch in die Grundstellung zurück (nach Zeitablauf)
 #define SAUTOTIME 2000 // Defaultwert ( wenn State-Parameter = 0 ist )
+#define F2OFFSET    5   // Offset für die Paramter des 2. Servo auf einer Adresse
 
 class Fservo {
     public:
