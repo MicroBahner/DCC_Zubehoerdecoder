@@ -51,7 +51,6 @@
  *  CV51    Position des Servo für Weichenstellung '0' ( in Grad, 0...180 )
  *  CV52    Position des Servo für Weichenstellung '1' ( in Grad, 0...180 )
  *  CV53    Geschwindigkeit des Servo
- *  CV54    aktuelle Weichenstellung ( nicht manuell verändern! )
  *  CV54    Wenn CV50 Bit4= 1: Zeit in 0,1Sek. Einheiten bis zum automatisch zurückbewegen.
  *          In diesem Fall startet das Servo beim Einschalten grundsätzlich in der Grundstellung
  *  
@@ -74,6 +73,19 @@
  *            ++-------- ON  2.Adresse
  *  CV51 .. 54 wie bei FSERVO        
  *            
+ *  F2SERVO Servo: ( 2 Servos auf einer Adresse )
+ *  CV50    Bit0 = 1: (SAUTOOFF) AutoOff der Servoimpulse bei Stillstand des Servo
+ *          Bit1 = 1: (SDIRECT) 'Direct-Mode' auch während der Servobewegung wird auf einen erneuten
+ *                    Stellbefehl reagiert, und gegebenenfalls sofort die Drehrichtung geändert
+ *          Bit2 = 1: (SAUTOBACK) Automatiche Rückkehren in die Ausgangslage nach Zeit in CV54
+ *          Bit3 = 1: (NOPOSCHK) kein Überprüfung auf Servoposition bei Empfang eines DCC-Befehls
+ *                    bei AUTOOFF und gleicher Position werden wieder Impulse ausgegeben
+ *  CV51    Position des Servo1 für Weichenstellung '0' ( in Grad, 0...180 )
+ *  CV52    Position des Servo1 für Weichenstellung '1' ( in Grad, 0...180 )
+ *  CV53    Geschwindigkeit des Servo1
+ *  CV54    Position des Servo2 für Weichenstellung '0' ( in Grad, 0...180 )
+ *  CV55    Position des Servo2 für Weichenstellung '1' ( in Grad, 0...180 )
+ *  CV56    Geschwindigkeit des Servo2
  *            
  *  FCOIL Doppelspulenantrieb: ( derzeit nur mit automatischer Abschaltung )
  *  CV50    Bit0 = 1: (CAUTOOFF) Spulenausgang nur automatisch abschalten

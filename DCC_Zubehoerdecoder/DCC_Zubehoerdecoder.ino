@@ -194,16 +194,17 @@ void setup() {
     #endif
     
     _pinMode( modePin, OUTPUT );
-    
-    #ifdef DEBUG
-    #warning "Debugging ist aktiv"
-    Serial.begin(115200); //Debugging
+    #if (defined DEBUG) || (defined IFC_SERIAL) 
+    Serial.begin(115200); //Debugging und/oder serielles Kommand-Interface
         #if defined(__STM32F1__) || defined(__AVR_ATmega32U4__) 
         // auf STM32/ATmega32u4: warten bis USB aktiv (maximal 6sec)
         {  unsigned long wait=millis()+6000;
            while ( !Serial && (millis()<wait) );
         }
         #endif
+    #endif
+    #ifdef DEBUG
+    #warning "Debugging ist aktiv"
         #ifdef LOCONET
            DB_PRINT(  ">>>>>>>>>> Neustart: (SV45/47): 0x%x 0x%x ", ifc_getCV( CV_INIVAL ), ifc_getCV( CV_MODEVAL ) );
         #else
@@ -378,7 +379,10 @@ void loop() {
         startMicros = micros();
         loopCnt = 0;
     }*/
-//    dccSim();       // Simulation von DCC-Telegrammen
+    #endif
+    
+    #ifdef IFC_SERIAL
+    dccSim();       // Simulation von DCC-Telegrammen
     #endif
     
     getEncoder();   // Drehencoder auswerten und Servolage gegebenenfalls anpassen
@@ -873,7 +877,7 @@ void softReset(void){
     #endif
 }
 //-----------------------------------------------------------
-#ifdef DEBUG
+#ifdef IFC_SERIAL
 /* Simulation der DCC-Befehle per serieller Schnittstelle
 
 "ac 14 1 0"  > Zubehöradresse 14, sollwert 1 stat 0
@@ -882,16 +886,17 @@ void softReset(void){
 
 Es werden die gleichen Callbacks wie von der nmraDCC Lib aufgerufen
 */
-char rcvBuf[20];
-byte rcvIx=0;       // Index im Empfangspuffer
 void dccSim ( void ) {
+    static char rcvBuf[40];    // auch als Sendepuffer für Ergebnisse
+    static byte rcvIx=0;       // Index im Empfangspuffer
+    #define IFC_PRINTF( x, ... ) { sprintf_P( rcvBuf, (const char*) F( x ), ##__VA_ARGS__ ) ; IFC_SERIAL.println( rcvBuf ); }
     // Wenn Daten verfügbar, diese in den receive-Buffer lesen. Endezeichen ist LF oder CR
     char *token;
     int adr =0; // empfagnee Adresse
     byte soll,state;
-    byte dataAnz = Serial.available();
+    byte dataAnz = IFC_SERIAL.available();
     if ( dataAnz > 0 ) {
-        Serial.readBytes( &rcvBuf[rcvIx], dataAnz );
+        IFC_SERIAL.readBytes( &rcvBuf[rcvIx], dataAnz );
         rcvIx += dataAnz;
         if ( rcvBuf[rcvIx-1] == 10 || rcvBuf[rcvIx-1] == 13 ) {
             rcvBuf[rcvIx] = 0;
@@ -903,13 +908,28 @@ void dccSim ( void ) {
                 soll = atoi( strtok( NULL, " ," ) );
                 state = atoi( strtok(NULL, " ,") );
                 DB_PRINT("Sim: AC,%d,%d,%d",adr,soll,state);
-                ifc_notifyDccAccState( adr, soll, state );           }
+                ifc_notifyDccAccState( adr, soll, state );
+             }
+            if ( strcmp( token, "cr" ) == 0 ) {
+                // CV lesen
+                adr = atoi( strtok( NULL, " ," ) );
+                soll = ifc_getCV( adr );
+                IFC_PRINTF("CV%d = %d, 0x%02x",adr,soll,soll);
+             }
+            if ( strcmp( token, "cw" ) == 0 ) {
+                // CV lesen
+                adr = atoi( strtok( NULL, " ," ) );
+                soll = atoi( strtok( NULL, " ," ) );
+                ifc_setCV( adr, soll );
+                IFC_PRINTF("CV%d = %d",adr, ifc_getCV(adr) );
+             }
         // Empfangspuffer rücksetzen
         rcvIx = 0;
         }
     }
 }
-
+#endif
+#ifdef DEBUG
 #ifdef __AVR_MEGA__
 int freeMemory() {
     // die Adressen des RAM beginnen bei 256 (0x100). Darunter liegen die
