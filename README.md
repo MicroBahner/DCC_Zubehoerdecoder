@@ -7,7 +7,7 @@ Overview of the adjustable functionality:
 - Servo with relay for turnout polarization
 - logical coupling of 2 servos for 3-aspect form signals
 - 1 servo via 2 addresses to control 4 positions
-- 2 servo via 1 adress ( with individual end positions/speed for each servo )
+- 2 servo via 1 adress ( with individual parameters for each servo )
 - Impulse function for servos (automatic return to initial position, e.g. for decoupler)
 - Double-coil drives
 - static outputs
@@ -25,7 +25,7 @@ Es lassen sich Servo's, Doppelspulenantrieb und Led's ansteuern.
 - Servo mit Umschaltrelais zur Weichenpolarisierung
 - logische Kopplung von 2 Servos für 3-begriffige Formsignale
 - 1 Servo über 2 Adressen um 4 Positionen anzusteuern
-- 2 Servo über 1 Adresse steuern ( mit individuellen Endpositionen und Geschwindigkeit pro Servo )
+- 2 Servo über 1 Adresse steuern ( mit individuellen Parametern pro Servo )
 - Impulsfunktion für Servos ( automatisches Rückkehren in Ausgangslage, z.B. für Entkuppler )
 - Doppelspulenantriebe
 - statische Ausgänge

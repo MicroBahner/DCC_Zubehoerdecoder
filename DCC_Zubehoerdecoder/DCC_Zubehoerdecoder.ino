@@ -75,9 +75,9 @@
 #include "DCC_Zubehoerdecoder-Micro.h"
 //#include "TestKOnf\DCC_Zubehoerdecoder-Micro-Servos.h"
 #else
-//#include "DCC_Zubehoerdecoder.h"
+#include "DCC_Zubehoerdecoder.h"
 //#include "TestKOnf\DCC_Zubehoerdecoder-LS-Nano.h"
-#include "TestKOnf\DCC_ZubehoerdecoderF2Servos.h"
+//#include "TestKOnf\DCC_ZubehoerdecoderF2Servos.h"
 //#include "examples\DCC_Zubehoerdecoder-Micro.h"
 //#include "examples\DCC_Zubehoerdecoder-Bsp1.h"
 #endif
@@ -306,7 +306,7 @@ void setup() {
             Fptr.twoServo[wIx]->pins1[2] = NC;              // keine 2 Relais möglich
             Fptr.twoServo[wIx]->pins2[0] = out3Pins[wIx];   // Pin 2. Servo
             Fptr.twoServo[wIx]->pins2[1] = NC;              // keine Relais beim
-            Fptr.twoServo[wIx]->pins2[2] = NC;              // 2. Relais möglich
+            Fptr.twoServo[wIx]->pins2[2] = NC;              // 2. Servo möglich
             // Servoobjekte anlegen
             Fptr.twoServo[wIx]->servo1 = new Fservo( cvAdr(wIx,0), Fptr.twoServo[wIx]->pins1, 2 );
             Fptr.twoServo[wIx]->servo2 = new Fservo( cvAdr(wIx,0), Fptr.twoServo[wIx]->pins2, 2, F2OFFSET ); // mit Offset für Paramter

@@ -115,8 +115,8 @@
  *              u.s.w.
  *  CV55    Bitmuster der blinkenden Leds für Befehl 1.Adresse 0 (rot)
  *  CV56    Bitmuster der blinkenden Leds für Befehl 1.Adresse 1 (grün)
- *  CV57-58 reserved
- *  CV59    Blinktakt ( 10ms-Einheiten ) 
+ *  CV57    Blinktakt - Phase EIN ( 10ms-Einheiten )
+ *  CV58    Blinktakt - Phase AUS ( 10ms-Einheiten ) 
  
  *  FSIGNAL0 1. Folgeadresse (optional)
  *  CV60    Bit 2.. 0 Bitmuster hard/soft gibt an, welche Ausgänge 'hart' umschalten (Bit=1)

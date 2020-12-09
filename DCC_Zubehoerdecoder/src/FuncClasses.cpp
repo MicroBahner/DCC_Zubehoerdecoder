@@ -458,11 +458,11 @@ void Fsignal::set( uint8_t sollWert ) {
     DBSG_PRINT( "setSignal, CV%d, Soll=%d, Ist=%d", _cvAdr, sollWert,  _fktStatus.sigBild );
     if (  _fktStatus.sigBild != sollWert ) {
         // Sollzustand hat sich verändert, püfen ob erlaubter Zustand
-        if (  _getSigMask( sollWert) == 0xff )  {
+        /*if (  _getSigMask( sollWert) == 0xff )  {
             // Sollzustand hat Signalmaske 0xff -> diesen Zustand ignorieren
             // Sollzustand zurücksetzen
             DBSG_PRINT("SigMask(soll) = %02X", _getSigMask( sollWert) );
-        } else {
+        } else */{
             // Gültiger Zustand, übernehmen, Flag setzen und Timer aufziehen
             _fktStatus.sigBild =  sollWert;
             _fktStatus.state   = SIG_NEW;
@@ -482,6 +482,12 @@ void Fsignal::process() {
         // warten auf Zustandsänderung am Signal
         // wurde 'set' aufgerufen, und das Signalbild muss umgeschaltet werden, so 
         // wird die Statemachine in der 'set' Methode weitergeschaltet
+        
+        // bei blinkenden Signalbildern die Blinkenden Leds umschalten
+        if ( _blinkT.expired() ) {
+            _fktStatus.blinkTakt = !_fktStatus.blinkTakt;
+            _setSignalBlink ( );
+        }
         break;
       case SIG_NEW:
         // Wenn Timer abgelaufen, neues Signalbild aufschalten
@@ -489,6 +495,7 @@ void Fsignal::process() {
             // ist abgelaufen: neues Signalbild
             _fktStatus.state = SIG_WAIT; // 
             _setSignal(); // aktuelles Signalbild einschalten
+           
             // Dunkelschaltung am Vorsignal setzen (nur bei Hauptsignalen)
             if ( _vorSig != NULL && *_vorSig != NULL  ) {
                 byte darkStates = getParam( DARKMASK );
@@ -515,36 +522,40 @@ uint8_t Fsignal::_getHsMask(){
 }
 
 //..............    
-// Ausgangsmaske für Signalbild sigState bestimmen
-uint8_t  Fsignal::_getSigMask( uint8_t sigState ) {
+// Ausgangsmasken für Signalbild sigState bestimmen
+void  Fsignal::_getSigMask( uint8_t sigState ) {
     // sState: Signalzustand
     //static int parOffs[] = { 1,2,6,7,11,12,16,17 } ; // max 4 Adressen vorgesehen
     byte parOffs = ((sigState>>1) * CV_BLKLEN ) + (sigState&1)  +1;
+    // der Offset für die Blinkparameter ist um BLINK1-BILD1 größer
+    byte staticMask = getParam( parOffs );
+    byte blinkMask = getParam( parOffs+(BLINK1-BILD1) );
     //DBSG_PRINT("Fsignal-Freemem %d", freeMemory() );
-   return getParam( parOffs );
+    _sigMask.staticLed =  staticMask & ~blinkMask;  // nur Bit in staticMask gesetzt
+    _sigMask.blnkStd =  blinkMask & ~staticMask; // nur Bit in blnkMask gesetzt
+    _sigMask.blnkInv =  staticMask & blinkMask;  // Bit in beiden Masken gesetzt
+   return;
 }
 
-//..............    
-// alle Signalausgänge entsprechend dem derzeitigen Signalzustand setzen
-void Fsignal::_setSignal ( ) {
+//.............. 
+// neues Signalbild initiieren
+void    Fsignal::_setSignal ( ) {
+            _fktStatus.blinkTakt = true;
+            _setSignalStatic(); // aktuelles Signalbild einschalten / statische Leds
+            _setSignalBlink();  // aktuelles Signalbild einschalten / blinkende Leds
+}
+
+// alle statischen Signalausgänge entsprechend dem derzeitigen Signalzustand setzen
+void Fsignal::_setSignalStatic ( ) {
     //byte sigZustand; // aktueller Signalzustand, abgeleitet aus den Weichenzuständen
     byte sigOutMsk;  // Bitmaske der Ausgangsports (Bit=1:Ausgang setzen, Bit=0 Ausgang rücksetzen
-                     // Diese Maske steht für jeden Signalzustand in entsprechenden CV-Paramtern:
-                     // CV51+offs    Bitmuster der Ausgänge für Befehl 1.Adresse 0 (rot)
-                     // CV52+offs    Bitmuster der Ausgänge für Befehl 1.Adresse 1 (grün)
-                     // CV56+offs    Bitmuster der Ausgänge für Befehl 2.Adresse 0 (rot)
-                     // CV57+offs    Bitmuster der Ausgänge für Befehl 2.Adresse 1 (grün)
-                     // die folgenden CV's sind nur relevant bei FSIGNAL3 (3 Adressen, 8 Zustände 6 Ausgänge)
-                     // CV61+offs    Bitmuster der Ausgänge für Befehl 3.Adresse 0 (rot)
-                     // CV62+offs    Bitmuster der Ausgänge für Befehl 3.Adresse 1 (grün)
-                     // offs= wIx*5
-                     //
     if ( !_fktStatus.dark ) {
         // Signal ist nicht dunkelgeschaltet, Signalbild aufblenden
         DBSG_PRINT( "Sig %d EIN (%d)", _cvAdr, _fktStatus.sigBild );
         // das aktuelle Signalbild steht in _fktStatus.sigBild
         // Ausgangszustände entsprechend Signalzustand bestimmen (CV-Wert)
-        sigOutMsk = _getSigMask( _fktStatus.sigBild ) ;
+        _getSigMask( _fktStatus.sigBild ) ;
+        sigOutMsk = _sigMask.staticLed ;
         // Die Ausgänge entsprechend dem aktuellen Signalbild setzen
         for ( byte i=0; i< _pinAnz ; i++ ) {
             if ( _sigLed[i] == NULL ) {
@@ -555,6 +566,42 @@ void Fsignal::_setSignal ( ) {
                 _sigLed[i]->write( sigOutMsk&1, LINEAR );
             }
             sigOutMsk = sigOutMsk >> 1;
+        }
+        //DBSG_PRINT( " Signal %d, Status=0x%02x, Ausgänge: 0x%02x ", wIx, sigZustand, Dcc.getCV( CVBaseAdr[sigZustand] + CVoffs)  );
+    }
+}
+ 
+// alle blinkenden Signalausgänge entsprechend dem derzeitigen Signalzustand und Taktphase setzen
+void Fsignal::_setSignalBlink ( ) {
+    //byte sigZustand; // aktueller Signalzustand, abgeleitet aus den Weichenzuständen
+    byte sigOutMask;   // Bitmaske aller blinkenden Leds
+    byte sigOutMskInv;  // Bitmaske der Ausgangsports (Bit=1:Ausgang blinkt )
+    if ( !_fktStatus.dark ) {
+        // Signal ist nicht dunkelgeschaltet, Signalbild aufblenden
+        // das aktuelle Signalbild steht in _fktStatus.sigBild
+        // Ausgangszustände entsprechend Signalzustand bestimmen (CV-Wert)
+        _getSigMask( _fktStatus.sigBild ) ;
+        sigOutMask   = _sigMask.blnkInv | _sigMask.blnkStd ;
+        sigOutMskInv = _sigMask.blnkInv ;
+        if ( sigOutMask ) {
+            // es gibt blinkende Leds
+            // Die Ausgänge entsprechend dem aktuellen Signalbild setzen
+            for ( byte i=0; i< _pinAnz ; i++ ) {
+                if ( sigOutMask&1 ) {
+                    // es ist eine blinkende Led
+                    if ( _sigLed[i] == NULL ) {
+                        // Standard-Ausgang
+                        _digitalWrite( _outP[i], _fktStatus.blinkTakt ^ (sigOutMskInv&1) );
+                    } else {
+                        // Softled-Ausgang
+                        _sigLed[i]->write( _fktStatus.blinkTakt ^ (sigOutMskInv&1), LINEAR );
+                    }
+                }
+                sigOutMskInv = sigOutMskInv >> 1;
+                sigOutMask = sigOutMask >> 1;
+            }
+            _blinkT.setTime( getParam( (_fktStatus.blinkTakt?BLINKTAKT1:BLINKTAKT2) ) *10 );
+            DBSG_PRINT( "Sig %d Blinktakt= %d, Zeit=%d", _cvAdr, _fktStatus.blinkTakt, getParam( (_fktStatus.blinkTakt?BLINKTAKT1:BLINKTAKT2) ) );
         }
         //DBSG_PRINT( " Signal %d, Status=0x%02x, Ausgänge: 0x%02x ", wIx, sigZustand, Dcc.getCV( CVBaseAdr[sigZustand] + CVoffs)  );
     }

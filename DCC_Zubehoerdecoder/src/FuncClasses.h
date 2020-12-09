@@ -158,11 +158,12 @@ class Fservo {
 // Flags für CV MODE:
 #define LEDINVERT 0x80  // FSIGNAL: SoftledAusgänge invertieren (Bit 7 des Modebyte von FSIGNAL2/3)
 const byte  LSMODE=0,                 BILD1=1,              BILD2=2, VORSIG=3,  DARKMASK = 4,   // Parameter 1.Adresse
-            BLINK1=5,                 BLINK2=6,
+                                     BLINK1=5,             BLINK2=6, 
+                                     BLINKTAKT1 = 7,       BLINKTAKT2 = 8,
             SOFTMASK2 = 0+CV_BLKLEN,  BILD3=1+CV_BLKLEN,    BILD4=2+CV_BLKLEN,                  // Parameter 2. Adresse
-            BLINK3=5+CV_BLKLEN,       BLINK4=6+CV_BLKLEN, 
+                                     BLINK3=5+CV_BLKLEN,   BLINK4=6+CV_BLKLEN, 
             SOFTMASK3=0+(2*CV_BLKLEN),BILD5=1+(2*CV_BLKLEN),BILD6=2+(2*CV_BLKLEN),              // Parameter 3. Adresse
-            BLINK5=1+(2*CV_BLKLEN),   BLINK6=2+(2*CV_BLKLEN);
+                                     BLINK5=5+(2*CV_BLKLEN),BLINK6=5+(2*CV_BLKLEN);
             
 #define SIG_DARK_TIME   300     // Zeit zwischen Dunkelschalten und Aufblenden des neuen Signalbilds
 #define SIG_RISETIME    500     // Auf/Abblendezeit
@@ -177,14 +178,16 @@ const byte  LSMODE=0,                 BILD1=1,              BILD2=2, VORSIG=3,  
     void setDark  ( bool darkFlg );    // 'true' schaltet das Signal aus(dunkel), 'false' ein
     
     private:
-    MoToTimer _blinkT;                 // Timer für blinkende Signalbilder
     void    _clrSignal ();             // SoftLed's ausschalten
     void    _setSignal ();             // aktuelles Signalbild einschalten
+    void    _setSignalStatic ();       // aktuelles Signalbild einschalten ( statische Led's )
+    void    _setSignalBlink ();         // aktuelles Signalbild schalten ( blionkede Led's )
     uint8_t _getHsMask ();             // Maske für Hard/Soft Umschaltung aller Ausgänge bestimmen
-    uint8_t _getSigMask( uint8_t ) ;   // Bitmaske der Ausgänge für aktuelles Signalbild bestimmen
+    void    _getSigMask( uint8_t ) ;   // Bitmaske der Ausgänge für aktuelles Signalbild bestimmen
     
     Fsignal **_vorSig;              // Pointer auf Vorsignal am gleichen Mast
-    MoToTimer darkT;                 // Dunkelzeit beim Überblenden zwischen Signalbildern
+    MoToTimer darkT;                // Dunkelzeit beim Überblenden zwischen Signalbildern
+    MoToTimer _blinkT;               // Timer für blinkende Signalbilder
     uint16_t _cvAdr = 0;            // Adresse des CV-Blocks mit den Funktionsparametern
     uint8_t  _pinAnz;               // Zahl der zugeordnten Ausgangspins : 3(PPWA) je CV-Block 
     uint8_t *_outP;           		// Array mit Pins der Ausgänge
@@ -194,7 +197,14 @@ const byte  LSMODE=0,                 BILD1=1,              BILD2=2, VORSIG=3,  
         byte sigBild :3;            // aktuelles Signalbild entsprechend letztem sollwert
         byte dark    :1;            // Signal ist aktuell Dunkelgeschaltet
         byte isVorSig:1;            // das Objekt ist ein Vorsignal
+        byte blinkTakt:1;           // Status des Blinktaktes ( startet mit true )
     } _fktStatus;         // interne Status
+    
+    struct {                        // Ledmasken für das aktuelle Signalbild
+        byte staticLed;             // statisch leuchtende Leds
+        byte blnkStd;               // blinkede Leds / starten mit EIN
+        byte blnkInv;               // blinkede Leds / starten mit AUS
+    } _sigMask;
     
     // aktueller Signalzustand 
     #define SIG_WAIT        0    // Warte auf Signalbefehle
