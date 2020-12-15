@@ -2,6 +2,7 @@
 // Diese Datei enthält die vom Anwender änderbaren Parameter um den Zubehördecoder an die 
 // gewünschte Funktionalität und die verwendete HW anzupassen
 
+//#define IFC_SERIAL  Serial  // Isr der define aktiv, können Kommandos auch über die serielle Schnittstelle abgesetzt werden
 // Beispiel für Variante mit Licht-Ausfahrsignal mit Vorsignal, mit Betriebsmode Led an Pin 13 (interne Led)
 // für Arduino Micro
 

@@ -69,16 +69,11 @@ extern byte progMode;
 
 #define CV_POMLOW     48  // Adresse für die POM-Programmierung
 #define CV_POMHIGH    49
-#define CV_FUNCTION   50  // Start der Blöcke für die Funktionskonfiguration
+#define CV_BLKZAHL    50  // Anzahl der Funktionsblöcke ( nicht änderbar )
+#define CV_INITYP     51  // CV51 ff enthalten die Funktionstypen der Adressen ( nicht änderbar )
+#define CV_FUNCTION  120  // Start der Blöcke für die Funktionskonfiguration
 #define CV_BLKLEN     10  // Länge eines CV-Blocks ( pro Adresse ein Block )
                           // Die Bedeutung ist weitgehend funktionsspezifisch
-
-// für spätere Erweiterungen wird ein weiterer Satz CV's definiert mit zusätzlichen Informationen
-// (speziell für die Programmierung per LocoNet sinnvoll)
-#define CV_EXTDATA     150
-#define CV_ERWLEN         6     // Blockklänge der Erweiterungsdaten
-//enum { WADR_LOW=0, WADR_HIGH=1, PIN0=2, PIN1=3, PIN2=4, FUNKT=5 } ;
-enum { WADR_LOW, WADR_HIGH, ROPIN0, ROPIN1, ROPIN2, ROFUNKT } ;
 
 extern const byte modePin;
 #define SET_PROGLED digitalWrite( modePin, HIGH )

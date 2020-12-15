@@ -9,6 +9,7 @@
 ///////////////////////////////////////////////////////////////////////
 // vom Anwender änderbare Parameter um den Zubehördecoder an die verwendete HW anzupassen
 
+//#define IFC_SERIAL  Serial  // Isr der define aktiv, können Kommandos auch über die serielle Schnittstelle abgesetzt werden
 // Beispiel für Variante mit 4 Servos + 3 statischen Ausgängen, mit Betriebsmode Led an Pin 13 (interne Led)
 
 //----------------------------------------------------------------

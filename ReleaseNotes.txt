@@ -74,3 +74,10 @@
                       Z.B. für mechanische Abdrücksignale oder bayerische Ruhe-Halt-Signale
                     - automatische Rückfallfunktion für Servos ( z.B. für Entkuppler )
 					- Fehlerbereinigungen
+
+    Version 7.0.0   - Die CV-Adressen wurden vollständig überarbeitet. Pro Adresse stehen nun 10 Parameter-CV's zur Verfügung.
+                      Da in diesem Fall bereits bei Decodern mit mehr als 3 Adresse die CV's in einen reservierten Bereich
+                      gelangen würden, wird der gesamte CV-Bereich nach oben verlegt, und startet nun bei 115.
+                      Die funktionsspezifischen CV's beginnen bei 120. Dieser Bereich ist nach NMRA herstellerspezifisch.
+                      S.a http://normen.railcommunity.de/RCN-225.pdf
+                      

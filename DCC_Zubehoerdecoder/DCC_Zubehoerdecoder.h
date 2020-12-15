@@ -2,7 +2,7 @@
 // Diese Datei enthält die vom Anwender änderbaren Parameter um den Zubehördecoder an die 
 // gewünschte Funktionalität und die verwendete HW anzupassen
 
-//#define IFC_SERIAL  Serial  // Isr der define aktiv, können Kommandos auch über die serielle Schnittstelle abgesetzt werden
+#define IFC_SERIAL  Serial  // Ist der define aktiv, können Kommandos auch über die serielle Schnittstelle abgesetzt werden
 // Beispiel für Variante mit Licht-Ausfahrsignal mit Vorsignal, mit Betriebsmode Led an Pin 13 (interne Led)
 // für Arduino Nano
 
@@ -38,7 +38,7 @@ const byte encode2P     =   A4;
 #define EXTENDED_CV       // CV-Werte ab V7.0 ( 10 CV per Adresse )
 
 const int DccAddr           =  17;    // DCC-Decoderadresse
-const byte iniMode          = 0x50 | AUTOADDR /*| ROCOADDR*/;  // default-Betriebsmodus ( CV47 )
+const byte iniMode          = AUTOADDR /*| ROCOADDR*/;  // default-Betriebsmodus ( CV47 )
 const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV48/49 )
                                     // mit LocoNet-Schnittstelle ist dies die LocoNetId
 //#define NOACK                     // Diese Zeile aktivieren, wenn keine HW zum CV auslesen vorhanden ist

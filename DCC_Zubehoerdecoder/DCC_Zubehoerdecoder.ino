@@ -13,6 +13,7 @@
     - Servo mit Umschaltrelais zur Weichenpolarisierung
     - logische Kopplung von 2 Servos für 3-begriffige Formsignale
     - 1 Servo über 2 Adressen um 4 Positionen anzusteuern
+    - 2 Servo über eine Adresse ( Parallelansteuerunmg von Servos )
     - Impulsfunktion für Servos ( automatisches Rückkehren in Ausgangslage,
       z.B. für Entkuppler )
     - Doppelspulenantriebe
