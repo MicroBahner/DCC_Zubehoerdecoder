@@ -42,7 +42,7 @@
 #endif
 
 //----------- allgemeine defines für beide Interfaces ----------------------------------------------
-// Modes f�r progMode
+// Modes für progMode
 extern byte progMode;
 #define NORMALMODE  0
 #define ADDRMODE    1   // Warte auf 1. Telegramm zur Bestimmung der ersten Weichenadresse ( Prog-Led blinkt )
@@ -69,7 +69,7 @@ extern byte progMode;
 
 #define CV_POMLOW     48  // Adresse für die POM-Programmierung
 #define CV_POMHIGH    49
-#define CV_BLKZAHL    50  // Anzahl der Funktionsblöcke ( nicht änderbar )
+#define CV_ADRZAHL    50  // Anzahl der verwalteten Adresse ( nicht änderbar )
 #define CV_INITYP     51  // CV51 ff enthalten die Funktionstypen der Adressen ( nicht änderbar )
 #define CV_FUNCTION  120  // Start der Blöcke für die Funktionskonfiguration
 #define CV_BLKLEN     10  // Länge eines CV-Blocks ( pro Adresse ein Block )

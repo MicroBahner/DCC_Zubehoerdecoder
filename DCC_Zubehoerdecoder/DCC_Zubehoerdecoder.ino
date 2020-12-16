@@ -84,12 +84,12 @@
 #endif
 //-------------------------------------------------------------------------------
 //-------------------------------------------
-const byte WeichenZahl = sizeof(iniTyp);
+const byte weichenZahl = sizeof(iniTyp);
 
 
 
-#define cvAdr(wIx,par)      (uint16_t)CV_FUNCTION+CV_BLKLEN*(wIx)+(par)
-#define getCvPar(wIx,par)   ifc_getCV( cvAdr(wIx,par) )
+#define cvParAdr(wIx,par)      (uint16_t)CV_FUNCTION+CV_BLKLEN*(wIx)+(par)
+#define getCvPar(wIx,par)   ifc_getCV( cvParAdr(wIx,par) )
 #define cvEAdr(wIx,epar)    CV_EXTDATA+epar+CV_ERWLEN*wIx  
 #define getCvExtPar(wIx,epar) ifc_getCV( cvEAdr(wIx,epar) )
 
@@ -112,7 +112,7 @@ byte opMode;                    // Bit 0..3 aus modeVal
 byte rocoOffs;                  // 4 bei ROCO-Adressierung, 0 sonst
 //byte isOutputAddr=1;            // Flag ob Output-Adressing ab 6.1 immer Ouptu-Adressind
 word weichenAddr;               // Addresse der 1. Weiche (des gesamten Blocks)
-byte ioPins[PPWA*WeichenZahl];  // alle definierten IO's in einem linearen Array
+byte ioPins[PPWA*weichenZahl];  // alle definierten IO's in einem linearen Array
 
 // Struktur für 2 Servos an einer Adresse ( F2SERVO )
 typedef struct {
@@ -125,11 +125,11 @@ typedef struct {
 // Pointer auf die Funktionsobjekte
 union { // für jede Klasse gibt es ein Array, die aber übereinanderliegen, da pro Weichenadresse
         // nur ein Objekt möglich ist
-    F2Servo_t  *twoServo[WeichenZahl];
-    Fservo  *servo[WeichenZahl];
-    Fcoil   *coil[WeichenZahl];    
-    Fstatic *stat[WeichenZahl];   
-    Fsignal *sig[WeichenZahl];
+    F2Servo_t  *twoServo[weichenZahl];
+    Fservo  *servo[weichenZahl];
+    Fcoil   *coil[weichenZahl];    
+    Fstatic *stat[weichenZahl];   
+    Fsignal *sig[weichenZahl];
 }Fptr;    
 
 Fservo *AdjServo = NULL ;   // Pointer auf zu justierenden Servo
@@ -140,7 +140,7 @@ enum combine_t:byte { NOCOM,        // keine Folgeadresse vorhanden, Defaultwert
                       SERVO_DOUBLE, // 2 verbundene Servos
                       SIGNAL2ADR,   // Lichtsignal mit 4 Signalbildern
                       SIGNAL3ADR }; // Lichtsignal mit 6 Signalbildern
-combine_t adressTyp[WeichenZahl];
+combine_t adressTyp[weichenZahl];
 ;
 byte progMode;      // Merker ob Decoder im Programmiermodus
 // -------- Encoderauswertung ----- Justierung der Servoendlage -----------------------------
@@ -169,7 +169,7 @@ EggTimer idLoconet;
 //###########################################################################
 
 void setup() {
-
+    boolean iniFlg = false;
 #ifdef __STM32F1__
    disableDebugPorts();     // JTAG und SW Ports freigeben
 #endif
@@ -234,7 +234,19 @@ void setup() {
 
     //-------------------------------------
     // CV's initiieren
-    if ( (ifc_getCV( CV_MODEVAL )&0xf0) != VALIDFLG || ifc_getCV(CV_INIVAL) != VALIDFLG || analogRead(resModeP) < 100 || (ifc_getCV(cvVersionId) < 0x70 ) ) {
+    // Prüfen ob die Funktionsbytes ab CV_INITYP korrekt sind
+    if ( ifc_getCV( CV_ADRZAHL ) != weichenZahl )  {
+        iniFlg = true;
+    } else {
+        for ( byte i=0; i<weichenZahl; i++ ) {
+            if ( ifc_getCV( CV_INITYP+i ) != iniTyp[i] ) { 
+                iniFlg = true;
+            }
+        }
+    }
+    //In V7 wird kein ValidFlg geprüft, sondern nur ob die HW-spezifischen CV's den Konfig-Werten entsprechen
+    //if ( (ifc_getCV( CV_MODEVAL )&0xf0) != VALIDFLG || ifc_getCV(CV_INIVAL) != VALIDFLG || analogRead(resModeP) < 100 || (ifc_getCV(cvVersionId) < 0x70 ) ) {
+    if ( iniFlg || analogRead(resModeP) < 100 || (ifc_getCV(cvVersionId) < 0x70 ) ) {
         // In modeVal oder ManufactId steht kein korrekter Wert ( oder resModeP ist auf 0 ),
         // alles initiieren mit den Defaultwerten
         // Wird über DCC ein 'factory-Reset' empfangen wird modeVal zurückgesetzt, was beim nächsten
@@ -267,36 +279,36 @@ void setup() {
     //--- Die definierten Io's in einem linearen Array speichern. Der entsprechende Array-Abschnitt
     // wird den Funktionsobjekten als Pointer übergeben, die damit ein Array mit 'ihren' Pin-Nummern
     // erhalten
-    for ( byte wIx = 0; wIx<WeichenZahl; wIx++ ){
+    for ( byte wIx = 0; wIx<weichenZahl; wIx++ ){
         ioPins[wIx*PPWA] = out1Pins[ wIx ];
         ioPins[wIx*PPWA+1] = out2Pins[ wIx ];
         ioPins[wIx*PPWA+2] = out3Pins[ wIx ];
     }
     //--- Funktionsobjekte entsprechend der Konfiguration instanziieren ------------------
-    for ( byte wIx=0; wIx<WeichenZahl; wIx++ ) {
+    for ( byte wIx=0; wIx<weichenZahl; wIx++ ) {
         // Funktionsobjekte instanziieren und initiieren
         byte vsIx = 0;  // Vorsignalindex am Mast auf 0 (kein Vorsignal) vorbesetzen
         adressTyp[wIx] = NOCOM;  // Standard ist keine Folgeadresse
         switch (iniTyp[wIx] )  {
           case FSERVO:
             // Prüfen ob Servokombination ( Folgetyp = FSERVO0 )
-            if ( wIx+1<WeichenZahl && iniTyp[wIx+1] == FSERVO0 ){
+            if ( wIx+1<weichenZahl && iniTyp[wIx+1] == FSERVO0 ){
                 // prüfen ob FSERVO0 gleicher Anschlußpin ( =Servo mit mehreren Stellungen )
                 if ( out1Pins[wIx] != out1Pins[wIx+1] ) {
                     // nein, 2 Servos mit kombinatorischer Ansteuerung
                     // das 2. Servo greift auf das Modbyte des 1. Servos zu, da das Mod-Byte
                     // des 2. Servos die Stellungskombinatorik enthält
-                     Fptr.servo[wIx] = new Fservo( cvAdr(wIx,0) , &ioPins[wIx*PPWA], 2 );
-                    Fptr.servo[wIx+1] = new Fservo( cvAdr(wIx+1,0) , &ioPins[(wIx+1)*PPWA], 2, -CV_BLKLEN );
+                     Fptr.servo[wIx] = new Fservo( cvParAdr(wIx,0) , &ioPins[wIx*PPWA], 2 );
+                    Fptr.servo[wIx+1] = new Fservo( cvParAdr(wIx+1,0) , &ioPins[(wIx+1)*PPWA], 2, -CV_BLKLEN );
                     adressTyp[wIx] = SERVO_DOUBLE;
                 } else {
                     // Servo mit 4 Positionen
                     adressTyp[wIx] = SERVO4POS;
-                    Fptr.servo[wIx] = new Fservo( cvAdr(wIx,0) , &ioPins[wIx*PPWA], 4 );
+                    Fptr.servo[wIx] = new Fservo( cvParAdr(wIx,0) , &ioPins[wIx*PPWA], 4 );
                 }
             } else {
                 //Standard-Servo
-                Fptr.servo[wIx] = new Fservo( cvAdr(wIx,0) , &ioPins[wIx*PPWA], 2 );
+                Fptr.servo[wIx] = new Fservo( cvParAdr(wIx,0) , &ioPins[wIx*PPWA], 2 );
             }
             break;
           case F2SERVO: // 2 Servos auf einer Adresse
@@ -309,19 +321,19 @@ void setup() {
             Fptr.twoServo[wIx]->pins2[1] = NC;              // keine Relais beim
             Fptr.twoServo[wIx]->pins2[2] = NC;              // 2. Servo möglich
             // Servoobjekte anlegen
-            Fptr.twoServo[wIx]->servo1 = new Fservo( cvAdr(wIx,0), Fptr.twoServo[wIx]->pins1, 2 );
-            Fptr.twoServo[wIx]->servo2 = new Fservo( cvAdr(wIx,0), Fptr.twoServo[wIx]->pins2, 2, F2OFFSET ); // mit Offset für Paramter
+            Fptr.twoServo[wIx]->servo1 = new Fservo( cvParAdr(wIx,0), Fptr.twoServo[wIx]->pins1, 2 );
+            Fptr.twoServo[wIx]->servo2 = new Fservo( cvParAdr(wIx,0), Fptr.twoServo[wIx]->pins2, 2, F2OFFSET ); // mit Offset für Paramter
             break;
           case FCOIL:
-            Fptr.coil[wIx] = new Fcoil( cvAdr(wIx,0) , &ioPins[wIx*PPWA] );
+            Fptr.coil[wIx] = new Fcoil( cvParAdr(wIx,0) , &ioPins[wIx*PPWA] );
             break;
           case FSTATIC:
-            Fptr.stat[wIx] = new Fstatic( cvAdr(wIx,0) , &ioPins[wIx*PPWA] );
+            Fptr.stat[wIx] = new Fstatic( cvParAdr(wIx,0) , &ioPins[wIx*PPWA] );
             break;
           case FSIGNAL2:
             // Prüfen ob ein Vorsignal am Mast Dunkelgeschaltet werden muss
             vsIx = getCvPar(wIx,PAR3);
-            if( !(vsIx >= 1 && vsIx <= WeichenZahl) ) {
+            if( !(vsIx >= 1 && vsIx <= weichenZahl) ) {
                 // kein gültiger Vorsignalindex gefunden
                 vsIx = 0;
             }
@@ -330,9 +342,9 @@ void setup() {
           case FVORSIG:
             {   // Zahl der Ausgangspins (PPWA*Folgeadressen) bestimmen
                 byte pinZahl = PPWA; 
-                if ( wIx+1<WeichenZahl && iniTyp[wIx+1] == FSIGNAL0 ){
+                if ( wIx+1<weichenZahl && iniTyp[wIx+1] == FSIGNAL0 ){
                     pinZahl+=PPWA;
-                    if ( wIx+2<WeichenZahl && iniTyp[wIx+2] == FSIGNAL0 ) {
+                    if ( wIx+2<weichenZahl && iniTyp[wIx+2] == FSIGNAL0 ) {
                         pinZahl+=PPWA;
                         adressTyp[wIx] = SIGNAL3ADR;    // Lichtsignal mit 3 Adressen
                     } else {
@@ -341,9 +353,9 @@ void setup() {
                 }
                 DBSG_PRINT("Signal %d, PinMax=%d, Vsindex: %d",wIx+1, pinZahl, vsIx );
                 if ( vsIx == 0 ) {
-                    Fptr.sig[wIx] = new Fsignal( cvAdr(wIx,0) , &ioPins[wIx*PPWA], pinZahl, NULL );
+                    Fptr.sig[wIx] = new Fsignal( cvParAdr(wIx,0) , &ioPins[wIx*PPWA], pinZahl, NULL );
                 } else {
-                    Fptr.sig[wIx] = new Fsignal( cvAdr(wIx,0) , &ioPins[wIx*PPWA], pinZahl, &Fptr.sig[vsIx-1] );
+                    Fptr.sig[wIx] = new Fsignal( cvParAdr(wIx,0) , &ioPins[wIx*PPWA], pinZahl, &Fptr.sig[vsIx-1] );
                 }
             }
             break;
@@ -390,11 +402,11 @@ void loop() {
     ifc_process();  // Hier werden die empfangenen Telegramme analysiert und der Sollwert gesetzt
     #ifdef DEBUG
     // Merker CV für CV-Ausgabe rücksetzen (MerkerCV ist 1.CV hinter dem CV-Block für die ausgangskonfiguration)
-    if( ifc_getCV( cvAdr(WeichenZahl,MODE)) != 0xff ) ifc_setCV( cvAdr(WeichenZahl,MODE) , 0xff );
+    if( ifc_getCV( cvParAdr(weichenZahl,MODE)) != 0xff ) ifc_setCV( cvParAdr(weichenZahl,MODE) , 0xff );
     #endif
     
     // Ausgänge ansteuern
-    for ( byte i=0; i<WeichenZahl; i++ ) {
+    for ( byte i=0; i<weichenZahl; i++ ) {
         switch ( iniTyp[i]  ) {
           case FSERVO: // Servoausgänge ansteuern ----------------------------------------------
             Fptr.servo[i]->process();
@@ -511,7 +523,7 @@ void ifc_notifyDccAccState( uint16_t Addr, uint8_t OutputAddr, uint8_t State ){
     // Testen ob eigene Weichenadresse
     DB_PRINT( "Weichenadresse: %d , Ausgang: %d, State: %d", wAddr, OutputAddr, State );
     // Prüfen ob Adresse im Decoderbereich
-    if ( wAddr >= weichenAddr && wAddr < (weichenAddr + WeichenZahl) ) {
+    if ( wAddr >= weichenAddr && wAddr < (weichenAddr + weichenZahl) ) {
         // ist eigene Adresse, Sollwert setzen
         byte Ix = wAddr-weichenAddr;
         dccSoll =  OutputAddr & 0x1;
@@ -540,7 +552,7 @@ void ifc_notifyDccAccState( uint16_t Addr, uint8_t OutputAddr, uint8_t State ){
         setPosition( Ix, dccSoll, dccState );
     }
     // Prüfen ob Vorsignal über Hauptsignaladresse geschaltet werden muss
-    for ( i = 0; i < WeichenZahl; i++ ) {
+    for ( i = 0; i < weichenZahl; i++ ) {
         uint16_t vsAdr;
         if ( iniTyp[i] == FVORSIG  ) {
             // Adresse des zugehörigen Hauptsignals bestimmen
@@ -551,7 +563,7 @@ void ifc_notifyDccAccState( uint16_t Addr, uint8_t OutputAddr, uint8_t State ){
                 break; // Schleifendurchlauf abbrechen, es kann nur eine Signaladresse sein
             } else {
                 // Folgeadresse ( bei mehrbegriffigen Vorsignalen ) prüfen
-                if ( i+1 < WeichenZahl && iniTyp[i+1] == FSIGNAL0 ) {
+                if ( i+1 < weichenZahl && iniTyp[i+1] == FSIGNAL0 ) {
                     // Folgeadresse vergleichen
                     if ( vsAdr+1 == wAddr ) { 
                         // Übereinstimmung gefunden, neues Signalbild setzen
@@ -582,22 +594,22 @@ void ifc_notifyCVChange( uint16_t CvAddr, uint8_t Value ) {
         //CV wurde über nmraDCC geändert. Ist dies eine aktive Servoposition, dann die Servoposition
         // entsprechend anpassen
        DB_PRINT( "neu: CV%d=%d", CvAddr, Value );
-        for ( byte i=0; i<WeichenZahl; i++ ) {
+        for ( byte i=0; i<weichenZahl; i++ ) {
             // prüfen ob Ausgang einen Servo ansteuert:
             switch ( iniTyp[i] ) {
               case FSERVO:
                 // gehört der veränderte CV zu diesem Servo?
-                if (  (CvAddr == cvAdr(i,PAR1) && Fptr.servo[i]->getPos() == GERADE) ||
-                      (CvAddr == cvAdr(i,PAR2) && Fptr.servo[i]->getPos() == ABZW ) ){
+                if (  (CvAddr == cvParAdr(i,PAR1) && Fptr.servo[i]->getPos() == GERADE) ||
+                      (CvAddr == cvParAdr(i,PAR2) && Fptr.servo[i]->getPos() == ABZW ) ){
                     // Es handelt sich um die aktuelle Position des Servos,
                     // Servo neu positionieren
                     //DBSV_PRINT( "Ausg.%d , Pos. %d neu einstellen", i, dccSoll[i] );
                      Fptr.servo[i]->adjust( ADJPOS, Value );
-                } else if ( CvAddr == cvAdr(i,PAR1) ||
-                            CvAddr == cvAdr(i,PAR2)  ) {
+                } else if ( CvAddr == cvParAdr(i,PAR1) ||
+                            CvAddr == cvParAdr(i,PAR2)  ) {
                       // ist nicht de aktuelle Position des Servos, Servo umstellen
                       Fptr.servo[i]->set( ! Fptr.servo[i]->getPos() );
-                } else if ( CvAddr == cvAdr(i,PAR3) ) {
+                } else if ( CvAddr == cvParAdr(i,PAR3) ) {
                     // die Geschwindigkeit des Servo wurde verändert
                     //DBSV_PRINT( "Ausg.%d , Speed. %d neu einstellen", i, Value );
                     Fptr.servo[i]->adjust( ADJSPEED, Value );
@@ -607,13 +619,23 @@ void ifc_notifyCVChange( uint16_t CvAddr, uint8_t Value ) {
         #ifdef DEBUG
             // prüfen ob die CV-Adresse HINTER den Weichenadressen verändert wurde. Wenn ja,
             // alle CV-Werte ausgeben und Wert wieder auf 0xff setzen
-            if ( CvAddr ==  cvAdr(WeichenZahl,MODE) && Value !=0xff ) {
+            if ( CvAddr ==  cvParAdr(weichenZahl,MODE) && Value !=0xff ) {
                 DBprintCV();
             }
         #endif
+
+        // Prüfen ob schreibgeschützter CV verändert wurde. Wenn ja zurücksetzen
         if ( CvAddr == cv29Config ) {
           // CV29 darf nicht verändert werden -> auf default setzen
           ifc_setCV( cv29Config, config29Value ); // == Accessory-Decoder mit Output-Adressing
+        }
+        if ( CvAddr == CV_ADRZAHL ) {
+            ifc_setCV( CV_ADRZAHL, weichenZahl );
+        }
+        for( byte i=0; i< weichenZahl; i++ ) {
+            if ( CvAddr == (CV_INITYP+i) ) {
+                ifc_setCV( (CV_INITYP+i), iniTyp[i] );
+            }
         }
         // prüfen ob die Weichenadresse verändert wurde. 
         // Dies kann durch Ändern der Decoderadresse geschehen.
@@ -634,9 +656,10 @@ void ifc_notifyCVChange( uint16_t CvAddr, uint8_t Value ) {
 //-----------------------------------------------------
 void ifc_notifyCVResetFactoryDefault(void) {
     // Auf Standardwerte zurücksetzen und Neustart
-    ifc_setCV( CV_MODEVAL, 255 );
+    localCV = true;     // schaltet Schreibschutz für CV_ADRZAHL aus
+    ifc_setCV( CV_ADRZAHL, 255 ); // Damit wird nach Reset komplet initiiert.
     delay( 20 );
-    DB_PRINT( "Reset: modeVal=0x%2x", ifc_getCV( CV_MODEVAL ) );
+    DB_PRINT( "Reset: AdrZahl=0x%2x", ifc_getCV( CV_ADRZAHL ) );
     delay(500);
     softReset();
 }
@@ -659,39 +682,43 @@ void iniCv( byte mode ) {
             ifc_setCV( FactoryDefaultCVs[i].CV, FactoryDefaultCVs[i].Value);
     }
     // Decoderspezifische CV's
-
+    
     // allgemeine CV's
     ifc_setCV( (int) CV_POMLOW, PomAddr%256 );
     ifc_setCV( (int) CV_POMHIGH, PomAddr/256 );
     ifc_setCV( (int) CV_INIVAL, VALIDFLG );
     ifc_setCV( (int) CV_MODEVAL, VALIDFLG | (iniMode&0xf) );
+    ifc_setCV( (int) CV_ADRZAHL, weichenZahl );
     // Funktionsspezifische CV's
-    for ( byte i = 0; i<WeichenZahl; i++ ) {
+    for ( byte i = 0; i<weichenZahl; i++ ) {
         DB_PRINT("fktSpezCv: %d,Typ=%d", i, iniTyp[i] );
+        // Funktionstypen speichern
+        ifc_setCV( (int) (CV_INITYP+i), iniTyp[i] );
+        // Parameter speichern
         #ifdef EXTENDED_CV  // initiale CV-Werte als 2-dim. Array
-            // 
+            // native struktur ab Version 7.0
             for ( byte pIx = 0; pIx < CV_BLKLEN; pIx++ ) {
                 // Statuswert nicht initiieren   
-                if ( pIx != STATE ) ifc_setCV( cvAdr( i, pIx ), iniCVx[pIx][i] );     
+                if ( pIx != STATE ) ifc_setCV( cvParAdr( i, pIx ), iniCVx[pIx][i] );     
             }
             if ( mode == INIALL ) {
                 // Bei INIALL auch alle Statuswerte initiieren
-                ifc_setCV( cvAdr(i,STATE ), iniCVx[CV_BLKLEN-1][i] );
+                ifc_setCV( cvParAdr(i,STATE ), iniCVx[CV_BLKLEN-1][i] );
             } 
         #else // Konfig-File im V6-Format
-            ifc_setCV( cvAdr(i,MODE), iniFmode[i] );
-            ifc_setCV( cvAdr(i,PAR1), iniPar1[i] );
-            ifc_setCV( cvAdr(i,PAR2), iniPar2[i] );
-            ifc_setCV( cvAdr(i,PAR3), iniPar3[i] );
-            ifc_setCV( cvAdr(i,PAR4), iniPar4[i] );     // in V6: Lichtsignalparameter oder Status
+            ifc_setCV( cvParAdr(i,MODE), iniFmode[i] );
+            ifc_setCV( cvParAdr(i,PAR1), iniPar1[i] );
+            ifc_setCV( cvParAdr(i,PAR2), iniPar2[i] );
+            ifc_setCV( cvParAdr(i,PAR3), iniPar3[i] );
+            ifc_setCV( cvParAdr(i,PAR4), iniPar4[i] );     // in V6: Lichtsignalparameter oder Status
             // restliche CV's ( 5...8 )löschen
             for ( byte pIx = 5; pIx < (CV_BLKLEN-1); pIx++ ) {
-                ifc_setCV( cvAdr( i, pIx ), 0xFF );
+                ifc_setCV( cvParAdr( i, pIx ), 0xFF );
             }
             
             if ( mode == INIALL ) {
                 // Bei INIALL auch alle Statuswerte initiieren
-                ifc_setCV( cvAdr(i,STATE ), iniPar4[i] );
+                ifc_setCV( cvParAdr(i,STATE ), iniPar4[i] );
             } 
         #endif
     }
@@ -921,9 +948,19 @@ void dccSim ( void ) {
                 // CV lesen
                 adr = atoi( strtok( NULL, " ," ) );
                 soll = atoi( strtok( NULL, " ," ) );
-                ifc_setCV( adr, soll );
-                IFC_PRINTF("CV%d = %d",adr, ifc_getCV(adr) );
+                if ( adr == 8 ) {
+                    // Schreiben auf CV8 löst nach DCC-Norm ein Rücksetzen auf
+                    // Werkseinstellungen aus ( = Werte aus Konfig-File )
+                    ifc_notifyCVResetFactoryDefault();
+                } else {
+                    ifc_setCV( adr, soll );
+                    IFC_PRINTF("CV%d = %d",adr, ifc_getCV(adr) );
+                }
              }
+            if ( strcmp( token, "ca" ) == 0 ) {
+                // Alle wesentlichen CV's ausgeben ( nur wenn debuggung aktiv )
+                DBprintCV();
+            }
         // Empfangspuffer rücksetzen
         rcvIx = 0;
         }
@@ -971,10 +1008,10 @@ void DBprintCV(void) {
     // Output-Konfiguration
    DB_PRINT_( "Wadr | Typ | CV's  | Mode| Par1| Par2| Par3| Par4|" );
    DB_PRINT ( " Par5| Par6| Par7| Par8| Status |" );
-    for( byte i=0; i<WeichenZahl; i++ ) {
+    for( byte i=0; i<weichenZahl; i++ ) {
        DB_PRINT_( "%4d |%2d/%1d |%3d-%3d| %3d | %3d | %3d | %3d | %3d " , 
                 weichenAddr+i, iniTyp[i],adressTyp[i],
-                cvAdr(i,MODE),  cvAdr(i,STATE),
+                cvParAdr(i,MODE),  cvParAdr(i,STATE),
                 getCvPar(i,MODE),
                 getCvPar(i,PAR1),
                 getCvPar(i,PAR2),
