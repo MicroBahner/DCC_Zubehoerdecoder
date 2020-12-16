@@ -36,9 +36,11 @@
  *  
  *  Aufteilung der CV's:
  *  CV        Bedeutung    
- *  115       Kennung für Erstiniierung ( Auch Unterscheidung LocoNet / DCC bei erstmaligem Start )
- *  117       Kennung für Erstinitiierung, allgemeine Optionen die für den gesamten Decoder gelten
- *  118/119   Pom-Adresse
+ *  45        Kennung für Erstiniierung ( Auch Unterscheidung LocoNet / DCC bei erstmaligem Start )
+ *  47        Kennung für Erstinitiierung, allgemeine Optionen die für den gesamten Decoder gelten
+ *  48/49     Pom-Adresse
+ *  50        Zahl der konfigurierten Adressen
+ *  51-5x     Funktionen der Adressen (Funktionscodes)
  *  120-129   Parameter für 1. Weichenadresse
  *  130-139   Parameter für 2. Weichenadresse
  *  ...

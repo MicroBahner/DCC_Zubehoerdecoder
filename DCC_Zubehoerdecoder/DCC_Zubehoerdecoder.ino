@@ -927,6 +927,7 @@ void dccSim ( void ) {
         IFC_SERIAL.readBytes( &rcvBuf[rcvIx], dataAnz );
         rcvIx += dataAnz;
         if ( rcvBuf[rcvIx-1] == 10 || rcvBuf[rcvIx-1] == 13 ) {
+            rcvBuf[rcvIx-1] = ' ';
             rcvBuf[rcvIx] = 0;
             // komplette Zeile empfangen -> auswerten
             token = strtok( rcvBuf, " ,");
@@ -937,28 +938,28 @@ void dccSim ( void ) {
                 state = atoi( strtok(NULL, " ,") );
                 DB_PRINT("Sim: AC,%d,%d,%d",adr,soll,state);
                 ifc_notifyDccAccState( adr, soll, state );
-             }
+            }
             if ( strcmp( token, "cr" ) == 0 ) {
                 // CV lesen
                 adr = atoi( strtok( NULL, " ," ) );
                 soll = ifc_getCV( adr );
                 IFC_PRINTF("CV%d = %d, 0x%02x",adr,soll,soll);
-             }
+            }
             if ( strcmp( token, "cw" ) == 0 ) {
-                // CV lesen
+                // CV schreiben
                 adr = atoi( strtok( NULL, " ," ) );
-                soll = atoi( strtok( NULL, " ," ) );
+                soll = strtol( strtok( NULL, " ," ),NULL,0 );
                 if ( adr == 8 ) {
                     // Schreiben auf CV8 löst nach DCC-Norm ein Rücksetzen auf
                     // Werkseinstellungen aus ( = Werte aus Konfig-File )
                     ifc_notifyCVResetFactoryDefault();
                 } else {
                     ifc_setCV( adr, soll );
-                    IFC_PRINTF("CV%d = %d",adr, ifc_getCV(adr) );
+                    IFC_PRINTF("CV%d = %d, 0x%02x",adr, ifc_getCV(adr), ifc_getCV(adr) );
                 }
-             }
+            }
             if ( strcmp( token, "ca" ) == 0 ) {
-                // Alle wesentlichen CV's ausgeben ( nur wenn debuggung aktiv )
+                // Alle wesentlichen CV's ausgeben ( nur wenn debugging aktiv )
                 DBprintCV();
             }
         // Empfangspuffer rücksetzen
