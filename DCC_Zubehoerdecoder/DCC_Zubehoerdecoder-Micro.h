@@ -2,7 +2,7 @@
 // Diese Datei enthält die vom Anwender änderbaren Parameter um den Zubehördecoder an die 
 // gewünschte Funktionalität und die verwendete HW anzupassen
 
-//#define IFC_SERIAL  Serial  // Isr der define aktiv, können Kommandos auch über die serielle Schnittstelle abgesetzt werden
+#define IFC_SERIAL  Serial  // Isr der define aktiv, können Kommandos auch über die serielle Schnittstelle abgesetzt werden
 // Beispiel für Variante mit Licht-Ausfahrsignal mit Vorsignal, mit Betriebsmode Led an Pin 13 (interne Led)
 // für Arduino Micro
 
@@ -34,6 +34,7 @@ const byte encode2P     =   A2;
 // Der Initiierungsmodus lässt sich per Mode-Eingang aktivieren oder er ist automatisch aktiv, wenn keine
 // sinnvollen Werte im CV47 stehen.
 //-------------------------------------------------------------------------------------------------------
+#define EXTENDED_CV       // CV-Werte ab V7.0 ( 10 CV per Adresse )
 const int DccAddr           = 317;    // DCC-Decoderadresse
 const byte iniMode          = 0x50 | AUTOADDR /*| ROCOADDR*/;  // default-Betriebsmodus ( CV47 )
 const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV48/49 )
@@ -51,15 +52,23 @@ const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmi
 #define COILMOD     NOPOSCHK|CAUTOOFF
 #define SERVOMOD    SAUTOOFF|NOPOSCHK|SDIRECT //|SAUTOBACK
 #define SERVO0MOD   SERVOMOD    // Modbyte für Folgeservo (FSERVO0)
+#define SERVOMOD2    SAUTOOFF|NOPOSCHK|SDIRECT |SAUTOBACK
 #define STATICMOD   CAUTOOFF|BLKSOFT|BLKSTRT|STATICRISE    // Wechselblinker mit beiden Leds an beim Start            
-const byte iniTyp[]     =   {    FSERVO,  FSERVO0,   FSIGNAL2,   FSIGNAL0,   FVORSIG,   FCOIL ,      FSERVO,  FSERVO0 };
-const byte out1Pins[]   =   {       A0,        A1,   /*rt*/ 9,   /*rt*/10,  /*ge*/12,        0,          3,         3 };  // output-pins der Funktionen
-const byte out2Pins[]   =   {        5,         6,   /*gn*/11,   /*ws*/ 8,  /*gn*/13,        1,         14,        16 };
-const byte out3Pins[]   =   {       NC,        NC,   /*ge*/ 7,         NC,        NC,       NC,         15,        17 };
-                                                                                                
-const byte iniFmode[]     = {SERVOMOD,  0b11000100,          0,          0,         0,  COILMOD, SERVOMOD,  0b11000100};
-const byte iniPar1[]      = {       30,       110,    0b01001,    0b10001,      0b01,       50,         30,       110 };
-const byte iniPar2[]      = {       80,       160,    0b00010,    0b00110,      0b10,       50,         80,       160 };
-const byte iniPar3[]      = {        8,         8,          5,          0,        19,        0,          8,         8 };
-const byte iniPar4[]      = {        0,         0,    0b00101,          0,         0,        0,          0,         0 }; // nur für Lichtsignale!
+const byte iniTyp[]     =   {    FSERVO,  FSERVO0,   FSIGNAL2,   FSIGNAL0,   FVORSIG,   FCOIL ,      F2SERVO };
+const byte out1Pins[]   =   {       A0,        A1,   /*rt*/ 9,   /*rt*/10,  /*ge*/12,        0,          3 };  // output-pins der Funktionen
+const byte out2Pins[]   =   {       16,        17,   /*gn*/11,   /*ws*/ 8,  /*gn*/13,        1,         1 };
+const byte out3Pins[]   =   {       NC,        NC,   /*ge*/ 7,         NC,        NC,       NC,          5 };
+
+const byte iniCVx[10][sizeof(iniTyp)]  = {
+/* iniFmode (CV50,60,... */ { SERVOMOD,0b11100100,          0,          0,         0,  COILMOD,  SERVOMOD  },
+/* iniPar1 (CV51,61,... */  {       30,       110,    0b01000,    0b10001,      0b01,       50,         30 },
+/* iniPar2 (CV52,62,... */  {       80,       160,    0b00010,    0b00110,      0b10,       50,         80 },
+/* iniPar3 (CV53,63,... */  {       8,          8,          5,          0,        16,        0,          8 },
+/* iniPar4 (CV54,64,... */  {       0,          0,    0b01001,          0,         0,        0,         20  }, 
+/* iniPar5 (CV55,65,... */  {       0,          0,    0b01001,          0,         0,        0,  SERVOMOD2  },
+/* iniPar6 (CV56,66,... */  {       0,          0,          0,          0,         0,        0,         20  },
+/* iniPar7 (CV57,67,... */  {       0,          0,         50,          0,         0,        0,        120  },
+/* iniPar8 (CV58,68,... */  {       0,          0,        100,          0,         0,        0,         32  },
+/* iniState (CV59,69,... */ {       0,          0,          0,          0,         0,        0,         10  }   // Status-Werte
+                            };
 //------------------------------------------------------------------------------------

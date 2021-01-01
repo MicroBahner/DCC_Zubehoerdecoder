@@ -34,7 +34,7 @@
       </variable>
 
      <variable CV="2" item="Decoder Version" >
-        <decVal/>
+        <hexVal/>
         <label>Manufacturer Version No.</label>
       </variable>
 

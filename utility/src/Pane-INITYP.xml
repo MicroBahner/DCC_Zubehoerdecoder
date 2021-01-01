@@ -12,7 +12,12 @@
   <column>
     <label> <text>Servo - Extend (FNR)</text> </label>
 
-  <!-- ^^^^^^^^^^^Ende FSERVO0 ^^^^^^^^^^^^^^^^ -->
+  <!-- ^^^^^^^^^^^Ende F2SERVO ^^^^^^^^^^^^^^^^ -->
+#elif ( INITYP == F2SERVO )
+  <column>
+    <label> <text> 2 Servos (FNR)</text> </label>
+
+  <!-- ^^^^^^^^^^^Ende FSERVO ^^^^^^^^^^^^^^^^ -->
 #elif ( INITYP == FCOIL )
   <column>
     <label>  <text> Spulenantrieb (FNR)  </text>  </label>
@@ -51,12 +56,34 @@
     <display item="Fkt-FNR Fmode-Bit5" format="checkbox"/>
     <display item="Fkt-FNR Fmode-Bit6" format="checkbox"/>
     <display item="Fkt-FNR Fmode-Bit7" format="checkbox"/>
-      <separator/>
+    <separator/>
     <label> <text>Parameter Bytes: </text> </label>
     <display item="Fkt-FNR Par1" format="checkbox"/>
     <display item="Fkt-FNR Par2" format="checkbox"/>
     <display item="Fkt-FNR Par3" format="checkbox"/>
     <display item="Fkt-FNR Par4" format="checkbox"/>
+#if ( INITYP == F2SERVO )
+      <separator/>
+    <label> <text>2. Servo: </text> </label>
+      <separator/>
+#endif    
+    <display item="Fkt-FNR Par5" format="checkbox"/>
+    <display item="Fkt-FNR Par5-Bit0" format="checkbox"/>
+    <display item="Fkt-FNR Par5-Bit1" format="checkbox"/>
+    <display item="Fkt-FNR Par5-Bit2" format="checkbox"/>
+    <display item="Fkt-FNR Par5-Bit3" format="checkbox"/>
+    <display item="Fkt-FNR Par5-Bit4" format="checkbox"/>
+    <display item="Fkt-FNR Par5-Bit5" format="checkbox"/>
+    <display item="Fkt-FNR Par5-Bit6" format="checkbox"/>
+    <display item="Fkt-FNR Par5-Bit7" format="checkbox"/>
+#if ( INITYP == F2SERVO )
+      <separator/>
+    <label> <text>Parameter Bytes: </text> </label>
+#endif    
+    <display item="Fkt-FNR Par6" format="checkbox"/>
+    <display item="Fkt-FNR Par7" format="checkbox"/>
+    <display item="Fkt-FNR Par8" format="checkbox"/>
+    <display item="Fkt-FNR Par9" format="checkbox"/>
   </column>
   <separator/>
 #endif

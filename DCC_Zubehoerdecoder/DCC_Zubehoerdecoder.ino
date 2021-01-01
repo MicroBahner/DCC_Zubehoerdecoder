@@ -713,7 +713,7 @@ void iniCv( byte mode ) {
             ifc_setCV( cvParAdr(i,PAR4), iniPar4[i] );     // in V6: Lichtsignalparameter oder Status
             // restliche CV's ( 5...8 )löschen
             for ( byte pIx = 5; pIx < (CV_BLKLEN-1); pIx++ ) {
-                ifc_setCV( cvParAdr( i, pIx ), 0xFF );
+                ifc_setCV( cvParAdr( i, pIx ), 0 );
             }
             
             if ( mode == INIALL ) {

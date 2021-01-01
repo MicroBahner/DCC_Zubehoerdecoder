@@ -75,7 +75,7 @@
  *                ++---- ON  1.Adresse
  *              ++-------OFF 2.Adresse
  *            ++-------- ON  2.Adresse
- *  CV51 .. 54 wie bei FSERVO        
+ *  CV121 .. 124 wie bei FSERVO        
  *            
  *  F2SERVO Servo: ( 2 Servos auf einer Adresse )
  *  CV120..CV124 wie beim ersten Servo (FSERVO)
