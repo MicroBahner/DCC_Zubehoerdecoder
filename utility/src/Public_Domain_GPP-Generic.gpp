@@ -1,3 +1,12 @@
+#if ( _INTERFACE == DCC )
+#define CV_WadrLow     1
+#define CV_WadrHigh    9
+#define CV_Version     7
+#else
+#define CV_WadrLow    17
+#define CV_WadrHigh   18
+#define CV_Version    2
+#endif
 <?xml version="1.0" encoding="utf-8"?>
 <?xml-stylesheet type="text/xsl" href="../XSLT/decoder.xsl"?>
 <!-- Copyright (C) JMRI 2002, 2004, 2007 All rights reserved -->
@@ -17,12 +26,22 @@
   <!-- version 1 - test only -->
   
   <decoder>
+#if ( _INTERFACE == DCC )
+    <!-- Mit DCC-Interface -->
+    <family name="DCC-boards" mfg="Public-domain and DIY">
+      <model model="_MODEL"/>
+    </family>
+    <programming direct="yes" paged="no" register="no" ops="yes">
+    </programming>
+#else
+    <!-- mit LocoNet Interface (default ) -->
     <family name="LNSV2-using boards" mfg="Public-domain and DIY">
       <model model="_MODEL"/>
     </family>
     <programming direct="no" paged="no" register="no" ops="no">
         <mode>LOCONETSV2MODE</mode>
     </programming>
+#endif
     <variables>
 
      <!-- Is the following actually accessible via the SV protocol? -->
@@ -33,7 +52,7 @@
         <tooltip>Lange 14-Bit Adresse \n\r Wird erst nach einem Reset des Decoders aktiv</tooltip>
       </variable>
 
-     <variable CV="2" item="Decoder Version" >
+     <variable CV="CV_Version" item="Decoder Version" >
         <hexVal/>
         <label>Manufacturer Version No.</label>
       </variable>
@@ -49,7 +68,11 @@
       </variable>
       <variable item="Betriebsparameter1Bit7-4" CV="47" mask="VVVVXXXX">
         <hexVal/>
-        <label>   SV-gültig-Flag(0x5):  </label>
+#if ( _INTERFACE == DCC )
+        <label>   CV-gültig-Flag(0x6):  </label>
+#else
+        <label>   SV-gültig-Flag(0x6):  </label>
+#endif
       </variable>
       <variable item="Betriebsparameter1Bit0" CV="47" mask="XXXXXXXV">
         <hexVal/>
@@ -58,11 +81,15 @@
       </variable>
       <variable item="Betriebsparameter2" CV="48">
         <splitVal highCV="49" />
+#if ( _INTERFACE == DCC )
+        <label> PoM-Adresse: </label>
+#else
         <label>  LocoNet ID: </label>
+#endif
         <tooltip>Änderung gilt ab nächstem Reset</tooltip>
       </variable>
-      <variable item="Betriebsparameter3" CV="17">
-        <splitVal highCV="18"  upperMask="XXVVVVVV" />
+      <variable item="Betriebsparameter3" CV="CV_WadrLow">
+        <splitVal highCV="CV_WadrHigh"  upperMask="XXVVVVVV" />
         <label>    1. Weichenadresse: </label>
         <tooltip>Änderung gilt sofort</tooltip>
       </variable>

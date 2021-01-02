@@ -17,11 +17,11 @@
   <!-- version 1 - test only -->
   
   <decoder>
-    <family name="LNSV2-using boards" mfg="Public-domain and DIY">
-      <model model="DIY_StandardV7"/>
+    <!-- Mit DCC-Interface -->
+    <family name="DCC-boards" mfg="Public-domain and DIY">
+      <model model="DIY_Standard"/>
     </family>
-    <programming direct="no" paged="no" register="no" ops="no">
-        <mode>LOCONETSV2MODE</mode>
+    <programming direct="yes" paged="no" register="no" ops="yes">
     </programming>
     <variables>
 
@@ -33,8 +33,8 @@
         <tooltip>Lange 14-Bit Adresse nr Wird erst nach einem Reset des Decoders aktiv</tooltip>
       </variable>
 
-     <variable CV="2" item="Decoder Version" >
-        <decVal/>
+     <variable CV="7" item="Decoder Version" >
+        <hexVal/>
         <label>Manufacturer Version No.</label>
       </variable>
 
@@ -49,7 +49,7 @@
       </variable>
       <variable item="Betriebsparameter1Bit7-4" CV="47" mask="VVVVXXXX">
         <hexVal/>
-        <label>   SV-gültig-Flag(0x5):  </label>
+        <label>   CV-gültig-Flag(0x6):  </label>
       </variable>
       <variable item="Betriebsparameter1Bit0" CV="47" mask="XXXXXXXV">
         <hexVal/>
@@ -58,11 +58,11 @@
       </variable>
       <variable item="Betriebsparameter2" CV="48">
         <splitVal highCV="49" />
-        <label>  LocoNet ID: </label>
+        <label> PoM-Adresse: </label>
         <tooltip>Änderung gilt ab nächstem Reset</tooltip>
       </variable>
-      <variable item="Betriebsparameter3" CV="17">
-        <splitVal highCV="18"  upperMask="XXVVVVVV" />
+      <variable item="Betriebsparameter3" CV="1">
+        <splitVal highCV="9"  upperMask="XXVVVVVV" />
         <label>    1. Weichenadresse: </label>
         <tooltip>Änderung gilt sofort</tooltip>
       </variable>
@@ -104,7 +104,7 @@
         <decVal/>
         <label>Erstes EIN(10ms): </label>
       </variable>
-      <variable item="Fkt-1 Par4" CV="124">
+      <variable item="Fkt-1 Par9" CV="129">
         <decVal/>
         <label>Status: </label>
       </variable>
@@ -153,7 +153,7 @@
         <decVal/>
         <label>Geschwindigkeit: </label>
       </variable>
-      <variable item="Fkt-2 Par4" CV="134">
+      <variable item="Fkt-2 Par9" CV="139">
         <decVal/>
         <label>Status: </label>
       </variable>
@@ -372,7 +372,7 @@
         <decVal/>
         <label>Minimum Aus(10ms): </label>
       </variable>
-      <variable item="Fkt-6 Par4" CV="174">
+      <variable item="Fkt-6 Par9" CV="179">
         <decVal/>
         <label>Status: </label>
       </variable>
@@ -447,13 +447,21 @@
     <display item="Fkt-1 Fmode-Bit5" format="checkbox"/>
     <display item="Fkt-1 Fmode-Bit6" format="checkbox"/>
     <display item="Fkt-1 Fmode-Bit7" format="checkbox"/>
-      <separator/>
+    <separator/>
     <label> <text>Parameter Bytes: </text> </label>
     <display item="Fkt-1 Par1" format="checkbox"/>
     <display item="Fkt-1 Par2" format="checkbox"/>
     <display item="Fkt-1 Par3" format="checkbox"/>
     <display item="Fkt-1 Par4" format="checkbox"/>
     <display item="Fkt-1 Par5" format="checkbox"/>
+    <display item="Fkt-1 Par5-Bit0" format="checkbox"/>
+    <display item="Fkt-1 Par5-Bit1" format="checkbox"/>
+    <display item="Fkt-1 Par5-Bit2" format="checkbox"/>
+    <display item="Fkt-1 Par5-Bit3" format="checkbox"/>
+    <display item="Fkt-1 Par5-Bit4" format="checkbox"/>
+    <display item="Fkt-1 Par5-Bit5" format="checkbox"/>
+    <display item="Fkt-1 Par5-Bit6" format="checkbox"/>
+    <display item="Fkt-1 Par5-Bit7" format="checkbox"/>
     <display item="Fkt-1 Par6" format="checkbox"/>
     <display item="Fkt-1 Par7" format="checkbox"/>
     <display item="Fkt-1 Par8" format="checkbox"/>
@@ -481,13 +489,21 @@
     <display item="Fkt-2 Fmode-Bit5" format="checkbox"/>
     <display item="Fkt-2 Fmode-Bit6" format="checkbox"/>
     <display item="Fkt-2 Fmode-Bit7" format="checkbox"/>
-      <separator/>
+    <separator/>
     <label> <text>Parameter Bytes: </text> </label>
     <display item="Fkt-2 Par1" format="checkbox"/>
     <display item="Fkt-2 Par2" format="checkbox"/>
     <display item="Fkt-2 Par3" format="checkbox"/>
     <display item="Fkt-2 Par4" format="checkbox"/>
     <display item="Fkt-2 Par5" format="checkbox"/>
+    <display item="Fkt-2 Par5-Bit0" format="checkbox"/>
+    <display item="Fkt-2 Par5-Bit1" format="checkbox"/>
+    <display item="Fkt-2 Par5-Bit2" format="checkbox"/>
+    <display item="Fkt-2 Par5-Bit3" format="checkbox"/>
+    <display item="Fkt-2 Par5-Bit4" format="checkbox"/>
+    <display item="Fkt-2 Par5-Bit5" format="checkbox"/>
+    <display item="Fkt-2 Par5-Bit6" format="checkbox"/>
+    <display item="Fkt-2 Par5-Bit7" format="checkbox"/>
     <display item="Fkt-2 Par6" format="checkbox"/>
     <display item="Fkt-2 Par7" format="checkbox"/>
     <display item="Fkt-2 Par8" format="checkbox"/>
@@ -515,13 +531,21 @@
     <display item="Fkt-3 Fmode-Bit5" format="checkbox"/>
     <display item="Fkt-3 Fmode-Bit6" format="checkbox"/>
     <display item="Fkt-3 Fmode-Bit7" format="checkbox"/>
-      <separator/>
+    <separator/>
     <label> <text>Parameter Bytes: </text> </label>
     <display item="Fkt-3 Par1" format="checkbox"/>
     <display item="Fkt-3 Par2" format="checkbox"/>
     <display item="Fkt-3 Par3" format="checkbox"/>
     <display item="Fkt-3 Par4" format="checkbox"/>
     <display item="Fkt-3 Par5" format="checkbox"/>
+    <display item="Fkt-3 Par5-Bit0" format="checkbox"/>
+    <display item="Fkt-3 Par5-Bit1" format="checkbox"/>
+    <display item="Fkt-3 Par5-Bit2" format="checkbox"/>
+    <display item="Fkt-3 Par5-Bit3" format="checkbox"/>
+    <display item="Fkt-3 Par5-Bit4" format="checkbox"/>
+    <display item="Fkt-3 Par5-Bit5" format="checkbox"/>
+    <display item="Fkt-3 Par5-Bit6" format="checkbox"/>
+    <display item="Fkt-3 Par5-Bit7" format="checkbox"/>
     <display item="Fkt-3 Par6" format="checkbox"/>
     <display item="Fkt-3 Par7" format="checkbox"/>
     <display item="Fkt-3 Par8" format="checkbox"/>
@@ -548,13 +572,21 @@
     <display item="Fkt-4 Fmode-Bit5" format="checkbox"/>
     <display item="Fkt-4 Fmode-Bit6" format="checkbox"/>
     <display item="Fkt-4 Fmode-Bit7" format="checkbox"/>
-      <separator/>
+    <separator/>
     <label> <text>Parameter Bytes: </text> </label>
     <display item="Fkt-4 Par1" format="checkbox"/>
     <display item="Fkt-4 Par2" format="checkbox"/>
     <display item="Fkt-4 Par3" format="checkbox"/>
     <display item="Fkt-4 Par4" format="checkbox"/>
     <display item="Fkt-4 Par5" format="checkbox"/>
+    <display item="Fkt-4 Par5-Bit0" format="checkbox"/>
+    <display item="Fkt-4 Par5-Bit1" format="checkbox"/>
+    <display item="Fkt-4 Par5-Bit2" format="checkbox"/>
+    <display item="Fkt-4 Par5-Bit3" format="checkbox"/>
+    <display item="Fkt-4 Par5-Bit4" format="checkbox"/>
+    <display item="Fkt-4 Par5-Bit5" format="checkbox"/>
+    <display item="Fkt-4 Par5-Bit6" format="checkbox"/>
+    <display item="Fkt-4 Par5-Bit7" format="checkbox"/>
     <display item="Fkt-4 Par6" format="checkbox"/>
     <display item="Fkt-4 Par7" format="checkbox"/>
     <display item="Fkt-4 Par8" format="checkbox"/>
@@ -582,13 +614,21 @@
     <display item="Fkt-5 Fmode-Bit5" format="checkbox"/>
     <display item="Fkt-5 Fmode-Bit6" format="checkbox"/>
     <display item="Fkt-5 Fmode-Bit7" format="checkbox"/>
-      <separator/>
+    <separator/>
     <label> <text>Parameter Bytes: </text> </label>
     <display item="Fkt-5 Par1" format="checkbox"/>
     <display item="Fkt-5 Par2" format="checkbox"/>
     <display item="Fkt-5 Par3" format="checkbox"/>
     <display item="Fkt-5 Par4" format="checkbox"/>
     <display item="Fkt-5 Par5" format="checkbox"/>
+    <display item="Fkt-5 Par5-Bit0" format="checkbox"/>
+    <display item="Fkt-5 Par5-Bit1" format="checkbox"/>
+    <display item="Fkt-5 Par5-Bit2" format="checkbox"/>
+    <display item="Fkt-5 Par5-Bit3" format="checkbox"/>
+    <display item="Fkt-5 Par5-Bit4" format="checkbox"/>
+    <display item="Fkt-5 Par5-Bit5" format="checkbox"/>
+    <display item="Fkt-5 Par5-Bit6" format="checkbox"/>
+    <display item="Fkt-5 Par5-Bit7" format="checkbox"/>
     <display item="Fkt-5 Par6" format="checkbox"/>
     <display item="Fkt-5 Par7" format="checkbox"/>
     <display item="Fkt-5 Par8" format="checkbox"/>
@@ -616,13 +656,21 @@
     <display item="Fkt-6 Fmode-Bit5" format="checkbox"/>
     <display item="Fkt-6 Fmode-Bit6" format="checkbox"/>
     <display item="Fkt-6 Fmode-Bit7" format="checkbox"/>
-      <separator/>
+    <separator/>
     <label> <text>Parameter Bytes: </text> </label>
     <display item="Fkt-6 Par1" format="checkbox"/>
     <display item="Fkt-6 Par2" format="checkbox"/>
     <display item="Fkt-6 Par3" format="checkbox"/>
     <display item="Fkt-6 Par4" format="checkbox"/>
     <display item="Fkt-6 Par5" format="checkbox"/>
+    <display item="Fkt-6 Par5-Bit0" format="checkbox"/>
+    <display item="Fkt-6 Par5-Bit1" format="checkbox"/>
+    <display item="Fkt-6 Par5-Bit2" format="checkbox"/>
+    <display item="Fkt-6 Par5-Bit3" format="checkbox"/>
+    <display item="Fkt-6 Par5-Bit4" format="checkbox"/>
+    <display item="Fkt-6 Par5-Bit5" format="checkbox"/>
+    <display item="Fkt-6 Par5-Bit6" format="checkbox"/>
+    <display item="Fkt-6 Par5-Bit7" format="checkbox"/>
     <display item="Fkt-6 Par6" format="checkbox"/>
     <display item="Fkt-6 Par7" format="checkbox"/>
     <display item="Fkt-6 Par8" format="checkbox"/>

@@ -17,24 +17,24 @@
   <!-- version 1 - test only -->
   
   <decoder>
-    <family name="LNSV2-using boards" mfg="Public-domain and DIY">
-      <model model="Lsig1"/>
+    <!-- Mit DCC-Interface -->
+    <family name="DCC-boards" mfg="Public-domain and DIY">
+      <model model="DIY_StandardV7MicroDcc"/>
     </family>
-    <programming direct="no" paged="no" register="no" ops="no">
-        <mode>LOCONETSV2MODE</mode>
+    <programming direct="yes" paged="no" register="no" ops="yes">
     </programming>
     <variables>
 
      <!-- Is the following actually accessible via the SV protocol? -->
      <!-- This sets a single JMRI-style composite address in two CVs  -->
-      <variable CV="3" comment="Board SV address" item="Long Address" default="255">
-        <splitVal highCV="4" upperMask="XXXXXVVV"/>
+      <variable CV="48" comment="Board SV address" item="Long Address" default="255">
+        <splitVal highCV="49" upperMask="XXXXXVVV"/>
         <label>Lange Adresse</label>
-        <tooltip>Lange 14-Bit Adresse in SV 3+4</tooltip>
+        <tooltip>Lange 14-Bit Adresse nr Wird erst nach einem Reset des Decoders aktiv</tooltip>
       </variable>
 
-     <variable CV="2" item="Decoder Version" >
-        <decVal/>
+     <variable CV="7" item="Decoder Version" >
+        <hexVal/>
         <label>Manufacturer Version No.</label>
       </variable>
 
@@ -49,7 +49,7 @@
       </variable>
       <variable item="Betriebsparameter1Bit7-4" CV="47" mask="VVVVXXXX">
         <hexVal/>
-        <label>   SV-gültig-Flag(0x50):  </label>
+        <label>   CV-gültig-Flag(0x6):  </label>
       </variable>
       <variable item="Betriebsparameter1Bit0" CV="47" mask="XXXXXXXV">
         <hexVal/>
@@ -58,441 +58,448 @@
       </variable>
       <variable item="Betriebsparameter2" CV="48">
         <splitVal highCV="49" />
-        <label>  LocoNet ID: </label>
+        <label> PoM-Adresse: </label>
         <tooltip>Änderung gilt ab nächstem Reset</tooltip>
+      </variable>
+      <variable item="Betriebsparameter3" CV="1">
+        <splitVal highCV="9"  upperMask="XXVVVVVV" />
+        <label>    1. Weichenadresse: </label>
+        <tooltip>Änderung gilt sofort</tooltip>
       </variable>
       
       <!-- Variable für Funktion 1 -->
-                                                      
-<!-- Variable für FSIGNAL2 -->
-     <variable item="Fkt-1 Fmode-Bit0" CV="50" mask="XXXXXXXV">
+                                                                                    
+<!-- Variable für FSERVO -->
+      <variable item="Fkt-1 Fmode-Bit0" CV="120" mask="XXXXXXXV">
         <enumVal> 
           <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
         </enumVal>
-        <label>Out1-Hart: </label>
-        <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
+        <label>AutoOFF: </label>
       </variable>
-      <variable item="Fkt-1 Fmode-Bit1" CV="50" mask="XXXXXXVX">
+      <variable item="Fkt-1 Fmode-Bit1" CV="120" mask="XXXXXXVX">
         <enumVal> 
           <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
         </enumVal>
-        <label>Out2-Hart: </label>
-        <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
+        <label>Direct-Mode: </label>
       </variable>
-      <variable item="Fkt-1 Fmode-Bit2" CV="50" mask="XXXXXVXX">
+      <variable item="Fkt-1 Fmode-Bit2" CV="120" mask="XXXXXVXX">
         <enumVal> 
           <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
         </enumVal>
-        <label>Out3-Hart: </label>
-        <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
+        <label>Auto-Return: </label>
       </variable>
-      <variable item="Fkt-1 Fmode-Bit7" CV="50" mask="VXXXXXXX">
+      <variable item="Fkt-1 Fmode-Bit3" CV="120" mask="XXXXVXXX">
         <enumVal> 
           <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
         </enumVal>
-        <label>Invertieren: </label>
+        <label>Kein PosCheck: </label>
       </variable>
-      <variable item="Fkt-1 Fmode" CV="50" >
+      <variable item="Fkt-1 Fmode" CV="120" >
         <hexVal/> 
         <label>Modebyte(hex): </label>
       </variable> 
-      <variable item="Fkt-1 Par1" CV="51">
-        <hexVal/>
-        <label>Bitmuster0(hex): </label>
-        <tooltip>Aktivierte Ausgänge wenn eine 0 auf dieser Adresse empfangen wird </tooltip>
-      </variable>
-      <variable item="Fkt-1 Par2" CV="52">
-        <hexVal/>
-        <label>Bitmuster1(hex): </label>
-        <tooltip>Aktivierte Ausgänge wenn eine 1 auf dieser
-        Adresse empfangen wird </tooltip>
-      </variable>
-      <variable item="Fkt-1 Par3" CV="53">
+      <variable item="Fkt-1 Par1" CV="121">
         <decVal/>
-        <label>VorsigIndex: </label>
+        <label>Position '0': </label>
       </variable>
-      <variable item="Fkt-1 Par4" CV="54">
-        <hexVal/>
-        <label>DunkelStates(hex): </label>
+      <variable item="Fkt-1 Par2" CV="122">
+        <decVal/>
+        <label>Position '1': </label>
       </variable>
+      <variable item="Fkt-1 Par3" CV="123">
+        <decVal/>
+        <label>Geschwindigkeit: </label>
+      </variable>
+      <variable item="Fkt-1 Par9" CV="129">
+        <decVal/>
+        <label>Status: </label>
+      </variable>
+        <!-- Ende FSERVO -->
 
       <!-- Variable für Funktion 2 -->
-                                                      
-<!-- Variable für FSIGNAL0 -->
-     <variable item="Fkt-2 Fmode-Bit0" CV="55" mask="XXXXXXXV">
+                                                                                    
+<!-- Variable für FSERVO -->
+      <variable item="Fkt-2 FmodeSel0" CV="130" mask="XXXXXXVV">
         <enumVal> 
-          <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
+          <enumChoice> <choice>Pos0/Pos0</choice> </enumChoice> 
+          <enumChoice> <choice>Pos1/Pos0</choice>  </enumChoice>
+          <enumChoice> <choice>Pos0/Pos1</choice>  </enumChoice>
+          <enumChoice> <choice>Pos1/Pos1</choice>  </enumChoice>
         </enumVal>
-        <label>Out1-Hart: </label>
-        <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
+        <label>Adr1 OFF: </label>
       </variable>
-      <variable item="Fkt-2 Fmode-Bit1" CV="55" mask="XXXXXXVX">
+      <variable item="Fkt-2 FmodeSel1" CV="130" mask="XXXXVVXX">
         <enumVal> 
-          <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
+          <enumChoice> <choice>Pos0/Pos0</choice> </enumChoice> 
+          <enumChoice> <choice>Pos1/Pos0</choice>  </enumChoice>
+          <enumChoice> <choice>Pos0/Pos1</choice>  </enumChoice>
+          <enumChoice> <choice>Pos1/Pos1</choice>  </enumChoice>
         </enumVal>
-        <label>Out2-Hart: </label>
-        <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
+        <label>Adr1 ON: </label>
       </variable>
-      <variable item="Fkt-2 Fmode-Bit2" CV="55" mask="XXXXXVXX">
+      <variable item="Fkt-2 FmodeSel2" CV="130" mask="XXVVXXXX">
         <enumVal> 
-          <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
+          <enumChoice> <choice>Pos0/Pos0</choice> </enumChoice> 
+          <enumChoice> <choice>Pos1/Pos0</choice>  </enumChoice>
+          <enumChoice> <choice>Pos0/Pos1</choice>  </enumChoice>
+          <enumChoice> <choice>Pos1/Pos1</choice>  </enumChoice>
         </enumVal>
-        <label>Out3-Hart: </label>
-        <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
+        <label>Adr2 Off: </label>
       </variable>
-      <variable item="Fkt-2 Fmode-Bit7" CV="55" mask="VXXXXXXX">
+      <variable item="Fkt-2 FmodeSel3" CV="130" mask="VVXXXXXX">
         <enumVal> 
-          <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
+          <enumChoice> <choice>Pos0/Pos0</choice> </enumChoice> 
+          <enumChoice> <choice>Pos1/Pos0</choice>  </enumChoice>
+          <enumChoice> <choice>Pos0/Pos1</choice>  </enumChoice>
+          <enumChoice> <choice>Pos1/Pos1</choice>  </enumChoice>
         </enumVal>
-        <label>Invertieren: </label>
+        <label>Adr2 On: </label>
       </variable>
-      <variable item="Fkt-2 Fmode" CV="55" >
+      <variable item="Fkt-2 Fmode" CV="130" >
         <hexVal/> 
         <label>Modebyte(hex): </label>
       </variable> 
-      <variable item="Fkt-2 Par1" CV="56">
-        <hexVal/>
-        <label>Bitmuster0(hex): </label>
-      </variable>
-      <variable item="Fkt-2 Par2" CV="57">
-        <hexVal/>
-        <label>Bitmuster2(hex): </label>
-      </variable>
-      <!--
-      <variable item="Fkt-2 Par3" CV="58">
+      <variable item="Fkt-2 Par1" CV="131">
         <decVal/>
-        <label>reserviert: </label>
+        <label>Position '0': </label>
       </variable>
-      <variable item="Fkt-2 Par4" CV="59">
+      <variable item="Fkt-2 Par2" CV="132">
         <decVal/>
-        <label>reserviert: </label>
+        <label>Position '1': </label>
       </variable>
-        -->
+      <variable item="Fkt-2 Par3" CV="133">
+        <decVal/>
+        <label>Geschwindigkeit: </label>
+      </variable>
+      <variable item="Fkt-2 Par9" CV="139">
+        <decVal/>
+        <label>Status: </label>
+      </variable>
+        <!-- Ende FSERVO0 -->
+
       <!-- Variable für Funktion 3 -->
-                                                      
+                                                                                    
 <!-- Variable für FSIGNAL2 -->
-     <variable item="Fkt-3 Fmode-Bit0" CV="60" mask="XXXXXXXV">
+     <variable item="Fkt-3 Fmode-Bit0" CV="140" mask="XXXXXXXV">
         <enumVal> 
           <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
         </enumVal>
         <label>Out1-Hart: </label>
         <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
       </variable>
-      <variable item="Fkt-3 Fmode-Bit1" CV="60" mask="XXXXXXVX">
+      <variable item="Fkt-3 Fmode-Bit1" CV="140" mask="XXXXXXVX">
         <enumVal> 
           <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
         </enumVal>
         <label>Out2-Hart: </label>
         <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
       </variable>
-      <variable item="Fkt-3 Fmode-Bit2" CV="60" mask="XXXXXVXX">
+      <variable item="Fkt-3 Fmode-Bit2" CV="140" mask="XXXXXVXX">
         <enumVal> 
           <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
         </enumVal>
         <label>Out3-Hart: </label>
         <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
       </variable>
-      <variable item="Fkt-3 Fmode-Bit7" CV="60" mask="VXXXXXXX">
+      <variable item="Fkt-3 Fmode-Bit7" CV="140" mask="VXXXXXXX">
         <enumVal> 
           <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
         </enumVal>
         <label>Invertieren: </label>
       </variable>
-      <variable item="Fkt-3 Fmode" CV="60" >
+      <variable item="Fkt-3 Fmode" CV="140" >
         <hexVal/> 
         <label>Modebyte(hex): </label>
       </variable> 
-      <variable item="Fkt-3 Par1" CV="61">
+      <variable item="Fkt-3 Par1" CV="141">
         <hexVal/>
         <label>Bitmuster0(hex): </label>
         <tooltip>Aktivierte Ausgänge wenn eine 0 auf dieser Adresse empfangen wird </tooltip>
       </variable>
-      <variable item="Fkt-3 Par2" CV="62">
+      <variable item="Fkt-3 Par2" CV="142">
         <hexVal/>
         <label>Bitmuster1(hex): </label>
-        <tooltip>Aktivierte Ausgänge wenn eine 1 auf dieser
-        Adresse empfangen wird </tooltip>
+        <tooltip>Aktivierte Ausgänge wenn eine 1 auf dieser Adresse empfangen wird </tooltip>
       </variable>
-      <variable item="Fkt-3 Par3" CV="63">
+      <variable item="Fkt-3 Par3" CV="143">
         <decVal/>
         <label>VorsigIndex: </label>
       </variable>
-      <variable item="Fkt-3 Par4" CV="64">
+      <variable item="Fkt-3 Par4" CV="144">
         <hexVal/>
         <label>DunkelStates(hex): </label>
       </variable>
+      <variable item="Fkt-3 Par5" CV="145">
+        <hexVal/>
+        <label>Bitmuster0(hex): </label>
+        <tooltip>Blinkende Ausgänge wenn eine 0 auf dieser Adresse empfangen wird </tooltip>
+      </variable>
+      <variable item="Fkt-3 Par6" CV="146">
+        <hexVal/>
+        <label>Bitmuster1(hex): </label>
+        <tooltip>Blinkende Ausgänge wenn eine 1 auf dieser Adresse empfangen wird </tooltip>
+      </variable>
+      <variable item="Fkt-3 Par7" CV="147">
+        <decVal/>
+        <label>Blinktakt0: </label>
+        <tooltip>Blinktakt - Phase EIN ( 10ms-Einheiten )</tooltip>
+      </variable>
+      <variable item="Fkt-3 Par8" CV="148">
+        <decVal/>
+        <label>Blinktakt1: </label>
+        <tooltip>Blinktakt - Phase AUS ( 10ms-Einheiten )</tooltip>
+      </variable>
 
        <!-- Variable für Funktion 4 -->
-                                                      
+                                                                                    
 <!-- Variable für FSIGNAL0 -->
-     <variable item="Fkt-4 Fmode-Bit0" CV="65" mask="XXXXXXXV">
+     <variable item="Fkt-4 Fmode-Bit0" CV="150" mask="XXXXXXXV">
         <enumVal> 
           <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
         </enumVal>
         <label>Out1-Hart: </label>
         <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
       </variable>
-      <variable item="Fkt-4 Fmode-Bit1" CV="65" mask="XXXXXXVX">
+      <variable item="Fkt-4 Fmode-Bit1" CV="150" mask="XXXXXXVX">
         <enumVal> 
           <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
         </enumVal>
         <label>Out2-Hart: </label>
         <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
       </variable>
-      <variable item="Fkt-4 Fmode-Bit2" CV="65" mask="XXXXXVXX">
+      <variable item="Fkt-4 Fmode-Bit2" CV="150" mask="XXXXXVXX">
         <enumVal> 
           <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
         </enumVal>
         <label>Out3-Hart: </label>
         <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
       </variable>
-      <variable item="Fkt-4 Fmode-Bit7" CV="65" mask="VXXXXXXX">
+      <variable item="Fkt-4 Fmode-Bit7" CV="150" mask="VXXXXXXX">
         <enumVal> 
           <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
         </enumVal>
         <label>Invertieren: </label>
       </variable>
-      <variable item="Fkt-4 Fmode" CV="65" >
+      <variable item="Fkt-4 Fmode" CV="150" >
         <hexVal/> 
         <label>Modebyte(hex): </label>
       </variable> 
-      <variable item="Fkt-4 Par1" CV="66">
+      <variable item="Fkt-4 Par1" CV="151">
         <hexVal/>
         <label>Bitmuster0(hex): </label>
       </variable>
-      <variable item="Fkt-4 Par2" CV="67">
+      <variable item="Fkt-4 Par2" CV="152">
         <hexVal/>
         <label>Bitmuster2(hex): </label>
       </variable>
       <!--
-      <variable item="Fkt-4 Par3" CV="68">
+      <variable item="Fkt-4 Par3" CV="153">
         <decVal/>
         <label>reserviert: </label>
       </variable>
-      <variable item="Fkt-4 Par4" CV="69">
+      <variable item="Fkt-4 Par4" CV="154">
         <decVal/>
         <label>reserviert: </label>
       </variable>
         -->
+      <variable item="Fkt-4 Par5" CV="155">
+        <hexVal/>
+        <label>Bitmuster0(hex): </label>
+        <tooltip>Blinkende Ausgänge wenn eine 0 auf dieser Adresse empfangen wird </tooltip>
+      </variable>
+      <variable item="Fkt-4 Par6" CV="156">
+        <hexVal/>
+        <label>Bitmuster1(hex): </label>
+        <tooltip>Blinkende Ausgänge wenn eine 1 auf dieser Adresse empfangen wird </tooltip>
+      </variable>
        <!-- Variable für Funktion 4 -->
-                                                      
+                                                                                    
 <!-- Variable für FFVORSIG -->
-     <variable item="Fkt-5 Fmode-Bit0" CV="70" mask="XXXXXXXV">
+     <variable item="Fkt-5 Fmode-Bit0" CV="160" mask="XXXXXXXV">
         <enumVal> 
           <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
         </enumVal>
         <label>Out1-Hart: </label>
         <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
       </variable>
-      <variable item="Fkt-5 Fmode-Bit1" CV="70" mask="XXXXXXVX">
+      <variable item="Fkt-5 Fmode-Bit1" CV="160" mask="XXXXXXVX">
         <enumVal> 
           <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
         </enumVal>
         <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
         <label>Out2-Hart: </label>
       </variable>
-      <variable item="Fkt-5 Fmode-Bit2" CV="70" mask="XXXXXVXX">
+      <variable item="Fkt-5 Fmode-Bit2" CV="160" mask="XXXXXVXX">
         <enumVal> 
           <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
         </enumVal>
         <label>Out3-Hart: </label>
         <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
       </variable>
-      <variable item="Fkt-5 Fmode-Bit7" CV="70" mask="VXXXXXXX">
+      <variable item="Fkt-5 Fmode-Bit7" CV="160" mask="VXXXXXXX">
         <enumVal> 
           <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
         </enumVal>
         <label>Invertieren: </label>
       </variable>
-      <variable item="Fkt-5 Fmode" CV="70" >
+      <variable item="Fkt-5 Fmode" CV="160" >
         <hexVal/> 
         <label>Modebyte(hex): </label>
       </variable> 
-      <variable item="Fkt-5 Par1" CV="71">
+      <variable item="Fkt-5 Par1" CV="161">
         <hexVal/>
         <label>Bitmuster0(hex): </label>
       </variable>
-      <variable item="Fkt-5 Par2" CV="72">
+      <variable item="Fkt-5 Par2" CV="162">
         <hexVal/>
         <label>Bitmuster2(hex): </label>
       </variable>
-      <variable item="Fkt-5 Par3" CV="73">
+      <variable item="Fkt-5 Par3" CV="163">
         <decVal/>
         <label>Adr.Hauptsig(low): </label>
       </variable>
-      <variable item="Fkt-5 Par4" CV="74">
+      <variable item="Fkt-5 Par4" CV="164">
         <decVal/>
         <label>Adr.Hauptsig(high): </label>
       </variable>
 
        <!-- Variable für Funktion 5 -->
-                                                      
-<!-- Variable für FSIGNAL0 -->
-     <variable item="Fkt-6 Fmode-Bit0" CV="75" mask="XXXXXXXV">
+                                                                                    
+<!-- Variable für FCOIL -->
+      <variable item="Fkt-6 Fmode-Bit0" CV="170" mask="XXXXXXXV">
         <enumVal> 
           <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
         </enumVal>
-        <label>Out1-Hart: </label>
-        <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
+        <label>Auto-Off: </label>
       </variable>
-      <variable item="Fkt-6 Fmode-Bit1" CV="75" mask="XXXXXXVX">
+      <variable item="Fkt-6 Fmode-Bit3" CV="170" mask="XXXXVXXX">
         <enumVal> 
           <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
         </enumVal>
-        <label>Out2-Hart: </label>
-        <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
+        <label>Kein PosCheck: </label>
       </variable>
-      <variable item="Fkt-6 Fmode-Bit2" CV="75" mask="XXXXXVXX">
-        <enumVal> 
-          <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
-        </enumVal>
-        <label>Out3-Hart: </label>
-        <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
-      </variable>
-      <variable item="Fkt-6 Fmode-Bit7" CV="75" mask="VXXXXXXX">
-        <enumVal> 
-          <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
-        </enumVal>
-        <label>Invertieren: </label>
-      </variable>
-      <variable item="Fkt-6 Fmode" CV="75" >
+      <variable item="Fkt-6 Fmode" CV="170" >
         <hexVal/> 
         <label>Modebyte(hex): </label>
       </variable> 
-      <variable item="Fkt-6 Par1" CV="76">
-        <hexVal/>
-        <label>Bitmuster0(hex): </label>
-      </variable>
-      <variable item="Fkt-6 Par2" CV="77">
-        <hexVal/>
-        <label>Bitmuster2(hex): </label>
-      </variable>
-      <!--
-      <variable item="Fkt-6 Par3" CV="78">
+      <variable item="Fkt-6 Par1" CV="171">
         <decVal/>
-        <label>reserviert: </label>
+        <label>Dauer Ein(10ms): </label>
       </variable>
-      <variable item="Fkt-6 Par4" CV="79">
+      <variable item="Fkt-6 Par2" CV="172">
         <decVal/>
-        <label>reserviert: </label>
+        <label>Minimum Aus(10ms): </label>
       </variable>
-        -->
+      <variable item="Fkt-6 Par9" CV="179">
+        <decVal/>
+        <label>Status: </label>
+      </variable>
+
+
        <!-- Variable für Funktion 6 -->
-                                                      
-<!-- Variable für FSIGNAL2 -->
-     <variable item="Fkt-7 Fmode-Bit0" CV="80" mask="XXXXXXXV">
+                                                                                    
+<!-- Variable für F2SERVO -->
+      <variable item="Fkt-7 Fmode-Bit0" CV="180" mask="XXXXXXXV">
         <enumVal> 
           <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
         </enumVal>
-        <label>Out1-Hart: </label>
-        <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
+        <label>AutoOFF: </label>
       </variable>
-      <variable item="Fkt-7 Fmode-Bit1" CV="80" mask="XXXXXXVX">
+      <variable item="Fkt-7 Fmode-Bit1" CV="180" mask="XXXXXXVX">
         <enumVal> 
           <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
         </enumVal>
-        <label>Out2-Hart: </label>
-        <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
+        <label>Direct-Mode: </label>
       </variable>
-      <variable item="Fkt-7 Fmode-Bit2" CV="80" mask="XXXXXVXX">
+      <variable item="Fkt-7 Fmode-Bit2" CV="180" mask="XXXXXVXX">
         <enumVal> 
           <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
         </enumVal>
-        <label>Out3-Hart: </label>
-        <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
+        <label>Auto-Return: </label>
       </variable>
-      <variable item="Fkt-7 Fmode-Bit7" CV="80" mask="VXXXXXXX">
+      <variable item="Fkt-7 Fmode-Bit3" CV="180" mask="XXXXVXXX">
         <enumVal> 
           <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
         </enumVal>
-        <label>Invertieren: </label>
+        <label>Kein PosCheck: </label>
       </variable>
-      <variable item="Fkt-7 Fmode" CV="80" >
+      <variable item="Fkt-7 Fmode" CV="180" >
         <hexVal/> 
         <label>Modebyte(hex): </label>
       </variable> 
-      <variable item="Fkt-7 Par1" CV="81">
-        <hexVal/>
-        <label>Bitmuster0(hex): </label>
-        <tooltip>Aktivierte Ausgänge wenn eine 0 auf dieser Adresse empfangen wird </tooltip>
-      </variable>
-      <variable item="Fkt-7 Par2" CV="82">
-        <hexVal/>
-        <label>Bitmuster1(hex): </label>
-        <tooltip>Aktivierte Ausgänge wenn eine 1 auf dieser
-        Adresse empfangen wird </tooltip>
-      </variable>
-      <variable item="Fkt-7 Par3" CV="83">
+      <variable item="Fkt-7 Par1" CV="181">
         <decVal/>
-        <label>VorsigIndex: </label>
+        <label>Position '0': </label>
       </variable>
-      <variable item="Fkt-7 Par4" CV="84">
-        <hexVal/>
-        <label>DunkelStates(hex): </label>
+      <variable item="Fkt-7 Par2" CV="182">
+        <decVal/>
+        <label>Position '1': </label>
       </variable>
+      <variable item="Fkt-7 Par3" CV="183">
+        <decVal/>
+        <label>Geschwindigkeit: </label>
+      </variable>
+      <variable item="Fkt-7 Par4" CV="184">
+        <decVal/>
+        <label>Status: </label>
+      </variable>
+      <!-- Werte des 2. Servo -->
+      <variable item="Fkt-7 Par5-Bit0" CV="185" mask="XXXXXXXV">
+        <enumVal> 
+          <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
+        </enumVal>
+        <label>AutoOFF: </label>
+      </variable>
+      <variable item="Fkt-7 Par5-Bit1" CV="185" mask="XXXXXXVX">
+        <enumVal> 
+          <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
+        </enumVal>
+        <label>Direct-Mode: </label>
+      </variable>
+      <variable item="Fkt-7 Par5-Bit2" CV="185" mask="XXXXXVXX">
+        <enumVal> 
+          <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
+        </enumVal>
+        <label>Auto-Return: </label>
+      </variable>
+      <variable item="Fkt-7 Par5-Bit3" CV="185" mask="XXXXVXXX">
+        <enumVal> 
+          <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
+        </enumVal>
+        <label>Kein PosCheck: </label>
+      </variable>
+      <variable item="Fkt-7 Par5" CV="185" >
+        <hexVal/> 
+        <label>Modebyte(hex): </label>
+      </variable> 
+      <variable item="Fkt-7 Par6" CV="186">
+        <decVal/>
+        <label>Position '0': </label>
+      </variable>
+      <variable item="Fkt-7 Par7" CV="187">
+        <decVal/>
+        <label>Position '1': </label>
+      </variable>
+      <variable item="Fkt-7 Par8" CV="188">
+        <decVal/>
+        <label>Geschwindigkeit: </label>
+      </variable>
+      <variable item="Fkt-7 Par9" CV="189">
+        <decVal/>
+        <label>Status: </label>
+      </variable>
+        <!-- Ende F2SERVO -->
 
        <!-- Variable für Funktion 7 -->
-                                                      
-<!-- Variable für FSIGNAL2 -->
-     <variable item="Fkt-8 Fmode-Bit0" CV="85" mask="XXXXXXXV">
-        <enumVal> 
-          <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
-        </enumVal>
-        <label>Out1-Hart: </label>
-        <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
-      </variable>
-      <variable item="Fkt-8 Fmode-Bit1" CV="85" mask="XXXXXXVX">
-        <enumVal> 
-          <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
-        </enumVal>
-        <label>Out2-Hart: </label>
-        <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
-      </variable>
-      <variable item="Fkt-8 Fmode-Bit2" CV="85" mask="XXXXXVXX">
-        <enumVal> 
-          <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
-        </enumVal>
-        <label>Out3-Hart: </label>
-        <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
-      </variable>
-      <variable item="Fkt-8 Fmode-Bit7" CV="85" mask="VXXXXXXX">
-        <enumVal> 
-          <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
-        </enumVal>
-        <label>Invertieren: </label>
-      </variable>
-      <variable item="Fkt-8 Fmode" CV="85" >
-        <hexVal/> 
-        <label>Modebyte(hex): </label>
-      </variable> 
-      <variable item="Fkt-8 Par1" CV="86">
-        <hexVal/>
-        <label>Bitmuster0(hex): </label>
-        <tooltip>Aktivierte Ausgänge wenn eine 0 auf dieser Adresse empfangen wird </tooltip>
-      </variable>
-      <variable item="Fkt-8 Par2" CV="87">
-        <hexVal/>
-        <label>Bitmuster1(hex): </label>
-        <tooltip>Aktivierte Ausgänge wenn eine 1 auf dieser
-        Adresse empfangen wird </tooltip>
-      </variable>
-      <variable item="Fkt-8 Par3" CV="88">
-        <decVal/>
-        <label>VorsigIndex: </label>
-      </variable>
-      <variable item="Fkt-8 Par4" CV="89">
-        <hexVal/>
-        <label>DunkelStates(hex): </label>
-      </variable>
-
+                                                                                    
        <!-- Variable für Funktion 8 -->
-                                                      
+                                                                                    
        <!-- Variable für Funktion 9 -->
-                                                      
+                                                                                    
        <!-- Variable für Funktion 10 -->
-                                                      
+                                                                                    
        <!-- Variable für Funktion 11 -->
-                                                      
+                                                                                    
        <!-- Variable für Funktion 12 -->
     </variables>
   </decoder>
@@ -533,13 +540,17 @@
       </griditem>
       <griditem gridx="1" gridy="2" ipadx="15" anchor="PAGE_START" >
                                       <column>
-    <label> <text> Signal (1)  </text>  </label>
+    <label> <text>Servo (1)</text> </label>
 
-  <!-- ^^^^^^^^^^^Ende FSIGNAL2 ^^^^^^^^^^^^^^^^ -->
+  <!-- ^^^^^^^^^^^Ende FSERVO ^^^^^^^^^^^^^^^^ -->
 
       <separator/>
     <display item="Fkt-1 Fmode"     format="checkbox"/>
-    <display item="Fkt-1 Fmode-Bit0" format="checkbox"/>
+    <display item="Fkt-1 FmodeSel0"     format="selection box"/>
+    <display item="Fkt-1 FmodeSel1"     format="selection box"/>
+    <display item="Fkt-1 FmodeSel2"     format="selection box"/>
+    <display item="Fkt-1 FmodeSel3"     format="selection box"/>
+   <display item="Fkt-1 Fmode-Bit0" format="checkbox"/>
     <display item="Fkt-1 Fmode-Bit1" format="checkbox"/>
     <display item="Fkt-1 Fmode-Bit2" format="checkbox"/>
     <display item="Fkt-1 Fmode-Bit3" format="checkbox"/>
@@ -547,23 +558,41 @@
     <display item="Fkt-1 Fmode-Bit5" format="checkbox"/>
     <display item="Fkt-1 Fmode-Bit6" format="checkbox"/>
     <display item="Fkt-1 Fmode-Bit7" format="checkbox"/>
-      <separator/>
+    <separator/>
     <label> <text>Parameter Bytes: </text> </label>
     <display item="Fkt-1 Par1" format="checkbox"/>
     <display item="Fkt-1 Par2" format="checkbox"/>
     <display item="Fkt-1 Par3" format="checkbox"/>
     <display item="Fkt-1 Par4" format="checkbox"/>
+    <display item="Fkt-1 Par5" format="checkbox"/>
+    <display item="Fkt-1 Par5-Bit0" format="checkbox"/>
+    <display item="Fkt-1 Par5-Bit1" format="checkbox"/>
+    <display item="Fkt-1 Par5-Bit2" format="checkbox"/>
+    <display item="Fkt-1 Par5-Bit3" format="checkbox"/>
+    <display item="Fkt-1 Par5-Bit4" format="checkbox"/>
+    <display item="Fkt-1 Par5-Bit5" format="checkbox"/>
+    <display item="Fkt-1 Par5-Bit6" format="checkbox"/>
+    <display item="Fkt-1 Par5-Bit7" format="checkbox"/>
+    <display item="Fkt-1 Par6" format="checkbox"/>
+    <display item="Fkt-1 Par7" format="checkbox"/>
+    <display item="Fkt-1 Par8" format="checkbox"/>
+    <display item="Fkt-1 Par9" format="checkbox"/>
   </column>
   <separator/>
       </griditem>
       <griditem gridx="NEXT" gridy="2" ipadx="15"  anchor="PAGE_START">
                                       <column>
-    <label>  <text> Signal - Extend (2)  </text>  </label>
-  <!-- ^^^^^^^^^^^Ende FSIGNAL0 ^^^^^^^^^^^^^^^^ -->
+    <label> <text>Servo - Extend (2)</text> </label>
+
+  <!-- ^^^^^^^^^^^Ende F2SERVO ^^^^^^^^^^^^^^^^ -->
 
       <separator/>
     <display item="Fkt-2 Fmode"     format="checkbox"/>
-    <display item="Fkt-2 Fmode-Bit0" format="checkbox"/>
+    <display item="Fkt-2 FmodeSel0"     format="selection box"/>
+    <display item="Fkt-2 FmodeSel1"     format="selection box"/>
+    <display item="Fkt-2 FmodeSel2"     format="selection box"/>
+    <display item="Fkt-2 FmodeSel3"     format="selection box"/>
+   <display item="Fkt-2 Fmode-Bit0" format="checkbox"/>
     <display item="Fkt-2 Fmode-Bit1" format="checkbox"/>
     <display item="Fkt-2 Fmode-Bit2" format="checkbox"/>
     <display item="Fkt-2 Fmode-Bit3" format="checkbox"/>
@@ -571,12 +600,25 @@
     <display item="Fkt-2 Fmode-Bit5" format="checkbox"/>
     <display item="Fkt-2 Fmode-Bit6" format="checkbox"/>
     <display item="Fkt-2 Fmode-Bit7" format="checkbox"/>
-      <separator/>
+    <separator/>
     <label> <text>Parameter Bytes: </text> </label>
     <display item="Fkt-2 Par1" format="checkbox"/>
     <display item="Fkt-2 Par2" format="checkbox"/>
     <display item="Fkt-2 Par3" format="checkbox"/>
     <display item="Fkt-2 Par4" format="checkbox"/>
+    <display item="Fkt-2 Par5" format="checkbox"/>
+    <display item="Fkt-2 Par5-Bit0" format="checkbox"/>
+    <display item="Fkt-2 Par5-Bit1" format="checkbox"/>
+    <display item="Fkt-2 Par5-Bit2" format="checkbox"/>
+    <display item="Fkt-2 Par5-Bit3" format="checkbox"/>
+    <display item="Fkt-2 Par5-Bit4" format="checkbox"/>
+    <display item="Fkt-2 Par5-Bit5" format="checkbox"/>
+    <display item="Fkt-2 Par5-Bit6" format="checkbox"/>
+    <display item="Fkt-2 Par5-Bit7" format="checkbox"/>
+    <display item="Fkt-2 Par6" format="checkbox"/>
+    <display item="Fkt-2 Par7" format="checkbox"/>
+    <display item="Fkt-2 Par8" format="checkbox"/>
+    <display item="Fkt-2 Par9" format="checkbox"/>
   </column>
   <separator/>
       </griditem>
@@ -588,7 +630,11 @@
 
       <separator/>
     <display item="Fkt-3 Fmode"     format="checkbox"/>
-    <display item="Fkt-3 Fmode-Bit0" format="checkbox"/>
+    <display item="Fkt-3 FmodeSel0"     format="selection box"/>
+    <display item="Fkt-3 FmodeSel1"     format="selection box"/>
+    <display item="Fkt-3 FmodeSel2"     format="selection box"/>
+    <display item="Fkt-3 FmodeSel3"     format="selection box"/>
+   <display item="Fkt-3 Fmode-Bit0" format="checkbox"/>
     <display item="Fkt-3 Fmode-Bit1" format="checkbox"/>
     <display item="Fkt-3 Fmode-Bit2" format="checkbox"/>
     <display item="Fkt-3 Fmode-Bit3" format="checkbox"/>
@@ -596,12 +642,25 @@
     <display item="Fkt-3 Fmode-Bit5" format="checkbox"/>
     <display item="Fkt-3 Fmode-Bit6" format="checkbox"/>
     <display item="Fkt-3 Fmode-Bit7" format="checkbox"/>
-      <separator/>
+    <separator/>
     <label> <text>Parameter Bytes: </text> </label>
     <display item="Fkt-3 Par1" format="checkbox"/>
     <display item="Fkt-3 Par2" format="checkbox"/>
     <display item="Fkt-3 Par3" format="checkbox"/>
     <display item="Fkt-3 Par4" format="checkbox"/>
+    <display item="Fkt-3 Par5" format="checkbox"/>
+    <display item="Fkt-3 Par5-Bit0" format="checkbox"/>
+    <display item="Fkt-3 Par5-Bit1" format="checkbox"/>
+    <display item="Fkt-3 Par5-Bit2" format="checkbox"/>
+    <display item="Fkt-3 Par5-Bit3" format="checkbox"/>
+    <display item="Fkt-3 Par5-Bit4" format="checkbox"/>
+    <display item="Fkt-3 Par5-Bit5" format="checkbox"/>
+    <display item="Fkt-3 Par5-Bit6" format="checkbox"/>
+    <display item="Fkt-3 Par5-Bit7" format="checkbox"/>
+    <display item="Fkt-3 Par6" format="checkbox"/>
+    <display item="Fkt-3 Par7" format="checkbox"/>
+    <display item="Fkt-3 Par8" format="checkbox"/>
+    <display item="Fkt-3 Par9" format="checkbox"/>
   </column>
   <separator/>
       </griditem>
@@ -612,7 +671,11 @@
 
       <separator/>
     <display item="Fkt-4 Fmode"     format="checkbox"/>
-    <display item="Fkt-4 Fmode-Bit0" format="checkbox"/>
+    <display item="Fkt-4 FmodeSel0"     format="selection box"/>
+    <display item="Fkt-4 FmodeSel1"     format="selection box"/>
+    <display item="Fkt-4 FmodeSel2"     format="selection box"/>
+    <display item="Fkt-4 FmodeSel3"     format="selection box"/>
+   <display item="Fkt-4 Fmode-Bit0" format="checkbox"/>
     <display item="Fkt-4 Fmode-Bit1" format="checkbox"/>
     <display item="Fkt-4 Fmode-Bit2" format="checkbox"/>
     <display item="Fkt-4 Fmode-Bit3" format="checkbox"/>
@@ -620,12 +683,25 @@
     <display item="Fkt-4 Fmode-Bit5" format="checkbox"/>
     <display item="Fkt-4 Fmode-Bit6" format="checkbox"/>
     <display item="Fkt-4 Fmode-Bit7" format="checkbox"/>
-      <separator/>
+    <separator/>
     <label> <text>Parameter Bytes: </text> </label>
     <display item="Fkt-4 Par1" format="checkbox"/>
     <display item="Fkt-4 Par2" format="checkbox"/>
     <display item="Fkt-4 Par3" format="checkbox"/>
     <display item="Fkt-4 Par4" format="checkbox"/>
+    <display item="Fkt-4 Par5" format="checkbox"/>
+    <display item="Fkt-4 Par5-Bit0" format="checkbox"/>
+    <display item="Fkt-4 Par5-Bit1" format="checkbox"/>
+    <display item="Fkt-4 Par5-Bit2" format="checkbox"/>
+    <display item="Fkt-4 Par5-Bit3" format="checkbox"/>
+    <display item="Fkt-4 Par5-Bit4" format="checkbox"/>
+    <display item="Fkt-4 Par5-Bit5" format="checkbox"/>
+    <display item="Fkt-4 Par5-Bit6" format="checkbox"/>
+    <display item="Fkt-4 Par5-Bit7" format="checkbox"/>
+    <display item="Fkt-4 Par6" format="checkbox"/>
+    <display item="Fkt-4 Par7" format="checkbox"/>
+    <display item="Fkt-4 Par8" format="checkbox"/>
+    <display item="Fkt-4 Par9" format="checkbox"/>
   </column>
   <separator/>
       </griditem>
@@ -637,7 +713,11 @@
 
       <separator/>
     <display item="Fkt-5 Fmode"     format="checkbox"/>
-    <display item="Fkt-5 Fmode-Bit0" format="checkbox"/>
+    <display item="Fkt-5 FmodeSel0"     format="selection box"/>
+    <display item="Fkt-5 FmodeSel1"     format="selection box"/>
+    <display item="Fkt-5 FmodeSel2"     format="selection box"/>
+    <display item="Fkt-5 FmodeSel3"     format="selection box"/>
+   <display item="Fkt-5 Fmode-Bit0" format="checkbox"/>
     <display item="Fkt-5 Fmode-Bit1" format="checkbox"/>
     <display item="Fkt-5 Fmode-Bit2" format="checkbox"/>
     <display item="Fkt-5 Fmode-Bit3" format="checkbox"/>
@@ -645,23 +725,41 @@
     <display item="Fkt-5 Fmode-Bit5" format="checkbox"/>
     <display item="Fkt-5 Fmode-Bit6" format="checkbox"/>
     <display item="Fkt-5 Fmode-Bit7" format="checkbox"/>
-      <separator/>
+    <separator/>
     <label> <text>Parameter Bytes: </text> </label>
     <display item="Fkt-5 Par1" format="checkbox"/>
     <display item="Fkt-5 Par2" format="checkbox"/>
     <display item="Fkt-5 Par3" format="checkbox"/>
     <display item="Fkt-5 Par4" format="checkbox"/>
+    <display item="Fkt-5 Par5" format="checkbox"/>
+    <display item="Fkt-5 Par5-Bit0" format="checkbox"/>
+    <display item="Fkt-5 Par5-Bit1" format="checkbox"/>
+    <display item="Fkt-5 Par5-Bit2" format="checkbox"/>
+    <display item="Fkt-5 Par5-Bit3" format="checkbox"/>
+    <display item="Fkt-5 Par5-Bit4" format="checkbox"/>
+    <display item="Fkt-5 Par5-Bit5" format="checkbox"/>
+    <display item="Fkt-5 Par5-Bit6" format="checkbox"/>
+    <display item="Fkt-5 Par5-Bit7" format="checkbox"/>
+    <display item="Fkt-5 Par6" format="checkbox"/>
+    <display item="Fkt-5 Par7" format="checkbox"/>
+    <display item="Fkt-5 Par8" format="checkbox"/>
+    <display item="Fkt-5 Par9" format="checkbox"/>
   </column>
   <separator/>
       </griditem>
       <griditem gridx="NEXT" gridy="2" ipadx="15"  anchor="PAGE_START">
                                       <column>
-    <label>  <text> Signal - Extend (6)  </text>  </label>
-  <!-- ^^^^^^^^^^^Ende FSIGNAL0 ^^^^^^^^^^^^^^^^ -->
+    <label>  <text> Spulenantrieb (6)  </text>  </label>
+
+  <!-- ^^^^^^^^^^^Ende FCOIL ^^^^^^^^^^^^^^^^ -->
 
       <separator/>
     <display item="Fkt-6 Fmode"     format="checkbox"/>
-    <display item="Fkt-6 Fmode-Bit0" format="checkbox"/>
+    <display item="Fkt-6 FmodeSel0"     format="selection box"/>
+    <display item="Fkt-6 FmodeSel1"     format="selection box"/>
+    <display item="Fkt-6 FmodeSel2"     format="selection box"/>
+    <display item="Fkt-6 FmodeSel3"     format="selection box"/>
+   <display item="Fkt-6 Fmode-Bit0" format="checkbox"/>
     <display item="Fkt-6 Fmode-Bit1" format="checkbox"/>
     <display item="Fkt-6 Fmode-Bit2" format="checkbox"/>
     <display item="Fkt-6 Fmode-Bit3" format="checkbox"/>
@@ -669,12 +767,25 @@
     <display item="Fkt-6 Fmode-Bit5" format="checkbox"/>
     <display item="Fkt-6 Fmode-Bit6" format="checkbox"/>
     <display item="Fkt-6 Fmode-Bit7" format="checkbox"/>
-      <separator/>
+    <separator/>
     <label> <text>Parameter Bytes: </text> </label>
     <display item="Fkt-6 Par1" format="checkbox"/>
     <display item="Fkt-6 Par2" format="checkbox"/>
     <display item="Fkt-6 Par3" format="checkbox"/>
     <display item="Fkt-6 Par4" format="checkbox"/>
+    <display item="Fkt-6 Par5" format="checkbox"/>
+    <display item="Fkt-6 Par5-Bit0" format="checkbox"/>
+    <display item="Fkt-6 Par5-Bit1" format="checkbox"/>
+    <display item="Fkt-6 Par5-Bit2" format="checkbox"/>
+    <display item="Fkt-6 Par5-Bit3" format="checkbox"/>
+    <display item="Fkt-6 Par5-Bit4" format="checkbox"/>
+    <display item="Fkt-6 Par5-Bit5" format="checkbox"/>
+    <display item="Fkt-6 Par5-Bit6" format="checkbox"/>
+    <display item="Fkt-6 Par5-Bit7" format="checkbox"/>
+    <display item="Fkt-6 Par6" format="checkbox"/>
+    <display item="Fkt-6 Par7" format="checkbox"/>
+    <display item="Fkt-6 Par8" format="checkbox"/>
+    <display item="Fkt-6 Par9" format="checkbox"/>
   </column>
   <separator/>
       </griditem>
@@ -694,13 +805,17 @@
       </griditem>
       <griditem gridx="1" gridy="2" ipadx="15"  anchor="PAGE_START">
                                       <column>
-    <label> <text> Signal (7)  </text>  </label>
+    <label> <text> 2 Servos (7)</text> </label>
 
-  <!-- ^^^^^^^^^^^Ende FSIGNAL2 ^^^^^^^^^^^^^^^^ -->
+  <!-- ^^^^^^^^^^^Ende FSERVO ^^^^^^^^^^^^^^^^ -->
 
       <separator/>
     <display item="Fkt-7 Fmode"     format="checkbox"/>
-    <display item="Fkt-7 Fmode-Bit0" format="checkbox"/>
+    <display item="Fkt-7 FmodeSel0"     format="selection box"/>
+    <display item="Fkt-7 FmodeSel1"     format="selection box"/>
+    <display item="Fkt-7 FmodeSel2"     format="selection box"/>
+    <display item="Fkt-7 FmodeSel3"     format="selection box"/>
+   <display item="Fkt-7 Fmode-Bit0" format="checkbox"/>
     <display item="Fkt-7 Fmode-Bit1" format="checkbox"/>
     <display item="Fkt-7 Fmode-Bit2" format="checkbox"/>
     <display item="Fkt-7 Fmode-Bit3" format="checkbox"/>
@@ -708,39 +823,35 @@
     <display item="Fkt-7 Fmode-Bit5" format="checkbox"/>
     <display item="Fkt-7 Fmode-Bit6" format="checkbox"/>
     <display item="Fkt-7 Fmode-Bit7" format="checkbox"/>
-      <separator/>
+    <separator/>
     <label> <text>Parameter Bytes: </text> </label>
     <display item="Fkt-7 Par1" format="checkbox"/>
     <display item="Fkt-7 Par2" format="checkbox"/>
     <display item="Fkt-7 Par3" format="checkbox"/>
     <display item="Fkt-7 Par4" format="checkbox"/>
+      <separator/>
+    <label> <text>2. Servo: </text> </label>
+      <separator/>
+    <display item="Fkt-7 Par5" format="checkbox"/>
+    <display item="Fkt-7 Par5-Bit0" format="checkbox"/>
+    <display item="Fkt-7 Par5-Bit1" format="checkbox"/>
+    <display item="Fkt-7 Par5-Bit2" format="checkbox"/>
+    <display item="Fkt-7 Par5-Bit3" format="checkbox"/>
+    <display item="Fkt-7 Par5-Bit4" format="checkbox"/>
+    <display item="Fkt-7 Par5-Bit5" format="checkbox"/>
+    <display item="Fkt-7 Par5-Bit6" format="checkbox"/>
+    <display item="Fkt-7 Par5-Bit7" format="checkbox"/>
+      <separator/>
+    <label> <text>Parameter Bytes: </text> </label>
+    <display item="Fkt-7 Par6" format="checkbox"/>
+    <display item="Fkt-7 Par7" format="checkbox"/>
+    <display item="Fkt-7 Par8" format="checkbox"/>
+    <display item="Fkt-7 Par9" format="checkbox"/>
   </column>
   <separator/>
       </griditem>
       <griditem gridx="NEXT" gridy="2" ipadx="15"  anchor="PAGE_START">
-                                      <column>
-    <label> <text> Signal (8)  </text>  </label>
-
-  <!-- ^^^^^^^^^^^Ende FSIGNAL2 ^^^^^^^^^^^^^^^^ -->
-
-      <separator/>
-    <display item="Fkt-8 Fmode"     format="checkbox"/>
-    <display item="Fkt-8 Fmode-Bit0" format="checkbox"/>
-    <display item="Fkt-8 Fmode-Bit1" format="checkbox"/>
-    <display item="Fkt-8 Fmode-Bit2" format="checkbox"/>
-    <display item="Fkt-8 Fmode-Bit3" format="checkbox"/>
-    <display item="Fkt-8 Fmode-Bit4" format="checkbox"/>
-    <display item="Fkt-8 Fmode-Bit5" format="checkbox"/>
-    <display item="Fkt-8 Fmode-Bit6" format="checkbox"/>
-    <display item="Fkt-8 Fmode-Bit7" format="checkbox"/>
-      <separator/>
-    <label> <text>Parameter Bytes: </text> </label>
-    <display item="Fkt-8 Par1" format="checkbox"/>
-    <display item="Fkt-8 Par2" format="checkbox"/>
-    <display item="Fkt-8 Par3" format="checkbox"/>
-    <display item="Fkt-8 Par4" format="checkbox"/>
-  </column>
-  <separator/>
+                                    
       </griditem>
       <griditem gridx="NEXT" gridy="2" ipadx="15"  anchor="PAGE_START">
                                     

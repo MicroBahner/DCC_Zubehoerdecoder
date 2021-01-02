@@ -1,6 +1,8 @@
 ﻿@echo off
 rem Modell-Name des Decoders in JMRI ( Buchstaben,Zahlen und _ ):
 set model=DIY_Standard2
+rem Interface: DCC oder LocoNet. LocoNet ist standard
+set interface=LocoNet
 rem Konfiguration des Decoders (Funktionen):
 rem Bitte keine Zeilen lösche, nur den Wert hinter dem = anpassen
 rem Hinter den Funktionsnamen dürfen keine Leerzeichen stehen und
@@ -21,6 +23,7 @@ rem ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 rem ------------ Ende des Benutzeranpassbaren Bereiches ---------------------------------
 
 echo #define _MODEL %model%> %model%.txt
+echo #define _INTERFACE %interface%>> %model%.txt
 echo #define INITYP1 %INITYP1%>> %model%.txt
 echo #define INITYP2 %INITYP2%>>  %model%.txt
 echo #define INITYP3 %INITYP3%>>  %model%.txt
@@ -33,6 +36,6 @@ echo #define INITYP9 %INITYP9%>>  %model%.txt
 echo #define INITYP10 %INITYP10%>>  %model%.txt
 echo #define INITYP11 %INITYP10%>>  %model%.txt
 echo #define INITYP12 %INITYP10%>>  %model%.txt
-gpp -s "\"" +n  --include %model%.txt  -I .\src  -o Public_Domain_LNSV2_%model%.xml src\Public_Domain_LNSV2_GPP-Generic.gpp
+gpp -s "\"" +n  --include %model%.txt  -I .\src  -o Public_Domain_%interface%_%model%.xml src\Public_Domain_GPP-Generic.gpp
 rem pause
 del %model%.txt
