@@ -1,12 +1,12 @@
 ﻿@echo off
+rem Bitte keine Zeilen lösche, nur den Wert hinter dem = anpassen
+rem Hinter den Werten dürfen keine Leerzeichen stehen
 rem Modell-Name des Decoders in JMRI ( Buchstaben,Zahlen und _ ):
 set model=DIY_Standard2
 rem Interface: DCC oder LocoNet. LocoNet ist standard
 set interface=LocoNet
 rem Konfiguration des Decoders (Funktionen):
-rem Bitte keine Zeilen lösche, nur den Wert hinter dem = anpassen
-rem Hinter den Funktionsnamen dürfen keine Leerzeichen stehen und
-rem es dürfen keine Lücken entstehen. Nicht verwendete Funktionen bleiben am Ende frei
+rem Es dürfen keine Lücken entstehen. Nicht verwendete Funktionen bleiben am Ende frei
 set INITYP1=FSERVO
 set INITYP2=FSERVO0
 set INITYP3=FSIGNAL2
