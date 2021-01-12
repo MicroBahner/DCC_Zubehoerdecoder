@@ -157,6 +157,7 @@ class Fservo {
 //Konstante für Lichtsignalfunktion
 // Flags für CV MODE:
 #define LEDINVERT 0x80  // FSIGNAL: SoftledAusgänge invertieren (Bit 7 des Modebyte von FSIGNAL2/3)
+#define NODARKLED 0x40  // Beim Bildwechsel werden Leds, die in beiden Bildern aktiv sind, nicht dunkelgeschaltet
 const byte  LSMODE=0,                 BILD1=1,              BILD2=2, VORSIG=3,  DARKMASK = 4,   // Parameter 1.Adresse
                                      BLINK1=5,             BLINK2=6, 
                                      BLINKTAKT1 = 7,       BLINKTAKT2 = 8,
@@ -178,7 +179,7 @@ const byte  LSMODE=0,                 BILD1=1,              BILD2=2, VORSIG=3,  
     void setDark  ( bool darkFlg );    // 'true' schaltet das Signal aus(dunkel), 'false' ein
     
     private:
-    void    _clrSignal ();             // SoftLed's ausschalten
+    void    _clrSignal (byte);         // SoftLed's ausschalten - Bits die im Parameter geetzt sind, werden nicht ausgeschaltet
     void    _setSignal ();             // aktuelles Signalbild einschalten
     void    _setSignalStatic ();       // aktuelles Signalbild einschalten ( statische Led's )
     void    _setSignalBlink ();         // aktuelles Signalbild schalten ( blionkede Led's )

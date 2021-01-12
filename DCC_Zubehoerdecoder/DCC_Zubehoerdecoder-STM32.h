@@ -50,6 +50,7 @@ const byte encode2P     =   PA4;
 // Der Initiierungsmodus lässt sich per Mode-Eingang aktivieren oder er ist automatisch aktiv, wenn keine
 // sinnvollen Werte im CV47 stehen.
 //-------------------------------------------------------------------------------------------------------
+#define EXTENDED_CV       // CV-Werte ab V7.0 ( 10 CV per Adresse )
 const int DccAddr           =  1;    // DCC-Decoderadresse
 const byte iniMode          = 0x50 | AUTOADDR; // | ROCOADDR;  // default-Betriebsmodus ( CV47 )
 const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV48/49 )
@@ -63,10 +64,10 @@ const byte modePin      =   LED_BUILTIN;     // Anzeige Betriebszustand (Normal/
 
 // maple mini: ( ARDUINO_MAPLE_MINI )
 #ifdef ARDUINO_MAPLE_MINI
-const byte iniTyp[]     =   {    FSTATIC,  FSERVO,   FSIGNAL2,   FSIGNAL0,   FVORSIG,   FCOIL };
-const byte out1Pins[]   =   {        9,        19,   /*rt*/26,   /*rt*/25,  /*ge*/13,       11 };  // output-pins der Funktionen
-const byte out2Pins[]   =   {        8,        17,   /*gn*/14,   /*ws*/27,  /*gn*/12,       10 };
-const byte out3Pins[]   =   {       NC,        16,   /*ge*/15,         NC,        NC,       NC };
+const byte iniTyp[]     =   {    FSTATIC,  FSERVO,   FSIGNAL2,   FSIGNAL0,   FVORSIG,   FCOIL  ,      FSERVO,  FSERVO0};
+const byte out1Pins[]   =   {        9,         8,   /*rt*/26,   /*rt*/25,  /*ge*/11,       13 ,         19,       19 };  // output-pins der Funktionen
+const byte out2Pins[]   =   {       17,        16,   /*gn*/14,   /*ws*/27,  /*gn*/10,       12 ,         31,       22  };
+const byte out3Pins[]   =   {       NC,        NC,   /*ge*/15,         NC,        NC,       NC ,         20,       21  };
 #endif
 
 // Generic STM32F103C 
@@ -82,14 +83,16 @@ const byte out3Pins[]   =   {       NC,        NC,  /*ge*/PB7,         NC,      
 #define COILMOD     NOPOSCHK|CAUTOOFF
 #define SERVOMOD    SAUTOOFF|NOPOSCHK|SDIRECT
 #define STATICMOD   CAUTOOFF|BLKSOFT|BLKSTRT|STATICRISE    // Wechselblinker mit beiden Leds an beim Start            
-const byte iniFmode[]     = { SERVOMOD,0b11000100,          0,          0,         0, NOPOSCHK, SERVOMOD,  0b11000100 };
-const byte iniPar1[]      = {       30,       110,    0b01001,    0b10001,      0b01,       20,         30,       110  };
-const byte iniPar2[]      = {       80,       160,    0b00010,    0b00110,      0b10,       50,         80,       160  };
-const byte iniPar3[]      = {        8,         8,          5,          0,        19,        0,          8,         8  };
-const byte iniPar4[]      = {        0,         0,    0b00101,          0,         0,        0,          0,         0  }; // nur für Lichtsignale!
-// Erweiterte Parameter ( ab V7.0 )
-const byte iniPar5[]      = {        0,         0,          0,          0,         0,         0,         0,         0 };
-const byte iniPar6[]      = {        0,         0,          0,          0,         0,         0,         0,         0  };
-const byte iniPar7[]      = {        0,         0,          0,          0,         0,         0,         0,         0  };
-const byte iniPar8[]      = {        0,         0,          0,          0,         0,         0,         0,         0  };
-const byte iniPar9[]      = {        0,         0,          0,          0,         0,         0,         0,         0  }; // nur für Lichtsignale!
+const byte iniCVx[10][sizeof(iniTyp)]  = {
+/* iniFmode (CV120,130,..*/ { SERVOMOD,0b11000100,          0,          0,         0, NOPOSCHK, SERVOMOD,  0b11000100 },
+/* iniPar1 (CV121,131,..*/  {       30,       110,    0b01001,    0b10001,      0b01,       20,         30,       110  },
+/* iniPar2 (CV122,132,..*/  {       80,       160,    0b00010,    0b00110,      0b10,       50,         80,       160  },
+/* iniPar3 (CV123,133,..*/  {        8,         8,          5,          0,        19,        0,          8,         8  },
+/* iniPar4 (CV124,134,..*/  {        0,         0,    0b00101,          0,         0,        0,          0,         0  }, 
+/* iniPar5 (CV125,135,..*/  {        0,         0,          0,          0,         0,         0,         0,         0 },
+/* iniPar6 (CV126,136,..*/  {        0,         0,          0,          0,         0,         0,         0,         0  },
+/* iniPar7 (CV127,137,..*/  {        0,         0,          0,          0,         0,         0,         0,         0  },
+/* iniPar8 (CV128,138,..*/  {        0,         0,          0,          0,         0,         0,         0,         0  },
+/* iniState (CV129,139,..*/ {        0,         0,          0,          0,         0,         0,         0,         0  }   // Status-Werte 
+                            };
+//------------------------------------------------------------------------------------

@@ -442,7 +442,7 @@ void Fsignal::setDark( bool darkFlg ) {
     if ( darkFlg ) {
         // Signal dunkelschalten
         DBSG_PRINT("setDark");
-        _clrSignal();
+        _clrSignal(0);
         _fktStatus.dark = true;
     } else {
         // Aktuelles Signalbild wieder einschalten
@@ -466,8 +466,11 @@ void Fsignal::set( uint8_t sollWert ) {
             // Gültiger Zustand, übernehmen, Flag setzen und Timer aufziehen
             _fktStatus.sigBild =  sollWert;
             _fktStatus.state   = SIG_NEW;
+            _getSigMask( _fktStatus.sigBild ) ;
+            DBSG_PRINT( "SigMSk Stat=%02X, Blnk=%02X, Inv=%02X", _sigMask.staticLed, _sigMask.blnkStd, _sigMask.blnkInv );
             darkT.setTime( SIG_DARK_TIME ) ;
-            _clrSignal(); // aktuelles Signalbild dunkelschalten
+            // im aktuellen Signalbild alles dunkelschalten, was im neuen Signalbild nicht leuchtet
+            _clrSignal(_sigMask.staticLed|_sigMask.blnkStd|_sigMask.blnkInv); 
             DBSG_PRINT("Ende set %d", _cvAdr );
         }
     }
@@ -530,6 +533,7 @@ void  Fsignal::_getSigMask( uint8_t sigState ) {
     // der Offset für die Blinkparameter ist um BLINK1-BILD1 größer
     byte staticMask = getParam( parOffs );
     byte blinkMask = getParam( parOffs+(BLINK1-BILD1) );
+    DBSG_PRINT("stMsk=%02X, blMsk=%02X ( Ofs=%d, Ofb=%d", staticMask, blinkMask, parOffs, parOffs+(BLINK1-BILD1) );
     //DBSG_PRINT("Fsignal-Freemem %d", freeMemory() );
     _sigMask.staticLed =  staticMask & ~blinkMask;  // nur Bit in staticMask gesetzt
     _sigMask.blnkStd =  blinkMask & ~staticMask; // nur Bit in blnkMask gesetzt
@@ -583,6 +587,7 @@ void Fsignal::_setSignalBlink ( ) {
         _getSigMask( _fktStatus.sigBild ) ;
         sigOutMask   = _sigMask.blnkInv | _sigMask.blnkStd ;
         sigOutMskInv = _sigMask.blnkInv ;
+        DBSG_PRINT( "Blinktakt MSK=%02X, INV=%02X", sigOutMask, sigOutMskInv );
         if ( sigOutMask ) {
             // es gibt blinkende Leds
             // Die Ausgänge entsprechend dem aktuellen Signalbild setzen
@@ -609,12 +614,15 @@ void Fsignal::_setSignalBlink ( ) {
  
 //..............    
 // alle Signallampen ausschalten ( beim Überblenden zwischen Signalbildern )
-void Fsignal::_clrSignal () {
-    // alle 'Soft'Leds des Signals ausschalten
+void Fsignal::_clrSignal ( byte onMsk ) {
+    // 'Soft'Leds des Signals entspr onMsk ausschalten
+    // Bits, die in onMsk gesetzt sind, werden nicht ausgeschaltet
+    if (!(getParam( LSMODE ) & NODARKLED) ) onMsk = 0; // Immer alles dunkelschalten
     DBSG_PRINT( "Sig %d AUS", _cvAdr);
     // nur 'soft' Ausgangszustände löschen
     for ( byte pIx=0; pIx< _pinAnz ; pIx++ ) {
-        if ( _sigLed[pIx] != NULL ) _sigLed[pIx]->write( OFF, BULB ); 
+        if ( _sigLed[pIx] != NULL && (onMsk&1) == 0) _sigLed[pIx]->write( OFF, BULB ); 
+        onMsk = onMsk >> 1;
     }
     // am Haupsignal gegebenenfalls auch das Vorsignal dunkelschalten
     if ( _vorSig != NULL && *_vorSig != NULL ) {

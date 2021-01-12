@@ -106,7 +106,10 @@
  *  FSIGNAL2 Lichtsignalfunktion mit 1..3 Weichenadressen 
  *          bei den Folgeadressen ist als Typ FSIGNAL0 einzutragen
  *          Lichtsignale starten beim Einschalten immer im Zustand 0 (Bitmuster CV51)
- *  CV120   Signalmodus: Bit7=1 : invertiert die Softled-Ausgänge (HIGH=OFF) (MobaTools ab V0.9)
+ *  CV120   Signalmodus: 
+ *          Bit7=1 : invertiert die Softled-Ausgänge (HIGH=OFF) (MobaTools ab V0.9)
+ *          Bit6=1 : Beim Signalbildwechsel bleiben Led's, die in beiden Bildern aktiv sind 
+ *                   konstant eingeschaltet und werden nicht kurz dunkelgeschaltet
  *          Bit 2..0: Bitmuster hard/soft gibt an, welche Ausgänge 'hart' umschalten (Bit=1)
  *          und welche Ausgänge weich überblenden (Bit=0)
  *  CV121   Bitmuster der Ausgänge für Befehl 1.Adresse 0 (rot)
