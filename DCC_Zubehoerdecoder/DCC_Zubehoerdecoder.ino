@@ -72,15 +72,25 @@
 //------------------ Einbinden der Konfigurationsdatei -------------------------
 #ifdef __STM32F1__
 #include "DCC_Zubehoerdecoder-STM32.h"
+#ifndef KONFIG_FILE
+#pragma message "\n\rbenutztes Konfig-File: DCC_Zubehoerdecoder-STM32.h"
+#endif
 #elif defined(__AVR_ATmega32U4__)
 #include "DCC_Zubehoerdecoder-Micro.h"
-//#include "TestKOnf\DCC_Zubehoerdecoder-Micro-Servos.h"
+#ifndef KONFIG_FILE
+#pragma message "\n\rbenutztes Konfig-File: DCC_Zubehoerdecoder-Micro.h"
+#endif
 #else
 #include "DCC_Zubehoerdecoder.h"
-//#include "TestKOnf\DCC_Zubehoerdecoder-LS-Nano.h"
-//#include "TestKOnf\DCC_ZubehoerdecoderF2Servos.h"
-//#include "examples\DCC_Zubehoerdecoder-Micro.h"
-//#include "examples\DCC_Zubehoerdecoder-Bsp1.h"
+#ifndef KONFIG_FILE
+#pragma message "\n\rbenutztes Konfiig-File DCC_Zubehoerdecoder.h"
+#endif
+#endif
+#ifdef KONFIG_FILE
+#include KONFIG_FILE
+#define STRING2(x) #x
+#define STRING(x) "\n\rBenutztes Konfig-File: "  STRING2(x)
+#pragma message (STRING(KONFIG_FILE))
 #endif
 //-------------------------------------------------------------------------------
 //-------------------------------------------

@@ -34,6 +34,8 @@ const byte encode2P     =   A3;
 // Der Initiierungsmodus lässt sich per Mode-Eingang aktivieren oder er ist automatisch aktiv, wenn keine
 // sinnvollen Werte im CV47 stehen.
 //-------------------------------------------------------------------------------------------------------
+#define EXTENDED_CV       // CV-Werte ab V7.0 ( 10 CV per Adresse )
+
 const int DccAddr          =  20;    // DCC-Decoderadresse
 const byte iniMode          = 0x50 | AUTOADDR /*| ROCOADDR*/;  // default-Betriebsmodus ( CV47 )
 const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV48/49 )
@@ -49,14 +51,20 @@ const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmi
 #define COILMOD     NOPOSCHK|CAUTOOFF
 #define SERVOMOD    SAUTOOFF|NOPOSCHK|SDIRECT
 #define STATICMOD   CAUTOOFF|BLKSOFT|BLKSTRT    // Wechselblinker mit beiden Leds an beim Start            
-const byte iniTyp[]   = {   FSERVO,   FSERVO,   FSERVO,   FSERVO,  FSTATIC,  FSTATIC,    FCOIL };
-const byte out1Pins[] = {       A0,       A1,       11,       12,        7,        8,       10 }; 
-const byte out2Pins[] = {        3,        5,       NC,       NC,        6,       NC,        9 };
-const byte out3Pins[] = {       NC,       NC,       NC,       NC,       NC,       NC,       NC };
+const byte iniTyp[]    =    {   FSERVO,   FSERVO,   FSERVO,   FSERVO,  FSTATIC,  FSTATIC,    FCOIL };
+const byte out1Pins[]  =    {       A0,       A1,       11,       12,        7,        8,       10 }; 
+const byte out2Pins[]  =    {        3,        5,       NC,       NC,        6,       NC,        9 };
+const byte out3Pins[]  =    {       NC,       NC,       NC,       NC,       NC,       NC,       NC };
 
-const byte iniFmode[] = { SAUTOOFF, SAUTOOFF, SAUTOOFF,        0,  BLKMODE,        0, CAUTOOFF };
-const byte iniPar1[]  = {        0,        0,        0,        0,       50,        0,       50 };
-const byte iniPar2[]  = {      180,      180,      180,      180,       50,        0,       50 };
-const byte iniPar3[]  = {        8,        8,        8,        0,      100,        0,        0 };
-const byte iniPar4[]  = {        0,         0,       0,        0,        0,        0,        0 }; // nur für Lichtsignale!
+const byte iniCVx[10][sizeof(iniTyp)]  = {
+/* iniFmode (CV120,130,..*/ { SAUTOOFF, SAUTOOFF, SAUTOOFF,        0,  BLKMODE,        0, CAUTOOFF },
+/* iniPar1 (CV121,131,..*/  {        0,        0,        0,        0,       50,        0,       50 },
+/* iniPar2 (CV122,132,..*/  {      180,      180,      180,      180,       50,        0,       50 },
+/* iniPar3 (CV123,133,..*/  {        8,        8,        8,        0,      100,        0,        0 },
+/* iniPar4 (CV124,134,..*/  {        0,         0,       0,        0,        0,        0,        0 },
+/* iniPar5 (CV125,135,..*/  {       0,          0,       0,        0,        0,        0,        0 },
+/* iniPar6 (CV126,136,..*/  {       0,          0,       0,        0,        0,        0,        0 },
+/* iniPar7 (CV127,137,..*/  {       0,          0,       0,        0,        0,        0,        0 },
+/* iniPar8 (CV128,138,..*/  {       0,          0,       0,        0,        0,        0,        0 },
+/* iniState (CV129,139,..*/ {       0,          0,       0,        0,        0,        0,        0 }}; // Status-Werte
 //------------------------------------------------------------------------------------

@@ -1,3 +1,6 @@
+//#define KONFIG_FILE "examples\DCC_Zubehoerdecoder-LS-STM32.h"  // Pfad zu einer alternativen Konfig-Datei
+
+#ifndef KONFIG_FILE
 // ----------------- DCC-Zubehördecoder ---------------------------------------
 // Diese Datei enthält die vom Anwender änderbaren Parameter um den Zubehördecoder an die 
 // gewünschte Funktionalität und die verwendete HW anzupassen
@@ -10,6 +13,7 @@
 // vom Anwender änderbare Parameter um den Zubehördecoder an die verwendete HW anzupassen
 
 //#define IFC_SERIAL  Serial  // Isr der define aktiv, können Kommandos auch über die serielle Schnittstelle abgesetzt werden
+
 // Beispiel für Variante mit 4 Servos + 3 statischen Ausgängen, mit Betriebsmode Led an Pin 13 (interne Led)
 
 //----------------------------------------------------------------
@@ -96,3 +100,4 @@ const byte iniCVx[10][sizeof(iniTyp)]  = {
 /* iniState (CV129,139,..*/ {        0,         0,          0,          0,         0,         0,         0,         0  }   // Status-Werte 
                             };
 //------------------------------------------------------------------------------------
+#endif

@@ -43,6 +43,8 @@ const byte encode2P     =   NC;
 // Der Initiierungsmodus lässt sich per Mode-Eingang aktivieren oder er ist automatisch aktiv, wenn keine
 // sinnvollen Werte im CV47 stehen.
 //-------------------------------------------------------------------------------------------------------
+#define EXTENDED_CV       // CV-Werte ab V7.0 ( 10 CV per Adresse )
+
 const int DccAddr          =  17;    // DCC-Decoderadresse
 const byte iniMode          = 0x50 | AUTOADDR /*| ROCOADDR*/;  // default-Betriebsmodus ( CV47 )
 const int  PomAddr          = 50;    // Adresse für die Pom-Programmierung ( CV48/49 )
@@ -61,15 +63,21 @@ const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmi
 #define MAX_LEDS 16 // default ist 16. Kann auf die tatsächlich benutzte Zahl reduziert werden, um RAM zu sparen.
                     // Pro Softled werden 19 Byte benötigt
                    
-const byte iniTyp[]     =   { FSIGNAL2, FSIGNAL0, FSIGNAL2, FSIGNAL0, FSIGNAL2, FSIGNAL0, FSIGNAL2, FSIGNAL0,  FSIGNAL2, FSIGNAL0  };
-const byte out1Pins[]   =   {       A0,       NC,       A3,       NC,        3,       NC,        6,       NC,         9,       NC  }; 
-const byte out2Pins[]   =   {       A1,       NC,       A4,       NC,        4,       NC,        7,       NC,        10,       NC  };
-const byte out3Pins[]   =   {       A2,       NC,       A5,       NC,        5,       NC,        8,       NC,        11,       NC  };
+const byte iniTyp[]     =   { FSIGNAL2, FSIGNAL0, FSIGNAL2, FSIGNAL0, FSIGNAL2, FSIGNAL0, FSIGNAL2, FSIGNAL0,  FSIGNAL2, FSIGNAL0 };
+const byte out1Pins[]   =   {       A0,       NC,       A3,       NC,        3,       NC,        6,       NC,         9,       NC }; 
+const byte out2Pins[]   =   {       A1,       NC,       A4,       NC,        4,       NC,        7,       NC,        10,       NC };
+const byte out3Pins[]   =   {       A2,       NC,       A5,       NC,        5,       NC,        8,       NC,        11,       NC };
                                                                                                                                   
-const byte iniFmode[]     = {        0, 0b000100,        0, 0b000100,        0, 0b000100,        0, 0b000100,         0, 0b000100  };
-const byte iniPar1[]      = { 0b001001, 0b110001, 0b001001, 0b110001, 0b001001, 0b110001, 0b001001, 0b110001,  0b001001, 0b110001  };
-const byte iniPar2[]      = { 0b100010, 0b100110, 0b100010, 0b100110, 0b100010, 0b100110, 0b100010, 0b100110,  0b100010, 0b100110  };
-const byte iniPar3[]      = {        0,        0,        0,        0,        0,        0,        0,        0,         0,        0  };
-const byte iniPar4[]      = { 0b000101,        0, 0b000101,        0, 0b000101,        0, 0b000101,        0,  0b000101,        0  }; 
+const byte iniCVx[10][sizeof(iniTyp)]  = {
+/* iniFmode (CV120,130,..*/ {        0, 0b000100,        0, 0b000100,        0, 0b000100,        0, 0b000100,         0, 0b000100 },
+/* iniPar1 (CV121,131,..*/  { 0b001001, 0b110001, 0b001001, 0b110001, 0b001001, 0b110001, 0b001001, 0b110001,  0b001001, 0b110001 },
+/* iniPar2 (CV122,132,..*/  { 0b100010, 0b100110, 0b100010, 0b100110, 0b100010, 0b100110, 0b100010, 0b100110,  0b100010, 0b100110 },
+/* iniPar3 (CV123,133,..*/  {        0,        0,        0,        0,        0,        0,        0,        0,         0,        0 },
+/* iniPar4 (CV124,134,..*/  { 0b000101,        0, 0b000101,        0, 0b000101,        0, 0b000101,        0,  0b000101,        0 }, 
+/* iniPar5 (CV125,135,..*/  {       0,          0,       0,        0,        0,        0,        0,        0,         0,        0 },
+/* iniPar6 (CV126,136,..*/  {       0,          0,       0,        0,        0,        0,        0,        0,         0,        0 },
+/* iniPar7 (CV127,137,..*/  {       0,          0,       0,        0,        0,        0,        0,        0,         0,        0 },
+/* iniPar8 (CV128,138,..*/  {       0,          0,       0,        0,        0,        0,        0,        0,         0,        0 },
+/* iniState (CV129,139,..*/ {       0,          0,       0,        0,        0,        0,        0,        0,         0,        0 }}; // Status-Werte
 //------------------------------------------------------------------------------------
 

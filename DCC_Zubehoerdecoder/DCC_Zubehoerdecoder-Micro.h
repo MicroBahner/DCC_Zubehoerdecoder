@@ -1,8 +1,12 @@
+//#define KONFIG_FILE "examples\DCC_Zubehoerdecoder-Micro1.h"  // Pfad zu einer alternativen Konfig-Datei
+
+#ifndef KONFIG_FILE
 // ----------------- DCC-Zubehördecoder ---------------------------------------
 // Diese Datei enthält die vom Anwender änderbaren Parameter um den Zubehördecoder an die 
 // gewünschte Funktionalität und die verwendete HW anzupassen
 
-#define IFC_SERIAL  Serial  // Isr der define aktiv, können Kommandos auch über die serielle Schnittstelle abgesetzt werden
+//#define IFC_SERIAL  Serial  // Isr der define aktiv, können Kommandos auch über die serielle Schnittstelle abgesetzt werden
+
 // Beispiel für Variante mit Licht-Ausfahrsignal mit Vorsignal, mit Betriebsmode Led an Pin 13 (interne Led)
 // für Arduino Micro
 
@@ -72,3 +76,4 @@ const byte iniCVx[10][sizeof(iniTyp)]  = {
 /* iniState (CV129,139,..*/ {       0,          0,          0,          0,         0,        0,         10  }   // Status-Werte
                             };
 //------------------------------------------------------------------------------------
+#endif
