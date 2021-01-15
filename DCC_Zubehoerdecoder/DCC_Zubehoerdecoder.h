@@ -1,6 +1,6 @@
 //#define KONFIG_FILE "examples\DCC_Zubehoerdecoder-LS-Nano.h"  // Pfad zu einer alternativen Konfig-Datei
+#if !defined( KONFIG_FILE ) || defined ( EXEC_KONFIG )
 
-#ifndef KONFIG_FILE
 // ----------------- DCC-Zubehördecoder ---------------------------------------
 // Diese Datei enthält die vom Anwender änderbaren Parameter um den Zubehördecoder an die 
 // gewünschte Funktionalität und die verwendete HW anzupassen

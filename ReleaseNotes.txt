@@ -77,7 +77,25 @@
 
     Version 7.0.0   - Die CV-Adressen wurden vollständig überarbeitet. Pro Adresse stehen nun 10 Parameter-CV's zur Verfügung.
                       Da in diesem Fall bereits bei Decodern mit mehr als 3 Adresse die CV's in einen reservierten Bereich
-                      gelangen würden, wird der gesamte CV-Bereich nach oben verlegt, und startet nun bei 115.
-                      Die funktionsspezifischen CV's beginnen bei 120. Dieser Bereich ist nach NMRA herstellerspezifisch.
+                      gelangen würden, wird der gesamte Bereich für die funktionsspezifischen CV's nach oben verlegt, und 
+                      startet nun bei 120. Dieser Bereich ist nach NMRA herstellerspezifisch. 
                       S.a http://normen.railcommunity.de/RCN-225.pdf
+                      Die globalen CV's unter 50 bleiben unverändert. Im Bereich ab 50 werden nun Informationen über die
+                      genutzte Funktionalität hinterlegt ( Zahl der genutzten Adressen und jeweiliger iniTyp ). Diese CV's
+                      können nicht verändert werden. Werden diese Parameter ( Zahl und Typ der Funktionen ) im Konfig-File
+                      verändert, und entsprechen daher nicht mehr den ab 50 hinterlegten Werte, wird eine Grundinitierung 
+                      aller CV's durchgeführt.
+                      Neue Funktionen:
+                      - 2 Servos können mit einer Adresse gesteuert werden, mit individuellen Endlagen und Geschwindigkeiten
+                      - alternative Konfigfiles ( z.B. aus examples ) können einfacher eingebunden werden
+                      - Bei Lichtsignalen sind Signalbilder mit blinkenden LED möglich
+                      - Bei Lichtsignalen werden LEDs die im alten und neuen Signalbild aktiv sind, in der Überblendphase
+                        nicht mehr dunkelgeschaltet ( konfigurierbar , Standard ist bisheriges Verhalten )
+                      - parallel zum DCC/LocoNet Interface kann der Decoder auch über die serielle Schnittstelle gesteuert
+                        werden ( über Parameter im Konfigfile aktivierbar ). Auch das Lesen und Ändern von CV's ist über
+                        die serielle Schnittstelle möglich.
+                      - Im examples-Verzeichnis ist ein Beispiel enthalten, wie die serielle Steuerung genutzt werden kann,
+                        um mit einem 2. Arduino ein Taster-Stellpult zu realisiern.
+                      - JMRI Decoderfiles können auch für die DCC-Schnittstelle generiert werden
+                        
                       

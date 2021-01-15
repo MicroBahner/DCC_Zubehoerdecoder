@@ -471,6 +471,7 @@ void Fsignal::set( uint8_t sollWert ) {
             darkT.setTime( SIG_DARK_TIME ) ;
             // im aktuellen Signalbild alles dunkelschalten, was im neuen Signalbild nicht leuchtet
             _clrSignal(_sigMask.staticLed|_sigMask.blnkStd|_sigMask.blnkInv); 
+            //_clrSignal(_sigMask.staticLed); 
             DBSG_PRINT("Ende set %d", _cvAdr );
         }
     }
@@ -533,11 +534,12 @@ void  Fsignal::_getSigMask( uint8_t sigState ) {
     // der Offset für die Blinkparameter ist um BLINK1-BILD1 größer
     byte staticMask = getParam( parOffs );
     byte blinkMask = getParam( parOffs+(BLINK1-BILD1) );
-    DBSG_PRINT("stMsk=%02X, blMsk=%02X ( Ofs=%d, Ofb=%d", staticMask, blinkMask, parOffs, parOffs+(BLINK1-BILD1) );
+    DBSG_PRINT("stMsk=%02X, blMsk=%02X ( Ofs=%d, Ofb=%d )", staticMask, blinkMask, parOffs, parOffs+(BLINK1-BILD1) );
     //DBSG_PRINT("Fsignal-Freemem %d", freeMemory() );
     _sigMask.staticLed =  staticMask & ~blinkMask;  // nur Bit in staticMask gesetzt
     _sigMask.blnkStd =  blinkMask & ~staticMask; // nur Bit in blnkMask gesetzt
     _sigMask.blnkInv =  staticMask & blinkMask;  // Bit in beiden Masken gesetzt
+    DBSG_PRINT("  ..static=%02X, blk=%02X, inv=%02X", _sigMask.staticLed, _sigMask.blnkStd, _sigMask.blnkInv );
    return;
 }
 
@@ -552,7 +554,8 @@ void    Fsignal::_setSignal ( ) {
 // alle statischen Signalausgänge entsprechend dem derzeitigen Signalzustand setzen
 void Fsignal::_setSignalStatic ( ) {
     //byte sigZustand; // aktueller Signalzustand, abgeleitet aus den Weichenzuständen
-    byte sigOutMsk;  // Bitmaske der Ausgangsports (Bit=1:Ausgang setzen, Bit=0 Ausgang rücksetzen
+    byte sigOutMsk;  // Bitmaske der Ausgangszustände (Bit=1:Ausgang setzen, Bit=0 Ausgang rücksetzen
+    byte sigStaMsk;  // Bitmaske der statischen Leds ( nur diese werden geschaltet )
     if ( !_fktStatus.dark ) {
         // Signal ist nicht dunkelgeschaltet, Signalbild aufblenden
         DBSG_PRINT( "Sig %d EIN (%d)", _cvAdr, _fktStatus.sigBild );
@@ -560,16 +563,22 @@ void Fsignal::_setSignalStatic ( ) {
         // Ausgangszustände entsprechend Signalzustand bestimmen (CV-Wert)
         _getSigMask( _fktStatus.sigBild ) ;
         sigOutMsk = _sigMask.staticLed ;
+        sigStaMsk = ~(_sigMask.blnkInv | _sigMask.blnkStd) ;
         // Die Ausgänge entsprechend dem aktuellen Signalbild setzen
         for ( byte i=0; i< _pinAnz ; i++ ) {
-            if ( _sigLed[i] == NULL ) {
-                // Standard-Ausgang
-                _digitalWrite( _outP[i], sigOutMsk&1 );
-            } else {
-                // Softled-Ausgang
-                _sigLed[i]->write( sigOutMsk&1, LINEAR );
+            if ( sigStaMsk&1 ) {
+                // Es ist eine statisch zu schaltende Led
+                if ( _sigLed[i] == NULL ) {
+                    // Standard-Ausgang
+                    _digitalWrite( _outP[i], sigOutMsk&1 );
+                } else {
+                    // Softled-Ausgang
+                    DBSG_PRINT(" Static-LED%d=%d", i,sigOutMsk&1 );
+                    _sigLed[i]->write( sigOutMsk&1, LINEAR );
+                }
             }
             sigOutMsk = sigOutMsk >> 1;
+            sigStaMsk = sigStaMsk >> 1;
         }
         //DBSG_PRINT( " Signal %d, Status=0x%02x, Ausgänge: 0x%02x ", wIx, sigZustand, Dcc.getCV( CVBaseAdr[sigZustand] + CVoffs)  );
     }
@@ -599,6 +608,7 @@ void Fsignal::_setSignalBlink ( ) {
                         _digitalWrite( _outP[i], _fktStatus.blinkTakt ^ (sigOutMskInv&1) );
                     } else {
                         // Softled-Ausgang
+                        DBSG_PRINT(" Blink-LED%d=%d", i,_fktStatus.blinkTakt ^ (sigOutMskInv&1) );
                         _sigLed[i]->write( _fktStatus.blinkTakt ^ (sigOutMskInv&1), LINEAR );
                     }
                 }

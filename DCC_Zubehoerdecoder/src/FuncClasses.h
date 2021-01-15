@@ -167,7 +167,7 @@ const byte  LSMODE=0,                 BILD1=1,              BILD2=2, VORSIG=3,  
                                      BLINK5=5+(2*CV_BLKLEN),BLINK6=5+(2*CV_BLKLEN);
             
 #define SIG_DARK_TIME   300     // Zeit zwischen Dunkelschalten und Aufblenden des neuen Signalbilds
-#define SIG_RISETIME    500     // Auf/Abblendezeit
+#define SIG_RISETIME    400     // Auf/Abblendezeit
  
  class Fsignal {
     public:

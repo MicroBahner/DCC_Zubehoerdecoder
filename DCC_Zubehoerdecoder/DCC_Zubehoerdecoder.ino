@@ -71,26 +71,27 @@
 //-----------------------------------------
 //------------------ Einbinden der Konfigurationsdatei -------------------------
 #ifdef __STM32F1__
-#include "DCC_Zubehoerdecoder-STM32.h"
-#ifndef KONFIG_FILE
-#pragma message "\n\rbenutztes Konfig-File: DCC_Zubehoerdecoder-STM32.h"
-#endif
+  #include "DCC_Zubehoerdecoder-STM32.h"
+  #ifndef KONFIG_FILE
+  #pragma message "\n\rbenutztes Konfig-File: DCC_Zubehoerdecoder-STM32.h"
+  #endif
 #elif defined(__AVR_ATmega32U4__)
-#include "DCC_Zubehoerdecoder-Micro.h"
-#ifndef KONFIG_FILE
-#pragma message "\n\rbenutztes Konfig-File: DCC_Zubehoerdecoder-Micro.h"
-#endif
+  #include "DCC_Zubehoerdecoder-Micro.h"
+  #ifndef KONFIG_FILE
+  #pragma message "\n\rbenutztes Konfig-File: DCC_Zubehoerdecoder-Micro.h"
+  #endif
 #else
-#include "DCC_Zubehoerdecoder.h"
-#ifndef KONFIG_FILE
-#pragma message "\n\rbenutztes Konfiig-File DCC_Zubehoerdecoder.h"
-#endif
+  #include "DCC_Zubehoerdecoder.h"
+  #ifndef KONFIG_FILE
+  #pragma message "\n\rbenutztes Konfiig-File DCC_Zubehoerdecoder.h"
+  #endif
 #endif
 #ifdef KONFIG_FILE
-#include KONFIG_FILE
-#define STRING2(x) #x
-#define STRING(x) "\n\rBenutztes Konfig-File: "  STRING2(x)
-#pragma message (STRING(KONFIG_FILE))
+  #define STRING2(x) #x
+  #define STRING(x) "\n\rBenutztes Konfig-File: "  STRING2(x)
+  #pragma message (STRING(KONFIG_FILE))
+  #define EXEC_KONFIG 1
+  #include KONFIG_FILE
 #endif
 //-------------------------------------------------------------------------------
 //-------------------------------------------
