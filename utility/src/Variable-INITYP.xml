@@ -252,7 +252,7 @@
       </variable>
         <!-- Ende F2SERVO -->
 
-#elif ( INITYP == FSIGNAL2 )
+#elif ( INITYP == FSIGNAL2 )  || ( INITYP == FSIGNAL0 ) || ( INITYP == FVORSIG )
 <!-- Variable für FSIGNAL2 -->
      <variable item="Fkt-FNR Fmode-Bit0" CV="CVMODE" mask="XXXXXXXV">
         <enumVal> 
@@ -275,44 +275,60 @@
         <label>Out3-Hart: </label>
         <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
       </variable>
+    #if ( INITYP != FSIGNAL0 )
+      <!-- Bits 6+7 sind bei Folgeadresse nicht gültig -->
+      <variable item="Fkt-FNR Fmode-Bit6" CV="CVMODE" mask="XVXXXXXX">
+        <enumVal> 
+          <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
+        </enumVal>
+        <label>Überblenden: </label>
+        <tooltip>Bei gesetztem Bit wird ein Ausgang, der im neuen und alten Bild aktiv ist, beim Signalbildwechsel nicht dunkelgeschaltet </tooltip>
+      </variable>
       <variable item="Fkt-FNR Fmode-Bit7" CV="CVMODE" mask="VXXXXXXX">
         <enumVal> 
           <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
         </enumVal>
         <label>Invertieren: </label>
       </variable>
+    #endif
       <variable item="Fkt-FNR Fmode" CV="CVMODE" >
         <hexVal/> 
         <label>Modebyte(hex): </label>
       </variable> 
       <variable item="Fkt-FNR Par1" CV="CVPAR1">
         <hexVal/>
-        <label>Bitmuster0(hex): </label>
+        <label>Bits-statisch-0(hex): </label>
         <tooltip>Aktivierte Ausgänge wenn eine 0 auf dieser Adresse empfangen wird </tooltip>
       </variable>
       <variable item="Fkt-FNR Par2" CV="CVPAR2">
         <hexVal/>
-        <label>Bitmuster1(hex): </label>
+        <label>Bits-statisch-1(hex): </label>
         <tooltip>Aktivierte Ausgänge wenn eine 1 auf dieser Adresse empfangen wird </tooltip>
       </variable>
+    #if ( INITYP == FSIGNAL2 )
+      <!-- Parameter zur Dunkelschaltung des Vorsignals gelten nur bei der Grundadresse des Hauptsignals -->
       <variable item="Fkt-FNR Par3" CV="CVPAR3">
         <decVal/>
         <label>VorsigIndex: </label>
+        <tooltip>Adress-Index des dunkelzuschaltenden Vorsignals ( 1.Adresse = 1, 0 = kein Vorsignal )</tooltip>
       </variable>
       <variable item="Fkt-FNR Par4" CV="CVPAR4">
         <hexVal/>
         <label>DunkelStates(hex): </label>
       </variable>
+    #endif
       <variable item="Fkt-FNR Par5" CV="CVPAR5">
         <hexVal/>
-        <label>Bitmuster0(hex): </label>
+        <label>Bits-Blinken-0(hex): </label>
         <tooltip>Blinkende Ausgänge wenn eine 0 auf dieser Adresse empfangen wird </tooltip>
       </variable>
       <variable item="Fkt-FNR Par6" CV="CVPAR6">
         <hexVal/>
-        <label>Bitmuster1(hex): </label>
+        <label>Bits-Blinken-1(hex): </label>
         <tooltip>Blinkende Ausgänge wenn eine 1 auf dieser Adresse empfangen wird </tooltip>
       </variable>
+    #if ( INITYP != FSIGNAL0 )
+      <!-- keine Blinktakt werte beim Folgeeintrag -->
       <variable item="Fkt-FNR Par7" CV="CVPAR7">
         <decVal/>
         <label>Blinktakt0: </label>
@@ -323,109 +339,9 @@
         <label>Blinktakt1: </label>
         <tooltip>Blinktakt - Phase AUS ( 10ms-Einheiten )</tooltip>
       </variable>
-
-#elif ( INITYP == FSIGNAL0 )
-<!-- Variable für FSIGNAL0 -->
-     <variable item="Fkt-FNR Fmode-Bit0" CV="CVMODE" mask="XXXXXXXV">
-        <enumVal> 
-          <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
-        </enumVal>
-        <label>Out1-Hart: </label>
-        <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
-      </variable>
-      <variable item="Fkt-FNR Fmode-Bit1" CV="CVMODE" mask="XXXXXXVX">
-        <enumVal> 
-          <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
-        </enumVal>
-        <label>Out2-Hart: </label>
-        <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
-      </variable>
-      <variable item="Fkt-FNR Fmode-Bit2" CV="CVMODE" mask="XXXXXVXX">
-        <enumVal> 
-          <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
-        </enumVal>
-        <label>Out3-Hart: </label>
-        <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
-      </variable>
-      <variable item="Fkt-FNR Fmode-Bit7" CV="CVMODE" mask="VXXXXXXX">
-        <enumVal> 
-          <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
-        </enumVal>
-        <label>Invertieren: </label>
-      </variable>
-      <variable item="Fkt-FNR Fmode" CV="CVMODE" >
-        <hexVal/> 
-        <label>Modebyte(hex): </label>
-      </variable> 
-      <variable item="Fkt-FNR Par1" CV="CVPAR1">
-        <hexVal/>
-        <label>Bitmuster0(hex): </label>
-      </variable>
-      <variable item="Fkt-FNR Par2" CV="CVPAR2">
-        <hexVal/>
-        <label>Bitmuster2(hex): </label>
-      </variable>
-      <!--
-      <variable item="Fkt-FNR Par3" CV="CVPAR3">
-        <decVal/>
-        <label>reserviert: </label>
-      </variable>
-      <variable item="Fkt-FNR Par4" CV="CVPAR4">
-        <decVal/>
-        <label>reserviert: </label>
-      </variable>
-        -->
-      <variable item="Fkt-FNR Par5" CV="CVPAR5">
-        <hexVal/>
-        <label>Bitmuster0(hex): </label>
-        <tooltip>Blinkende Ausgänge wenn eine 0 auf dieser Adresse empfangen wird </tooltip>
-      </variable>
-      <variable item="Fkt-FNR Par6" CV="CVPAR6">
-        <hexVal/>
-        <label>Bitmuster1(hex): </label>
-        <tooltip>Blinkende Ausgänge wenn eine 1 auf dieser Adresse empfangen wird </tooltip>
-      </variable>
-#elif ( INITYP == FVORSIG )
-<!-- Variable für FFVORSIG -->
-     <variable item="Fkt-FNR Fmode-Bit0" CV="CVMODE" mask="XXXXXXXV">
-        <enumVal> 
-          <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
-        </enumVal>
-        <label>Out1-Hart: </label>
-        <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
-      </variable>
-      <variable item="Fkt-FNR Fmode-Bit1" CV="CVMODE" mask="XXXXXXVX">
-        <enumVal> 
-          <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
-        </enumVal>
-        <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
-        <label>Out2-Hart: </label>
-      </variable>
-      <variable item="Fkt-FNR Fmode-Bit2" CV="CVMODE" mask="XXXXXVXX">
-        <enumVal> 
-          <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
-        </enumVal>
-        <label>Out3-Hart: </label>
-        <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
-      </variable>
-      <variable item="Fkt-FNR Fmode-Bit7" CV="CVMODE" mask="VXXXXXXX">
-        <enumVal> 
-          <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
-        </enumVal>
-        <label>Invertieren: </label>
-      </variable>
-      <variable item="Fkt-FNR Fmode" CV="CVMODE" >
-        <hexVal/> 
-        <label>Modebyte(hex): </label>
-      </variable> 
-      <variable item="Fkt-FNR Par1" CV="CVPAR1">
-        <hexVal/>
-        <label>Bitmuster0(hex): </label>
-      </variable>
-      <variable item="Fkt-FNR Par2" CV="CVPAR2">
-        <hexVal/>
-        <label>Bitmuster2(hex): </label>
-      </variable>
+    #endif
+    #if ( INITYP == FVORSIG )  
+        <!-- Adresse des zugehörigen Hauptsignals nur beim Vorsignal gültig -->
       <variable item="Fkt-FNR Par3" CV="CVPAR3">
         <decVal/>
         <label>Adr.Hauptsig(low): </label>
@@ -434,6 +350,7 @@
         <decVal/>
         <label>Adr.Hauptsig(high): </label>
       </variable>
+    #endif
 
 #elif ( INITYP == FCOIL )
 <!-- Variable für FCOIL -->

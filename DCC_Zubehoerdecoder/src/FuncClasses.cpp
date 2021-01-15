@@ -615,8 +615,10 @@ void Fsignal::_setSignalBlink ( ) {
                 sigOutMskInv = sigOutMskInv >> 1;
                 sigOutMask = sigOutMask >> 1;
             }
-            _blinkT.setTime( getParam( (_fktStatus.blinkTakt?BLINKTAKT1:BLINKTAKT2) ) *10 );
-            DBSG_PRINT( "Sig %d Blinktakt= %d, Zeit=%d", _cvAdr, _fktStatus.blinkTakt, getParam( (_fktStatus.blinkTakt?BLINKTAKT1:BLINKTAKT2) ) );
+            int taktZeit = getParam( _fktStatus.blinkTakt?BLINKTAKT1:BLINKTAKT2  ) *10;
+            if ( taktZeit == 0 ) taktZeit = SIG_RISETIME + SIG_RISETIME/2 ; // bei fehlender Taktzeit Zeit etwas länger als Aufblendzeit der Led
+            DBSG_PRINT( "Sig %d Takt= %d, Zeit=%d BT1=%d, BT2=%d", _cvAdr, _fktStatus.blinkTakt?BLINKTAKT1:BLINKTAKT2, taktZeit, getParam(BLINKTAKT1), getParam(BLINKTAKT2) );
+            _blinkT.setTime(  taktZeit );
         }
         //DBSG_PRINT( " Signal %d, Status=0x%02x, Ausgänge: 0x%02x ", wIx, sigZustand, Dcc.getCV( CVBaseAdr[sigZustand] + CVoffs)  );
     }

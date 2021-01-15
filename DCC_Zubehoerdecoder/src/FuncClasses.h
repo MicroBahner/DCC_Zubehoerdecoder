@@ -17,15 +17,15 @@ enum :byte { MODE=0, PAR1, PAR2, PAR3, PAR4, PAR5, PAR6, PAR7, PAR8, STATE} ;
 // ( gegebenenfalls auch direkter EEPROM Zugriff )
 #define NMRA
 #ifdef NMRA
-    #define getParam( parAdr ) ifc_getCV( _cvAdr+parAdr )
-    #define setParam( parAdr, value ) ifc_setCV( _cvAdr+parAdr, value )
+    #define getParam( parAdr ) ifc_getCV( _cvAdr+(parAdr) )
+    #define setParam( parAdr, value ) ifc_setCV( _cvAdr+(parAdr), value )
     #define setState( value )  ifc_setCV( _cvAdr+STATE, value )
 #else
     // Zugriff auf die Konfig-Parameter direkt über EEPROM:
     // ( nicht möglich bei LocoNet Interface )
     #include <EEPROM.h>
-    #define getParam( parAdr ) EEPROM.read( _cvAdr+parAdr )
-    #define setParam( parAdr, value ) EEPROM.update( _cvAdr+parAdr, value )
+    #define getParam( parAdr ) EEPROM.read( _cvAdr+(parAdr) )
+    #define setParam( parAdr, value ) EEPROM.update( _cvAdr+(parAdr), value )
     #define setState( value )  EEPROM.update( _cvAdr+STATE, value )
 #endif
 //======================  allgemeine Hilfsfunktionen ==================================

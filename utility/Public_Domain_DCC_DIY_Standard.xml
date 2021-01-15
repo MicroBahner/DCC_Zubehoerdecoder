@@ -183,44 +183,55 @@
         <label>Out3-Hart: </label>
         <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
       </variable>
+          <!-- Bits 6+7 sind bei Folgeadresse nicht gültig -->
+      <variable item="Fkt-3 Fmode-Bit6" CV="140" mask="XVXXXXXX">
+        <enumVal> 
+          <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
+        </enumVal>
+        <label>Überblenden: </label>
+        <tooltip>Bei gesetztem Bit wird ein Ausgang, der im neuen und alten Bild aktiv ist, beim Signalbildwechsel nicht dunkelgeschaltet </tooltip>
+      </variable>
       <variable item="Fkt-3 Fmode-Bit7" CV="140" mask="VXXXXXXX">
         <enumVal> 
           <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
         </enumVal>
         <label>Invertieren: </label>
       </variable>
-      <variable item="Fkt-3 Fmode" CV="140" >
+          <variable item="Fkt-3 Fmode" CV="140" >
         <hexVal/> 
         <label>Modebyte(hex): </label>
       </variable> 
       <variable item="Fkt-3 Par1" CV="141">
         <hexVal/>
-        <label>Bitmuster0(hex): </label>
+        <label>Bits-statisch-0(hex): </label>
         <tooltip>Aktivierte Ausgänge wenn eine 0 auf dieser Adresse empfangen wird </tooltip>
       </variable>
       <variable item="Fkt-3 Par2" CV="142">
         <hexVal/>
-        <label>Bitmuster1(hex): </label>
+        <label>Bits-statisch-1(hex): </label>
         <tooltip>Aktivierte Ausgänge wenn eine 1 auf dieser Adresse empfangen wird </tooltip>
       </variable>
+          <!-- Parameter zur Dunkelschaltung des Vorsignals gelten nur bei der Grundadresse des Hauptsignals -->
       <variable item="Fkt-3 Par3" CV="143">
         <decVal/>
         <label>VorsigIndex: </label>
+        <tooltip>Adress-Index des dunkelzuschaltenden Vorsignals ( 1.Adresse = 1, 0 = kein Vorsignal )</tooltip>
       </variable>
       <variable item="Fkt-3 Par4" CV="144">
         <hexVal/>
         <label>DunkelStates(hex): </label>
       </variable>
-      <variable item="Fkt-3 Par5" CV="145">
+          <variable item="Fkt-3 Par5" CV="145">
         <hexVal/>
-        <label>Bitmuster0(hex): </label>
+        <label>Bits-Blinken-0(hex): </label>
         <tooltip>Blinkende Ausgänge wenn eine 0 auf dieser Adresse empfangen wird </tooltip>
       </variable>
       <variable item="Fkt-3 Par6" CV="146">
         <hexVal/>
-        <label>Bitmuster1(hex): </label>
+        <label>Bits-Blinken-1(hex): </label>
         <tooltip>Blinkende Ausgänge wenn eine 1 auf dieser Adresse empfangen wird </tooltip>
       </variable>
+          <!-- keine Blinktakt werte beim Folgeeintrag -->
       <variable item="Fkt-3 Par7" CV="147">
         <decVal/>
         <label>Blinktakt0: </label>
@@ -231,10 +242,10 @@
         <label>Blinktakt1: </label>
         <tooltip>Blinktakt - Phase AUS ( 10ms-Einheiten )</tooltip>
       </variable>
-
+        
        <!-- Variable für Funktion 4 -->
                                                                                     
-<!-- Variable für FSIGNAL0 -->
+<!-- Variable für FSIGNAL2 -->
      <variable item="Fkt-4 Fmode-Bit0" CV="150" mask="XXXXXXXV">
         <enumVal> 
           <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
@@ -256,47 +267,34 @@
         <label>Out3-Hart: </label>
         <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
       </variable>
-      <variable item="Fkt-4 Fmode-Bit7" CV="150" mask="VXXXXXXX">
-        <enumVal> 
-          <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
-        </enumVal>
-        <label>Invertieren: </label>
-      </variable>
-      <variable item="Fkt-4 Fmode" CV="150" >
+          <variable item="Fkt-4 Fmode" CV="150" >
         <hexVal/> 
         <label>Modebyte(hex): </label>
       </variable> 
       <variable item="Fkt-4 Par1" CV="151">
         <hexVal/>
-        <label>Bitmuster0(hex): </label>
+        <label>Bits-statisch-0(hex): </label>
+        <tooltip>Aktivierte Ausgänge wenn eine 0 auf dieser Adresse empfangen wird </tooltip>
       </variable>
       <variable item="Fkt-4 Par2" CV="152">
         <hexVal/>
-        <label>Bitmuster2(hex): </label>
+        <label>Bits-statisch-1(hex): </label>
+        <tooltip>Aktivierte Ausgänge wenn eine 1 auf dieser Adresse empfangen wird </tooltip>
       </variable>
-      <!--
-      <variable item="Fkt-4 Par3" CV="153">
-        <decVal/>
-        <label>reserviert: </label>
-      </variable>
-      <variable item="Fkt-4 Par4" CV="154">
-        <decVal/>
-        <label>reserviert: </label>
-      </variable>
-        -->
-      <variable item="Fkt-4 Par5" CV="155">
+          <variable item="Fkt-4 Par5" CV="155">
         <hexVal/>
-        <label>Bitmuster0(hex): </label>
+        <label>Bits-Blinken-0(hex): </label>
         <tooltip>Blinkende Ausgänge wenn eine 0 auf dieser Adresse empfangen wird </tooltip>
       </variable>
       <variable item="Fkt-4 Par6" CV="156">
         <hexVal/>
-        <label>Bitmuster1(hex): </label>
+        <label>Bits-Blinken-1(hex): </label>
         <tooltip>Blinkende Ausgänge wenn eine 1 auf dieser Adresse empfangen wird </tooltip>
       </variable>
+        
        <!-- Variable für Funktion 4 -->
                                                                                     
-<!-- Variable für FFVORSIG -->
+<!-- Variable für FSIGNAL2 -->
      <variable item="Fkt-5 Fmode-Bit0" CV="160" mask="XXXXXXXV">
         <enumVal> 
           <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
@@ -308,8 +306,8 @@
         <enumVal> 
           <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
         </enumVal>
-        <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
         <label>Out2-Hart: </label>
+        <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
       </variable>
       <variable item="Fkt-5 Fmode-Bit2" CV="160" mask="XXXXXVXX">
         <enumVal> 
@@ -318,24 +316,56 @@
         <label>Out3-Hart: </label>
         <tooltip>Wenn dieses Bit gesetzt wird, schaltet der Ausgang hart um ( kein weiches Auf- Abblenden ) </tooltip>
       </variable>
+          <!-- Bits 6+7 sind bei Folgeadresse nicht gültig -->
+      <variable item="Fkt-5 Fmode-Bit6" CV="160" mask="XVXXXXXX">
+        <enumVal> 
+          <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
+        </enumVal>
+        <label>Überblenden: </label>
+        <tooltip>Bei gesetztem Bit wird ein Ausgang, der im neuen und alten Bild aktiv ist, beim Signalbildwechsel nicht dunkelgeschaltet </tooltip>
+      </variable>
       <variable item="Fkt-5 Fmode-Bit7" CV="160" mask="VXXXXXXX">
         <enumVal> 
           <enumChoice> <choice>off</choice> </enumChoice> <enumChoice> <choice>on</choice>  </enumChoice>
         </enumVal>
         <label>Invertieren: </label>
       </variable>
-      <variable item="Fkt-5 Fmode" CV="160" >
+          <variable item="Fkt-5 Fmode" CV="160" >
         <hexVal/> 
         <label>Modebyte(hex): </label>
       </variable> 
       <variable item="Fkt-5 Par1" CV="161">
         <hexVal/>
-        <label>Bitmuster0(hex): </label>
+        <label>Bits-statisch-0(hex): </label>
+        <tooltip>Aktivierte Ausgänge wenn eine 0 auf dieser Adresse empfangen wird </tooltip>
       </variable>
       <variable item="Fkt-5 Par2" CV="162">
         <hexVal/>
-        <label>Bitmuster2(hex): </label>
+        <label>Bits-statisch-1(hex): </label>
+        <tooltip>Aktivierte Ausgänge wenn eine 1 auf dieser Adresse empfangen wird </tooltip>
       </variable>
+          <variable item="Fkt-5 Par5" CV="165">
+        <hexVal/>
+        <label>Bits-Blinken-0(hex): </label>
+        <tooltip>Blinkende Ausgänge wenn eine 0 auf dieser Adresse empfangen wird </tooltip>
+      </variable>
+      <variable item="Fkt-5 Par6" CV="166">
+        <hexVal/>
+        <label>Bits-Blinken-1(hex): </label>
+        <tooltip>Blinkende Ausgänge wenn eine 1 auf dieser Adresse empfangen wird </tooltip>
+      </variable>
+          <!-- keine Blinktakt werte beim Folgeeintrag -->
+      <variable item="Fkt-5 Par7" CV="167">
+        <decVal/>
+        <label>Blinktakt0: </label>
+        <tooltip>Blinktakt - Phase EIN ( 10ms-Einheiten )</tooltip>
+      </variable>
+      <variable item="Fkt-5 Par8" CV="168">
+        <decVal/>
+        <label>Blinktakt1: </label>
+        <tooltip>Blinktakt - Phase AUS ( 10ms-Einheiten )</tooltip>
+      </variable>
+                <!-- Adresse des zugehörigen Hauptsignals nur beim Vorsignal gültig -->
       <variable item="Fkt-5 Par3" CV="163">
         <decVal/>
         <label>Adr.Hauptsig(low): </label>
@@ -344,7 +374,7 @@
         <decVal/>
         <label>Adr.Hauptsig(high): </label>
       </variable>
-
+    
        <!-- Variable für Funktion 5 -->
                                                                                     
 <!-- Variable für FCOIL -->
