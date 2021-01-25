@@ -207,7 +207,10 @@ void setup() {
     
     _pinMode( modePin, OUTPUT );
     #if (defined DEBUG) || (defined IFC_SERIAL) 
-    Serial.begin(115200); //Debugging und/oder serielles Kommand-Interface
+    #ifndef SERIAL_BAUD
+    #define SERIAL_BAUD 115200
+    #endif
+    Serial.begin(SERIAL_BAUD); //Debugging und/oder serielles Kommand-Interface
         #if defined(__STM32F1__) || defined(__AVR_ATmega32U4__) 
         // auf STM32/ATmega32u4: warten bis USB aktiv (maximal 6sec)
         {  unsigned long wait=millis()+6000;
