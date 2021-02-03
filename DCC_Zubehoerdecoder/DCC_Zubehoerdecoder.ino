@@ -165,15 +165,15 @@ byte adjPulse;      // per Encoder aktuell eingestellte Servoposition
 #endif
 bool localCV;       // lokale Änderung eines CV (Callback NotifyCV wird dann nicht ausgeführt )
 //---- Library-Objekte ----
-EggTimer AckImpuls;
-EggTimer ledTimer;  // zum Blinken der Programmierled
+MoToTimer AckImpuls;
+MoToTimer ledTimer;  // zum Blinken der Programmierled
 #ifdef LOCONET
 // Bei der Loconet-Schnittstelle wird 2Sec nach Ändern der 'Pom' Adresse ein Reset ausgeführt, wobei
 // die Pom-Adress als Loconet ID übernommen wird. Die Zeitverzögerung ist erforderlich, damit Low- und High
 // Byte geschrieben werden können, bevor der Reset ausgeführt wird. Die Zeit startet, wenn eins der beiden
 // Byte geschrieben wird.
 bool chgLoconetId = false;
-EggTimer idLoconet;
+MoToTimer idLoconet;
 #endif
 
 //^^^^^^^^^^^^^^^^^^^^^^^^ Ende der Definitionen ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -602,32 +602,69 @@ void ifc_notifyCVAck ( void ) {
 }
 #endif
 //-----------------------------------------------------
+// Unterfunktion zu CVChange: Änderungen an Servo-CV's prüfen
+void chkServoCv( Fservo *servoP, uint8_t Value, int8_t parNr, int8_t sollOffs ) {
+    // parNr= 0: Pos0, 1:Pos1, 2:Speed
+    // welcher Paramter des Servo wurde verändert?
+    if ( parNr >= 0 && parNr < 3 ) {
+        // es ist ein Endlagen oder Speed Wert
+        if ( parNr == 2  ) {
+            // die Geschwindigkeit des Servo wurde verändert
+            if ( sollOffs == 0 ) {
+                // bei 4-Stellungsservo bei der 2. Adresse ( sollOffs == 2 ) kein Speedwert.
+                DBSV_PRINT( "Servo %4x, Par/Ofs.%d/%d , Speed. %d neu einstellen", (unsigned int)servoP, parNr, sollOffs, Value );
+                servoP->adjust( ADJSPEED, Value );
+            }
+        }  else if (  parNr+sollOffs == servoP->getPos() ){
+            // Es handelt sich um die aktuelle Position des Servos,
+            // Servo neu positionieren
+           DBSV_PRINT( "Servo %4x, Par/Ofs.%d/%d , akt Pos. %d justieren", (unsigned int)servoP, parNr, sollOffs, Value );
+           servoP->adjust( ADJPOS, Value );
+        } else  {
+           // ist nicht de aktuelle Position des Servos, Servo umstellen 
+           DBSV_PRINT( "Servo %4x, Par/Ofs.%d/%d , auf Pos. %d umstellen", (unsigned int)servoP, parNr, sollOffs, Value );
+           servoP->set( parNr+sollOffs );
+        }
+    }
+  
+}
 // Wird aufgerufen, nachdem ein CV-Wert verändert wurde
 void ifc_notifyCVChange( uint16_t CvAddr, uint8_t Value ) {
     if ( !localCV ) {
         //CV wurde über nmraDCC geändert. Ist dies eine aktive Servoposition, dann die Servoposition
-        // entsprechend anpassen
-       DB_PRINT( "neu: CV%d=%d", CvAddr, Value );
-        for ( byte i=0; i<weichenZahl; i++ ) {
+        // entsprechend anpassen, ebenso, wenn die Geschwindigkeit verändert wurde.
+        // zunächst berechnen, zu welchem Index die CV-Adresse gehört.
+        localCV = true; // kein erneuter Aufruf, wenn innerhalb dieser Funktion CV's verändert werden
+        int8_t wIx = (CvAddr - CV_FUNCTION) / CV_BLKLEN ;
+        int8_t parIx = (CvAddr - CV_FUNCTION) % CV_BLKLEN ;
+        DB_PRINT( "neu: CV%d=%d ( Index = %d, Parameter = %d )", CvAddr, Value, wIx, parIx  );
+        if ( wIx > 0 && wIx < weichenZahl ) {
+            // es ist ein Parameter CV
             // prüfen ob Ausgang einen Servo ansteuert:
-            switch ( iniTyp[i] ) {
+            switch ( iniTyp[wIx] ) {
+              case F2SERVO:
+                // verbunde Servos - prüfen zu welchem Servo der CV gehört
+                if (  parIx >= 5 ) {
+                  // 2. Servo 
+                    chkServoCv( Fptr.twoServo[wIx]->servo2, Value, parIx-PAR1-5, 0 );
+                  } else {
+                    // 1.Servo
+                    chkServoCv( Fptr.twoServo[wIx]->servo1, Value, parIx-PAR1, 0 );
+                  }
+                break;;
               case FSERVO:
-                // gehört der veränderte CV zu diesem Servo?
-                if (  (CvAddr == cvParAdr(i,PAR1) && Fptr.servo[i]->getPos() == GERADE) ||
-                      (CvAddr == cvParAdr(i,PAR2) && Fptr.servo[i]->getPos() == ABZW ) ){
-                    // Es handelt sich um die aktuelle Position des Servos,
-                    // Servo neu positionieren
-                    //DBSV_PRINT( "Ausg.%d , Pos. %d neu einstellen", i, dccSoll[i] );
-                     Fptr.servo[i]->adjust( ADJPOS, Value );
-                } else if ( CvAddr == cvParAdr(i,PAR1) ||
-                            CvAddr == cvParAdr(i,PAR2)  ) {
-                      // ist nicht de aktuelle Position des Servos, Servo umstellen
-                      Fptr.servo[i]->set( ! Fptr.servo[i]->getPos() );
-                } else if ( CvAddr == cvParAdr(i,PAR3) ) {
-                    // die Geschwindigkeit des Servo wurde verändert
-                    //DBSV_PRINT( "Ausg.%d , Speed. %d neu einstellen", i, Value );
-                    Fptr.servo[i]->adjust( ADJSPEED, Value );
+                chkServoCv( Fptr.servo[wIx],Value, parIx-PAR1, 0 );
+                break;
+              case FSERVO0:
+                // es ist ein CV der Servofolgeadresse
+                if ( Fptr.servo[wIx] == NULL ) {
+                  // Der Adresse ist kein eigener Servo zugeordnet -> ist Servo des vorherigen Index mit 4 Positionen
+                  chkServoCv( Fptr.servo[wIx-1], Value, parIx-PAR1, 2 );
+                } else {
+                  // ist 2. Servo von verbundenen Servos ( mit eigenen CV's für Position und Geschwindigkeit )
+                  chkServoCv( Fptr.servo[wIx], Value, parIx-PAR1, 0 );
                 }
+                break;
             }
         }
         #ifdef DEBUG
@@ -647,7 +684,7 @@ void ifc_notifyCVChange( uint16_t CvAddr, uint8_t Value ) {
             ifc_setCV( CV_ADRZAHL, weichenZahl );
         }
         for( byte i=0; i< weichenZahl; i++ ) {
-            if ( CvAddr == (CV_INITYP+i) ) {
+            if ( CvAddr == (uint16_t)(CV_INITYP+i) ) {
                 ifc_setCV( (CV_INITYP+i), iniTyp[i] );
             }
         }
@@ -665,6 +702,7 @@ void ifc_notifyCVChange( uint16_t CvAddr, uint8_t Value ) {
             idLoconet.setTime( 2000 );
         }
         #endif
+        localCV=false;
     }
 }    
 //-----------------------------------------------------

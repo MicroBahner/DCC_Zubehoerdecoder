@@ -267,7 +267,7 @@ void Fservo::set( uint8_t newPos ) {
     // Befehl 'servo stellen' erhalten
     if ( newPos >= _posZahl ) newPos = _posZahl-1;   // maximalZhal der Positionswerte
     _sollPos = newPos;
-    DBSV_PRINT( "Servo.set: new:%d, soll:%d, max:%d", newPos, _sollPos, _posZahl );
+    DBSV_PRINT( "Servo.set(%d): new:%d, soll:%d, max:%d", _outP[0], newPos, _sollPos, _posZahl );
     _flags.sollAct = true;
 }
 //..............    
@@ -368,8 +368,9 @@ void Fservo::adjust( uint8_t mode, uint8_t value ) {
         _weicheS.write( value );
         break;
       case ADJSPEED:
-        setParam( PAR3, value );
+        setParam( PAR3+_parOffs, value );
         _weicheS.setSpeed( value );
+        DBSV_PRINT("AdjSpeed, %04X = %d ( CV %d ) ", (uint16_t)this, value, PAR3+_parOffs ); 
         break;
     }
 }
