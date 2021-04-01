@@ -5,7 +5,7 @@ It is able to control servos, double coil motors and leds. Most characteristics 
 
 Overview of the adjustable functionality:
 - Servo with relay for turnout polarization
-- logical coupling of 2 servos for 3-aspect form signals
+- logical coupling of 2 servos for 3-term shaped signals
 - 1 servo via 2 addresses to control 4 positions
 - 2 servo via 1 adress ( with individual parameters for each servo )
 - Impulse function for servos (automatic return to initial position, e.g. for decoupler)
