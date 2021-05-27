@@ -72,12 +72,12 @@ void Fcoil::process() {
             if ( (_flags.sollCoil & 1) == 0 ) {
                 // Out1 aktiv setzen
                 _digitalWrite( _outP[0], HIGH );
-                _digitalWrite( _outP[1], LOW );
+                if ( _outP[0] != _outP[1] ) _digitalWrite( _outP[1], LOW );
                 //DBCL_PRINT( "Pin%d HIGH, Pin%d LOW", _outP[0], _outP[1] );
             } else {
                 // Out2 aktiv setzen
                 _digitalWrite( _outP[1], HIGH );
-                _digitalWrite( _outP[0], LOW );
+                if ( _outP[0] != _outP[1] ) _digitalWrite( _outP[0], LOW );
                 //DBCL_PRINT( "Pin%d LOW, Pin%d HIGH", _outP[0], _outP[1] );
             }
             _flags.pulseON = true;
