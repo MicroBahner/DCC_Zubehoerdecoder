@@ -34,8 +34,8 @@ echo #define INITYP7 %INITYP7%>>  %model%.txt
 echo #define INITYP8 %INITYP8%>>  %model%.txt
 echo #define INITYP9 %INITYP9%>>  %model%.txt
 echo #define INITYP10 %INITYP10%>>  %model%.txt
-echo #define INITYP11 %INITYP10%>>  %model%.txt
-echo #define INITYP12 %INITYP10%>>  %model%.txt
+echo #define INITYP11 %INITYP11%>>  %model%.txt
+echo #define INITYP12 %INITYP12%>>  %model%.txt
 gpp -s "\"" +n  --include %model%.txt  -I .\src  -o Public_Domain_%interface%_%model%.xml src\Public_Domain_GPP-Generic.gpp
 rem pause
 del %model%.txt
