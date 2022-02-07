@@ -60,7 +60,7 @@
  *  
  *  FSERVO0 verbundene Servos, muss unittelbar hinter FSERVO stehen ( Folgeadresse )
  *         Ist die Pinnr identisch zum Eintrag unter FSERVO, so wird nur 1 Servo eingerichtet, 
- *         dass auf 4 Positionen gestellt werden kann. Die Einträge von CV120und CV53/54 sind
+ *         dass auf 4 Positionen gestellt werden kann. Die Einträge von CV120und CV123/124 sind
  *         dann im FSERVO0 Eintag belanglos.
  *         Enthält FSERVO0 eine unterschiedliche Pinnr für das Servo, so werden zwei Servos
  *         eingerichtet. Das Modusbyte von FSERVO gilt dann fur beide. Die Lage der Servos kann

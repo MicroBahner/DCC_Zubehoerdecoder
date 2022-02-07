@@ -570,7 +570,7 @@ void ifc_notifyDccAccState( uint16_t Addr, uint8_t OutputAddr, uint8_t State ){
         uint16_t vsAdr;
         if ( iniTyp[i] == FVORSIG  ) {
             // Adresse des zugehörigen Hauptsignals bestimmen
-            vsAdr = getCvPar(i, PAR3) + 256 * getCvPar(i, STATE);
+            vsAdr = getCvPar(i, PAR3) + 256 * getCvPar(i, PAR4);
             if ( vsAdr == wAddr ) {
                 DBSG_PRINT( "Vorsig0 %d, Index %d, Soll %d", wAddr, i, OutputAddr & 0x1 );
                 setPosition( i, OutputAddr & 0x1 );

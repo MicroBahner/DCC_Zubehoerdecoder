@@ -1,4 +1,5 @@
 //#define KONFIG_FILE "examples\DCC_Zubehoerdecoder-LS-Nano.h"  // Pfad zu einer alternativen Konfig-Datei
+//#define KONFIG_FILE "TestKonf\MobaAlfred.h"  // Pfad zu einer alternativen Konfig-Datei
 #if !defined( KONFIG_FILE ) || defined ( EXEC_KONFIG )
 
 // ----------------- DCC-Zubehördecoder ---------------------------------------

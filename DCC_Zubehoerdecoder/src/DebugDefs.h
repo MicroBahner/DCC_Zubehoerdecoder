@@ -3,11 +3,11 @@
 #ifndef DEBUGDEFS
 #define DEBUGDEFS
 
-//#define DEBUG
+#define DEBUG
 //#define SERVODBG
 //#define SIGNALDBG
 //#define COILDBG
-//#define STATICDBG
+#define STATICDBG
 
 #ifdef __AVR_MEGA__
 

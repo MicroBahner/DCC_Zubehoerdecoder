@@ -23,6 +23,7 @@ PH.rtf
 .gitignore
 .gitattributes
 Formsignale.odt
+*.bak
 
 #Directory:
 Zusatzinfo
