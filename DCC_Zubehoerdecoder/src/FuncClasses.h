@@ -88,9 +88,10 @@ void _digitalWrite( byte port, byte state ) ;
     private:
     void _setLedPin( uint8_t ledI, uint8_t sollWert );
     MoToTimer _pulseT;
-    
+    MoToTimer *_pulseT[3];
+	
     uint16_t _cvAdr;            // Adresse des CV-Blocks mit den Funktionsparametern
-    SoftLed *_ledS[2] = { NULL, NULL };      // Softled-Objekte
+    SoftLed *_ledS[3] = { NULL, NULL, NULL };      // Softled-Objekte
     uint8_t *_ledP;           // Pins der Leds
     struct {
         bool blkOn :1;      // blinkende Led ist EIN
