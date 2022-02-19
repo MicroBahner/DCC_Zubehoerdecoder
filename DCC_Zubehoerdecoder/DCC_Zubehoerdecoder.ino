@@ -97,8 +97,6 @@
 //-------------------------------------------
 const byte weichenZahl = sizeof(iniTyp);
 
-
-
 #define cvParAdr(wIx,par)      (uint16_t)CV_FUNCTION+CV_BLKLEN*(wIx)+(par)
 #define getCvPar(wIx,par)   ifc_getCV( cvParAdr(wIx,par) )
 #define cvEAdr(wIx,epar)    CV_EXTDATA+epar+CV_ERWLEN*wIx  
@@ -638,7 +636,7 @@ void ifc_notifyCVChange( uint16_t CvAddr, uint8_t Value ) {
         int8_t wIx = (CvAddr - CV_FUNCTION) / CV_BLKLEN ;
         int8_t parIx = (CvAddr - CV_FUNCTION) % CV_BLKLEN ;
         DB_PRINT( "neu: CV%d=%d ( Index = %d, Parameter = %d )", CvAddr, Value, wIx, parIx  );
-        if ( wIx > 0 && wIx < weichenZahl ) {
+        if ( wIx >= 0 && wIx < weichenZahl ) {
             // es ist ein Parameter CV
             // prüfen ob Ausgang einen Servo ansteuert:
             switch ( iniTyp[wIx] ) {

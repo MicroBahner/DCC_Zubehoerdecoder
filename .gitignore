@@ -18,6 +18,7 @@ $RECYCLE.BIN/
 *.lnk
 
 #Files
+*.bak
 PH.txt
 PH.rtf
 .gitignore
