@@ -26,7 +26,7 @@
     So sind z.B. bei Servoausgängen die Endlagen per CV-Wert einstellbar, bei Lichtsignalen ist die 
     Zuordnung der Ausgangszustände zum Signalzustand frei konfigurierbar.
 */
-#define DCC_DECODER_VERSION_ID 0x70
+#define DCC_DECODER_VERSION_ID 0x71
 
 #include "src/FuncClasses.h"
 #ifdef __AVR_MEGA__

@@ -39,9 +39,9 @@ Fcoil::Fcoil( int cvAdr, uint8_t out1P[] ) {
     // Konstruktor für Doppelspulenantriebe
     _cvAdr = cvAdr;
     _outP = out1P;
-    DBCL_PRINT( "Fcoil CV=%d, OutPins %d,%d ", _cvAdr, _outP[0], _outP[1] );
+    DBCL_PRINT( "Fcoil CV=%d, OutPins %d,%d,%d ", _cvAdr, _outP[0], _outP[1], _outP[2] );
     
-    for ( byte i=0; i<2; i++ ) {
+    for ( byte i=0; i<3; i++ ) {
         _pinMode( _outP[i], OUTPUT );
         _digitalWrite( _outP[i], LOW );
     }
@@ -57,6 +57,9 @@ void Fcoil::set( uint8_t dccSoll, uint8_t dccState ) {
     _flags.sollCoil = dccSoll;
     _flags.sollOut = dccState;
     _flags.sollAct = true;
+	// Wenn 3. Pin definiert ist, den Sollzustand ausgeben ( invertiert, wenn CINVERT Bit gesetzt ).
+	_digitalWrite( _outP[2], (getParam(MODE) & CINVERT)? !_flags.sollCoil : _flags.sollCoil );
+    DBCL_PRINT( "SetFcoil OutPins %d,%d,%d ", digitalRead(_outP[0]), digitalRead(_outP[1]), digitalRead(_outP[2]) );
 }
 
 //..............    
@@ -176,7 +179,7 @@ void Fstatic::set( bool sollOn ) {
         setState( _flags.isOn );
         if ( _flags.isOn && ( getParam( MODE ) & BLKMODE ) ) {
             // Funktion wird eingeschaltet und Blinkmode ist aktiv -> Timer setzen
-            _pulseT.setTime( getParam( PAR3)*10 );
+            _pulseT[0]->setTime( getParam( PAR3)*10 );
             DBST_PRINT( "BlkEin %d/%d, Strt=%x", getParam( PAR1) , getParam( PAR2), (getParam( MODE) & BLKSTRT)  );
             _flags.blkOn = true;
         }
@@ -188,20 +191,20 @@ void Fstatic::process( ) {
     // Blinken der Leds steuern
     if ( _flags.isOn && ( getParam( MODE ) & BLKMODE ) ) {
         // bei aktivem Blinken die Timer abfragen/setzen
-        if ( !_pulseT.running() ) {
+        if ( !_pulseT[0]->running() ) {
             // Timer abgelaufen, Led-Status wechseln
             if ( _flags.blkOn ) {
                 // Led ausschalten
                 _setLedPin(0, LOW );
                 _setLedPin(1, HIGH );
                 _flags.blkOn = false;
-                _pulseT.setTime( getParam( PAR2 )*10 );
+                _pulseT[0]->setTime( getParam( PAR2 )*10 );
             } else {
                 // Led einschalten
                 _setLedPin(0, HIGH );
                 _setLedPin(1, LOW );
                 _flags.blkOn = true;
-                _pulseT.setTime( getParam( PAR1 )*10 );
+                _pulseT[0]->setTime( getParam( PAR1 )*10 );
             }
         }
     }

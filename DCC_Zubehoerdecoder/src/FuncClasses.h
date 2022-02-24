@@ -44,6 +44,7 @@ void _digitalWrite( byte port, byte state ) ;
 //---------------------- FCOIL -------------------------------------------
 // Flags für CV 'MODE'
 #define CAUTOOFF 0x01   // Die Impulsdauer wird intern begrenzt
+#define CINVERT  0x02	// Pin 3 invertiert ausgeben ( wenn aktiv )
 #define NOPOSCHK 0x08   // Die Ausgänge reagieren auch auf einen Befehl, wenn die aktuelle
                         // Postion nicht verändert wird.
  
@@ -87,7 +88,6 @@ void _digitalWrite( byte port, byte state ) ;
 
     private:
     void _setLedPin( uint8_t ledI, uint8_t sollWert );
-    MoToTimer _pulseT;
     MoToTimer *_pulseT[3];
 	
     uint16_t _cvAdr;            // Adresse des CV-Blocks mit den Funktionsparametern
