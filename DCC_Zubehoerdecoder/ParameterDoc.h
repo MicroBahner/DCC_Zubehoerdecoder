@@ -141,8 +141,8 @@
  *  FSIGNAL0 1. Folgeadresse (optional)
  *  CV130   Bit 2.. 0 Bitmuster hard/soft gibt an, welche Ausgänge 'hart' umschalten (Bit=1)
  *          und Welche Ausgänge weich überblenden (Bit=0)
- *  CV131   Bitmuster der Ausgänge für Befehl 2.Adresse 0 (rot)
- *  CV132   Bitmuster der Ausgänge für Befehl 2.Adresse 1 (grün)
+ *  CV131   Bitmuster der Ausgänge für Befehl 2.Adresse 0 (rot)  (255: Befehl ignorieren)
+ *  CV132   Bitmuster der Ausgänge für Befehl 2.Adresse 1 (grün) (255: Befehl ignorieren)
  *  CV133   reserved
  *  CV134   reserved
  *  CV135   Bitmuster der blinkenden Leds für Befehl 2.Adresse 0 (rot)

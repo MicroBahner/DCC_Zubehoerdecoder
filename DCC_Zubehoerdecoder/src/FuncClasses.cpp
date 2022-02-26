@@ -500,11 +500,11 @@ void Fsignal::set( uint8_t sollWert ) {
     DBSG_PRINT( "setSignal, CV%d, Soll=%d, Ist=%d", _cvAdr, sollWert,  _fktStatus.sigBild );
     if (  _fktStatus.sigBild != sollWert ) {
         // Sollzustand hat sich verändert, püfen ob erlaubter Zustand
-        /*if (  _getSigMask( sollWert) == 0xff )  {
+        if (  _getSigMask( sollWert) == 0xff )  {
             // Sollzustand hat Signalmaske 0xff -> diesen Zustand ignorieren
             // Sollzustand zurücksetzen
             DBSG_PRINT("SigMask(soll) = %02X", _getSigMask( sollWert) );
-        } else */{
+        } else {
             // Gültiger Zustand, übernehmen, Flag setzen und Timer aufziehen
             _fktStatus.sigBild =  sollWert;
             _fktStatus.state   = SIG_NEW;
@@ -569,7 +569,8 @@ uint8_t Fsignal::_getHsMask(){
 
 //..............    
 // Ausgangsmasken für Signalbild sigState bestimmen
-void  Fsignal::_getSigMask( uint8_t sigState ) {
+byte  Fsignal::_getSigMask( uint8_t sigState ) {
+	// Zurückgegeben wird die statische Maske ( für den Test auf 0xFF um Kommandos zu ignorieren )
     // sState: Signalzustand
     //static int parOffs[] = { 1,2,6,7,11,12,16,17 } ; // max 4 Adressen vorgesehen
     byte parOffs = ((sigState>>1) * CV_BLKLEN ) + (sigState&1)  +1;
@@ -582,7 +583,7 @@ void  Fsignal::_getSigMask( uint8_t sigState ) {
     _sigMask.blnkStd =  blinkMask & ~staticMask; // nur Bit in blnkMask gesetzt
     _sigMask.blnkInv =  staticMask & blinkMask;  // Bit in beiden Masken gesetzt
     DBSG_PRINT("  ..static=%02X, blk=%02X, inv=%02X", _sigMask.staticLed, _sigMask.blnkStd, _sigMask.blnkInv );
-   return;
+   return staticMask;
 }
 
 //.............. 

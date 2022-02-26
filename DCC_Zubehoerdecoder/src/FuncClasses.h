@@ -187,7 +187,8 @@ const byte  LSMODE=0,                 BILD1=1,              BILD2=2, VORSIG=3,  
     void    _setSignalStatic ();       // aktuelles Signalbild einschalten ( statische Led's )
     void    _setSignalBlink ();         // aktuelles Signalbild schalten ( blionkede Led's )
     uint8_t _getHsMask ();             // Maske für Hard/Soft Umschaltung aller Ausgänge bestimmen
-    void    _getSigMask( uint8_t ) ;   // Bitmaske der Ausgänge für aktuelles Signalbild bestimmen
+    uint8_t _getSigMask( uint8_t ) ;   // Bitmaske der Ausgänge für aktuelles Signalbild bestimmen
+									   // zurückgegeben wird die statische Maske ( für Test auf 0xff )
     
     Fsignal **_vorSig;              // Pointer auf Vorsignal am gleichen Mast
     MoToTimer darkT;                // Dunkelzeit beim Überblenden zwischen Signalbildern
