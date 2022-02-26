@@ -76,26 +76,28 @@ void _digitalWrite( byte port, byte state ) ;
 // Flags für CV 'MODE':
 #define BLKMODE 0x01    // Ausgänge blinken
 #define BLKSTRT 0x02    // Starten mit beide Ausgängen EIN
+#define FSTAINV 0x02    // Im extended Mode Pin invertieren
 #define BLKSOFT 0x04    // Ausgänge als Softleds
-#define FSTAEXT 0x08	// Extended Mode
-
+#define MODEOFFS   3	// CV's pro pin im extended Mode
  class Fstatic {
     // statisches oder blinkendes Ansteuern von Led's
     public:
-    Fstatic( int cvAdr, uint8_t ledP[]  );
+    Fstatic( int cvAdr, uint8_t ledP[], bool extended=false  );
     void process( );
     void set( bool sollWert );       // neuen Schaltbefehl erhalten
 
     private:
-    void _setLedPin( uint8_t ledI, uint8_t sollWert );
-    MoToTimer *_pulseT[3];
+    void _setLedPin( uint8_t ledI, bool sollWert );
+    MoToTimer _pulseT[3];
 	
     uint16_t _cvAdr;            // Adresse des CV-Blocks mit den Funktionsparametern
     SoftLed *_ledS[3] = { NULL, NULL, NULL };      // Softled-Objekte
-    uint8_t *_ledP;           // Pins der Leds
+    uint8_t *_ledP;         // Pins der Leds
+	uint8_t _pinStat = 0;		// bitcodierter Pinstatus
     struct {
         bool blkOn :1;      // blinkende Led ist EIN
         bool isOn  :1;      // Funktion is eingeschaltet
+		bool extended :1;	// true= extended Mode mit max 3 Pins
     } _flags;       
     
  };

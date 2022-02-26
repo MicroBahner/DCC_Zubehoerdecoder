@@ -122,100 +122,140 @@ void Fcoil::process() {
 //------------------------FSTATIC -------------------------------------------- 
 // Ansteuerung von statischen/blinkenden Leds
 
-Fstatic::Fstatic( int cvAdr, uint8_t ledP[] ) {
+Fstatic::Fstatic( int cvAdr, uint8_t ledP[], bool extended ) {
     // Konstruktor der Klasse für statisches Leuchten bzw. blinken
+	byte modeOffs = 0;	// Im normalen Mode gibt es nur ein Modebyte
+	byte pinCnt = 2;	// Im normalen Mode immer nur 2 Pins
     _cvAdr = cvAdr;
     _ledP = ledP;
-    DBST_PRINT( "Fstatic CV=%d, LedPis %d,%d ", _cvAdr, _ledP[0], _ledP[1] );
-    // Modi der Ausgangsports
-    if ( getParam( MODE ) & BLKSOFT ) {
+	_flags.extended = extended;
+	if ( extended ) {
+		modeOffs = 3;	// Im extended Mode hat jeder Pin sein eigenes Mode-Byte
+		pinCnt = 3;		// Im extended Mode bis zu 3 Pins
+	}
+
+    DBST_PRINT( "Fstatic CV=%d, LedPis %d,%d, %d ", _cvAdr, _ledP[0], _ledP[1], _ledP[2] );
+    // Ausgangsports einrichten
+	for ( byte pNr=0; pNr < pinCnt; pNr++ ) {
+		byte modeIx = MODE+(pNr*modeOffs);
+		// Der 3.Pin kann nur im extended mode ein SoftLed sein
+		if ( (getParam( modeIx ) & BLKSOFT) && (extended || pNr != 3 ) ) {
         // Ausgangsports als Softleds einrichten
-        for ( byte i=0; i<2; i++ ) {
-            if ( _ledP[i] != NC ) {
-                _ledS[i] = new SoftLed;
+            if ( _ledP[pNr] != NC ) {
+                _ledS[pNr] = new SoftLed;
                 byte att;
                 int rise;
-                att=_ledS[i]->attach( _ledP[i] );
-                rise = (getParam(MODE) >> 4) * 100;
+                att=_ledS[pNr]->attach( _ledP[pNr] );
+                rise = (getParam(modeIx) >> 4) * 100;
                 if ( rise == 0 ) rise = 500; // defaultwert
-                _ledS[i]->riseTime( rise );
-                _ledS[i]->write( OFF, LINEAR );
-               DBST_PRINT( "Softled, pin %d, Att=%d", _ledP[i], att );
+                _ledS[pNr]->riseTime( rise );
+                _ledS[pNr]->write( OFF, LINEAR );
+                DBST_PRINT( "Softled, pin %d, Att=%d", _ledP[pNr], att );
             }
-        }
-    } else {
-        _pinMode( _ledP[0], OUTPUT );
-        _pinMode( _ledP[1], OUTPUT );
-        DBST_PRINT( "Hardled, pins %d,%d ", _ledP[0], _ledP[1] );
-    }
+		} else {
+        _pinMode( _ledP[pNr], OUTPUT );
+        DBST_PRINT( "Hardled, pin %d ", _ledP[pNr] );
+		}
+	}
     // Grundstellung der Ausgangsports
     _flags.isOn = !getParam( STATE );
     _flags.blkOn = false;       // Blinken startet mit AUS
     set( getParam( STATE ) );
-    /*
-    if ( getParam( MODE ) & BLKMODE ) {
-        // aktuellen Blinkstatus berücksichtigen
-        _setLedPin(0, LOW );
-        _setLedPin(1, LOW );
-    } else {
-        // statische Ausgabe
-        _setLedPin(0, _flags.isOn );
-        _setLedPin(1, !_flags.isOn );
-    }*/
 }
 
 //..............    
 void Fstatic::set( bool sollOn ) {
     // Funktion ein/ausschalten
     if ( sollOn != _flags.isOn ) {
-        _setLedPin(0, sollOn );
-        if ( getParam( MODE) & BLKMODE ) {
-            _setLedPin(1, (getParam( MODE ) & BLKSTRT)&& sollOn ); 
-        } else {                   
-            _setLedPin(1, !sollOn );                    
-        }
-        DBST_PRINT( "Fkt=%d, Soll=%d, Ist=%d", _cvAdr, sollOn, _flags.isOn );
-        _flags.isOn = sollOn;
-        setState( _flags.isOn );
-        if ( _flags.isOn && ( getParam( MODE ) & BLKMODE ) ) {
-            // Funktion wird eingeschaltet und Blinkmode ist aktiv -> Timer setzen
-            _pulseT[0]->setTime( getParam( PAR3)*10 );
-            DBST_PRINT( "BlkEin %d/%d, Strt=%x", getParam( PAR1) , getParam( PAR2), (getParam( MODE) & BLKSTRT)  );
-            _flags.blkOn = true;
-        }
-    }
+		if ( _flags.extended ) {
+			// extended Mode (FSTATIC3): 3 Pins aus/einschalten. Bei Blinkmode Timer starten
+			for ( byte pNr=0; pNr<3; pNr++ ) {
+				byte modeIx = MODE+(pNr*MODEOFFS);
+				_setLedPin(pNr, sollOn );
+				DBST_PRINT( "Soll=%d, Mode=%02x", sollOn, getParam( modeIx ) );
+				if ( sollOn && (getParam( modeIx ) & BLKMODE) && getParam( modeIx+1) > 0 ) {
+					// Einschalten und Blinkmodus: Timer starten
+					_pulseT[pNr].setTime( getParam( modeIx+1)*10 );
+					DBST_PRINT( "BlinkTime %d = %d", pNr, getParam( modeIx+1)*10 );
+				}
+			}
+		} else {
+			// normaler Mode ( FSTATIC )
+			_digitalWrite( _ledP[3], sollOn );	// gegebenenfalls 3.Pin statisch schalten
+			_setLedPin(0, sollOn );
+			if ( getParam( MODE) & BLKMODE ) {
+				_setLedPin(1, (getParam( MODE ) & BLKSTRT)&& sollOn ); 
+			} else {                   
+				_setLedPin(1, !sollOn );                    
+			}
+			DBST_PRINT( "Fkt=%d, Soll=%d, Ist=%d", _cvAdr, sollOn, _flags.isOn );
+			if ( sollOn && ( getParam( MODE ) & BLKMODE ) ) {
+				// Funktion wird eingeschaltet und Blinkmode ist aktiv -> Timer setzen
+				_pulseT[0].setTime( getParam( PAR3)*10 );
+				DBST_PRINT( "BlkEin %d/%d, Strt=%x", getParam( PAR1) , getParam( PAR2), (getParam( MODE) & BLKSTRT)  );
+				_flags.blkOn = true;
+			}
+		}
+		_flags.isOn = sollOn;
+		setState( _flags.isOn );
+	}
 }
 
 //..............    
 void Fstatic::process( ) {
     // Blinken der Leds steuern
-    if ( _flags.isOn && ( getParam( MODE ) & BLKMODE ) ) {
-        // bei aktivem Blinken die Timer abfragen/setzen
-        if ( !_pulseT[0]->running() ) {
-            // Timer abgelaufen, Led-Status wechseln
-            if ( _flags.blkOn ) {
-                // Led ausschalten
-                _setLedPin(0, LOW );
-                _setLedPin(1, HIGH );
-                _flags.blkOn = false;
-                _pulseT[0]->setTime( getParam( PAR2 )*10 );
-            } else {
-                // Led einschalten
-                _setLedPin(0, HIGH );
-                _setLedPin(1, LOW );
-                _flags.blkOn = true;
-                _pulseT[0]->setTime( getParam( PAR1 )*10 );
-            }
-        }
+    if ( _flags.isOn ) {
+		// nur im aktiven Status wird geblinkt
+	    if ( _flags.extended ) {
+			for ( byte ledI=0; ledI<3; ledI++ ) {
+				byte modeIx = MODE+(ledI*MODEOFFS);
+				if ( (getParam( modeIx ) & BLKMODE) && getParam( modeIx+1 ) > 0 && !_pulseT[ledI].running() ) {
+					// Timer abgelaufen, Led-Status wechseln
+					if ( bitRead( _pinStat, ledI ) ) {
+						// Led ausschalten
+						_setLedPin(ledI, LOW );
+						if ( getParam( modeIx+2 ) > 0 ) _pulseT[ledI].setTime( getParam( modeIx+2 )*10 );
+						else _pulseT[ledI].setTime( getParam( modeIx+1 )*10 );
+					} else { 
+						// Led einschalten
+						_setLedPin(ledI, HIGH );
+						_pulseT[ledI].setTime( getParam( modeIx+1 )*10 );
+					}
+				}
+			}
+		} else if ( getParam( MODE ) & BLKMODE ) {
+			// bei aktivem Blinken die Timer abfragen/setzen
+			if ( !_pulseT[0].running() ) {
+				// Timer abgelaufen, Led-Status wechseln
+				if ( _flags.blkOn ) {
+					// Led ausschalten
+					_setLedPin(0, LOW );
+					_setLedPin(1, HIGH );
+					_flags.blkOn = false;
+					_pulseT[0].setTime( getParam( PAR2 )*10 );
+				} else {
+					// Led einschalten
+					_setLedPin(0, HIGH );
+					_setLedPin(1, LOW );
+					_flags.blkOn = true;
+					_pulseT[0].setTime( getParam( PAR1 )*10 );
+				}
+			}
+		}
     }
 }
 
 //..............    
-void Fstatic::_setLedPin( uint8_t ledI, uint8_t sollWert ) {
-    // den LED ausgang 1/2 setzen. je nach Konfiguration als Softled oder hart
-    if ( ledI <2 ) {
-        if ( _ledS[ledI] != NULL ) _ledS[ledI]->write( sollWert);
-        else _digitalWrite( _ledP[ledI], sollWert );
+void Fstatic::_setLedPin( uint8_t ledI, bool sollWert ) {
+    // den LED ausgang setzen. je nach Konfiguration als Softled oder hart
+	bool outState = sollWert;
+    if ( ledI < 3 ) {
+		// Im extended Mode Ausgabewert gegebenenfalls invertieren
+		if ( _flags.extended && ( FSTAINV & getParam( MODE+(MODEOFFS*ledI) ) ) ) outState = !outState; 
+        if ( _ledS[ledI] != NULL ) _ledS[ledI]->write( outState);
+        else _digitalWrite( _ledP[ledI], outState );
+		bitWrite( _pinStat, ledI, sollWert );
+		DBST_PRINT( "Pin: %d, Val: %d, pStat=%02x", _ledP[ledI], outState, _pinStat );
     }
 }
 

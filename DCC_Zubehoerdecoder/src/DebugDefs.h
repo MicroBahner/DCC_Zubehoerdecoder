@@ -6,7 +6,7 @@
 #define DEBUG
 //#define SERVODBG
 //#define SIGNALDBG
-#define COILDBG
+//#define COILDBG
 #define STATICDBG
 
 #ifdef __AVR_MEGA__
