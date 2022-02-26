@@ -1,12 +1,12 @@
-#define KONFIG_FILE "examples\DCC_Zubehoerdecoder_STATIC_COIL.h"  // Pfad zu einer alternativen Konfig-Datei
-//#define KONFIG_FILE "TestKonf\DCC_ZubehoerdecoderV71.h"  // Pfad zu einer alternativen Konfig-Datei
+//#define KONFIG_FILE "examples\DCC_Zubehoerdecoder-LS-Nano.h"  // Pfad zu einer alternativen Konfig-Datei
+#define KONFIG_FILE "TestKonf\DCC_ZubehoerdecoderV71.h"  // Pfad zu einer alternativen Konfig-Datei
 #if !defined( KONFIG_FILE ) || defined ( EXEC_KONFIG )
 
 // ----------------- DCC-Zubehördecoder ---------------------------------------
 // Diese Datei enthält die vom Anwender änderbaren Parameter um den Zubehördecoder an die 
 // gewünschte Funktionalität und die verwendete HW anzupassen
 
-//#define IFC_SERIAL  Serial  // Ist der define aktiv, können Kommandos auch über die serielle Schnittstelle abgesetzt werden
+#define IFC_SERIAL  Serial  // Ist der define aktiv, können Kommandos auch über die serielle Schnittstelle abgesetzt werden
 #define SERIAL_BAUD 115200
 
 // Beispiel für Variante mit Licht-Ausfahrsignal mit Vorsignal, mit Betriebsmode Led an Pin 13 (interne Led)
@@ -57,24 +57,22 @@ const byte modePin      =   13;     // Anzeige Betriebszustand (Normal/Programmi
 
 #define STATICRISE  (250/50 << 4) // Softled riseTime = 250 ( max = 750 )
 #define COILMOD     NOPOSCHK|CAUTOOFF
-#define SERVOMOD    SAUTOOFF|NOPOSCHK|SDIRECT //|SAUTOBACK
-#define SERVO0MOD   SERVOMOD    // Modbyte für Folgeservo (FSERVO0)
 #define STATICMOD   CAUTOOFF|BLKSOFT|BLKSTRT|STATICRISE    // Wechselblinker mit beiden Leds an beim Start            
-const byte iniTyp[]     =   {    FSERVO,  FSERVO0,   FSIGNAL2,   FSIGNAL0,   FVORSIG,   FCOIL };
-const byte out1Pins[]   =   {       A2,        A3,   /*rt*/ 9,   /*rt*/10,  /*ge*/A0,        5 };  // output-pins der Funktionen
-const byte out2Pins[]   =   {        3,        12,   /*gn*/11,   /*ws*/ 8,  /*gn*/A1,        6 };
-const byte out3Pins[]   =   {       NC,        NC,   /*ge*/ 7,         NC,        NC,       NC };
+const byte iniTyp[]     =   {   FSTATIC,   FSTATIC3,   FCOIL };
+const byte out1Pins[]   =   {        A0,   /*rt*/ 9,        3 };  // output-pins der Funktionen
+const byte out2Pins[]   =   {        A1,   /*rt*/10,        5 };
+const byte out3Pins[]   =   {         7,   /*gn*/11,        6 };
 
 const byte iniCVx[10][sizeof(iniTyp)]  = {
-/* iniFmode (CV120,130,..*/ { SERVOMOD,0b11100100,          0,          0,         0,  COILMOD },
-/* iniPar1 (CV121,131,..*/  {       30,       110,    0b01000,    0b10001,      0b01,       50 },
-/* iniPar2 (CV122,132,..*/  {       80,       160,    0b00010,    0b00110,      0b10,       50 },
-/* iniPar3 (CV123,133,..*/  {       8,          8,          5,          0,        16,        0 },
-/* iniPar4 (CV124,134,..*/  {       0,          0,    0b00101,          0,         0,        0 }, 
-/* iniPar5 (CV125,135,..*/  {       0,          0,    0b01001,          0,         0,        0 },
-/* iniPar6 (CV126,136,..*/  {       0,          0,          0,          0,         0,        0 },
-/* iniPar7 (CV127,137,..*/  {       0,          0,         50,          0,         0,        0 },
-/* iniPar8 (CV128,138,..*/  {       0,          0,        100,          0,         0,        0 },
-/* iniState (CV129,139,..*/ {       0,          0,          0,          0,         0,        0 }}; // Status-Werte
+/* iniFmode (CV120,130,..*/ { STATICMOD,    0b00111,  COILMOD },
+/* iniPar1 (CV121,131,..*/  {       100,         50,       50 },
+/* iniPar2 (CV122,132,..*/  {       100,         25,       50 },
+/* iniPar3 (CV123,133,..*/  {       200,    0b00101,        0 },
+/* iniPar4 (CV124,134,..*/  {         0,        100,        0 }, 
+/* iniPar5 (CV125,135,..*/  {         0,        200,        0 },
+/* iniPar6 (CV126,136,..*/  {         0,    0b00101,        0 },
+/* iniPar7 (CV127,137,..*/  {         0,        200,        0 },
+/* iniPar8 (CV128,138,..*/  {         0,          0,        0 },
+/* iniState (CV129,139,..*/ {         0,          0,        0 }}; // Status-Werte
 //------------------------------------------------------------------------------------
 #endif

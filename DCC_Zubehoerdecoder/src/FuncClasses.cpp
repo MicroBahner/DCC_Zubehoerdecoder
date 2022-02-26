@@ -125,21 +125,19 @@ void Fcoil::process() {
 Fstatic::Fstatic( int cvAdr, uint8_t ledP[], bool extended ) {
     // Konstruktor der Klasse für statisches Leuchten bzw. blinken
 	byte modeOffs = 0;	// Im normalen Mode gibt es nur ein Modebyte
-	byte pinCnt = 2;	// Im normalen Mode immer nur 2 Pins
     _cvAdr = cvAdr;
     _ledP = ledP;
 	_flags.extended = extended;
 	if ( extended ) {
 		modeOffs = 3;	// Im extended Mode hat jeder Pin sein eigenes Mode-Byte
-		pinCnt = 3;		// Im extended Mode bis zu 3 Pins
 	}
 
-    DBST_PRINT( "Fstatic CV=%d, LedPis %d,%d, %d ", _cvAdr, _ledP[0], _ledP[1], _ledP[2] );
+    DBST_PRINT( "Fstatic,%d CV=%d, LedPins %d,%d, %d ", extended, _cvAdr, _ledP[0], _ledP[1], _ledP[2] );
     // Ausgangsports einrichten
-	for ( byte pNr=0; pNr < pinCnt; pNr++ ) {
+	for ( byte pNr=0; pNr < 3; pNr++ ) {
 		byte modeIx = MODE+(pNr*modeOffs);
 		// Der 3.Pin kann nur im extended mode ein SoftLed sein
-		if ( (getParam( modeIx ) & BLKSOFT) && (extended || pNr != 3 ) ) {
+		if ( (getParam( modeIx ) & BLKSOFT) && (extended || pNr != 2 ) ) {
         // Ausgangsports als Softleds einrichten
             if ( _ledP[pNr] != NC ) {
                 _ledS[pNr] = new SoftLed;
@@ -181,7 +179,7 @@ void Fstatic::set( bool sollOn ) {
 			}
 		} else {
 			// normaler Mode ( FSTATIC )
-			_digitalWrite( _ledP[3], sollOn );	// gegebenenfalls 3.Pin statisch schalten
+			_digitalWrite( _ledP[2], sollOn );	// gegebenenfalls 3.Pin statisch schalten
 			_setLedPin(0, sollOn );
 			if ( getParam( MODE) & BLKMODE ) {
 				_setLedPin(1, (getParam( MODE ) & BLKSTRT)&& sollOn ); 

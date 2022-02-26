@@ -103,7 +103,20 @@
  *  CV123   1. Einschaltzeit beim Start des Blinkens
  *  CV124   aktueller Zusatnd ( nicht manuell verändern! )
  *  
- *  FSIGNAL2 Lichtsignalfunktion mit 1..3 Weichenadressen 
+ *  FSTATIC3 statischer/Blinkender Ausgang - extended Mode
+ *  CV120..122  Werte für out1Pins
+ *  CV123..125  Werte für out2Pins
+ *  CV126..128  Werte für out3Pins
+ *  CV120   Bit0 = 1: (BLKMODE) Blinken,  0: statisch
+ *          Bit1 = 1: (FSTAINV) Ausgang wird invertiert angesteuert
+ *          Bit2 = 1: (BLKSOFT) mit weichem Auf/Abblenden 
+ *          Bit4..7:  Risetime ( in 50ms Einheiten, 0=default von 500 )
+ *  CV121   Einschaltzeit des Blinkens ( 10ms Einheiten ) wenn 0 gibt es kein Blinken
+ *  CV122   Ausschaltzeit des Blinkens ( 10ms Einheiten ) wenn 0 gilt Ausschaltzeit=Einschaltzeit
+ *  CV123..125  wie 120..122 für out2Pins
+ *  CV126..128  wie 120..122 für out3Pins
+ *  
+*  FSIGNAL2 Lichtsignalfunktion mit 1..3 Weichenadressen 
  *          bei den Folgeadressen ist als Typ FSIGNAL0 einzutragen
  *          Lichtsignale starten beim Einschalten immer im Zustand 0 (Bitmuster CV51)
  *  CV120   Signalmodus: 
