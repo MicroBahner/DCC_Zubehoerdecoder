@@ -1,5 +1,6 @@
 //#define KONFIG_FILE "examples\DCC_Zubehoerdecoder-Micro1.h"  // Pfad zu einer alternativen Konfig-Datei
 //#define KONFIG_FILE "TestKonf\DCC_ZubehoerdecoderV71-Micro.h"  // Pfad zu einer alternativen Konfig-Datei
+//#define KONFIG_FILE "TestKonf\V71-Micro-Signal3.h"  // Pfad zu einer alternativen Konfig-Datei
 //#define KONFIG_FILE "examples\DCC_Zubehoerdecoder_STATIC_COIL.h"  // Pfad zu einer alternativen Konfig-Datei
 #if !defined( KONFIG_FILE ) || defined ( EXEC_KONFIG )
 

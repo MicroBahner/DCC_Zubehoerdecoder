@@ -585,13 +585,15 @@ void ifc_notifyDccAccState( uint16_t Addr, uint8_t OutputAddr, uint8_t State ){
                         // Übereinstimmung gefunden, neues Signalbild setzen
                         DBSG_PRINT( "Vorsig1 %d, Index %d, Soll %d", wAddr, i, (OutputAddr & 0x1)+2  );
                         setPosition( i, (OutputAddr & 0x1)+2 );
-                    }
-                } else if ( i+2 < weichenZahl && iniTyp[i+2] == FSIGNAL0 ) {
-                    // 2. Folgeadresse vergleichen
-                    if ( vsAdr+2 == wAddr ) { 
-                        // Übereinstimmung gefunden, neues Signalbild setzen
-                        DBSG_PRINT( "Vorsig2 %d, Index %d, Soll %d", wAddr, i, (OutputAddr & 0x1)+2  );
-                        setPosition( i, (OutputAddr & 0x1)+4 );
+                    } else {
+                        if ( i+2 < weichenZahl && iniTyp[i+2] == FSIGNAL0 ) {
+                            // 2. Folgeadresse vergleichen
+                            if ( vsAdr+2 == wAddr ) { 
+                                // Übereinstimmung gefunden, neues Signalbild setzen
+                                DBSG_PRINT( "Vorsig2 %d, Index %d, Soll %d", wAddr, i, (OutputAddr & 0x1)+4  );
+                                setPosition( i, (OutputAddr & 0x1)+4 );
+                            }
+                        }
                     }
                 }
             }
