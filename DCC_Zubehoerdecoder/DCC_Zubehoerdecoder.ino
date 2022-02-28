@@ -578,13 +578,20 @@ void ifc_notifyDccAccState( uint16_t Addr, uint8_t OutputAddr, uint8_t State ){
                 setPosition( i, OutputAddr & 0x1 );
                 break; // Schleifendurchlauf abbrechen, es kann nur eine Signaladresse sein
             } else {
-                // Folgeadresse ( bei mehrbegriffigen Vorsignalen ) prüfen
+                // Folgeadressen ( bei mehrbegriffigen Vorsignalen ) prüfen
                 if ( i+1 < weichenZahl && iniTyp[i+1] == FSIGNAL0 ) {
-                    // Folgeadresse vergleichen
+                    // 1. Folgeadresse vergleichen
                     if ( vsAdr+1 == wAddr ) { 
                         // Übereinstimmung gefunden, neues Signalbild setzen
                         DBSG_PRINT( "Vorsig1 %d, Index %d, Soll %d", wAddr, i, (OutputAddr & 0x1)+2  );
                         setPosition( i, (OutputAddr & 0x1)+2 );
+                    }
+                } else if ( i+2 < weichenZahl && iniTyp[i+2] == FSIGNAL0 ) {
+                    // 2. Folgeadresse vergleichen
+                    if ( vsAdr+2 == wAddr ) { 
+                        // Übereinstimmung gefunden, neues Signalbild setzen
+                        DBSG_PRINT( "Vorsig2 %d, Index %d, Soll %d", wAddr, i, (OutputAddr & 0x1)+2  );
+                        setPosition( i, (OutputAddr & 0x1)+4 );
                     }
                 }
             }

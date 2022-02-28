@@ -101,7 +101,7 @@
  *  CV121   Einschaltzeit des Blinkens ( 10ms Einheiten )
  *  CV122   Ausschaltzeit des Blinkens ( 10ms Einheiten )
  *  CV123   1. Einschaltzeit beim Start des Blinkens
- *  CV124   aktueller Zusatnd ( nicht manuell verändern! )
+ *  CV129   aktueller Zustand ( nicht manuell verändern! )
  *  
  *  FSTATIC3 statischer/Blinkender Ausgang - extended Mode
  *  CV120..122  Werte für out1Pins
@@ -115,6 +115,7 @@
  *  CV122   Ausschaltzeit des Blinkens ( 10ms Einheiten ) wenn 0 gilt Ausschaltzeit=Einschaltzeit
  *  CV123..125  wie 120..122 für out2Pins
  *  CV126..128  wie 120..122 für out3Pins
+ *  CV129   aktueller Zustand ( nicht manuell verändern! )
  *  
 *  FSIGNAL2 Lichtsignalfunktion mit 1..3 Weichenadressen 
  *          bei den Folgeadressen ist als Typ FSIGNAL0 einzutragen
