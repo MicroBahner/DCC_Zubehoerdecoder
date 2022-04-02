@@ -85,6 +85,8 @@
  *  FCOIL Doppelspulenantrieb: ( derzeit nur mit automatischer Abschaltung )
  *  CV120   Bit0 = 1: (CAUTOOFF) Spulenausgang nur automatisch abschalten
  *               = 0: Spulenausgang auch über DCC-Befehl abschalten
+ *          Bit2 = 1: Spulenausgänge nur über DCC/LocoNet steuern. Bit0/3 haben keine Bedeutung
+ *               = 0: Normalbetrieb
  *          Bit3 = 1: (NOPOSCHK) kein Überprüfung auf Weichenposition. Gegebenenfalls wird auch an gleichen
  *                    Anschluss wiederholt ein Puls ausgegeben
  *  CV121   Einschaltdauer der Spule  ( in 10ms Einheiten ) 

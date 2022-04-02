@@ -45,11 +45,24 @@ Fcoil::Fcoil( int cvAdr, uint8_t out1P[] ) {
         _pinMode( _outP[i], OUTPUT );
         _digitalWrite( _outP[i], LOW );
     }
-    _flags.pulseON = false;
-    _flags.sollCoil = getParam( STATE )&1;
-    _flags.istCoil = !_flags.sollCoil;
-    _flags.sollOut = 0;
-    _flags.sollAct = true;
+	if ( getParam( MODE) & CSTATIC ) {	
+		// im STATIC Mode Ausgänge setzen
+		byte lastState = getParam( STATE );
+		_digitalWrite( _outP[0], lastState & 1 );
+		_digitalWrite( _outP[1], lastState & 2 );
+		_flags.pulseON =0;
+		_flags.sollCoil = 0;
+		_flags.istCoil = 0;
+		_flags.sollOut = 0;
+		_flags.sollAct = 0;
+	} else {
+		// flags für Bearbeitung in process() setzen	
+		_flags.pulseON = false;
+		_flags.sollCoil = getParam( STATE )&1;
+		_flags.istCoil = !_flags.sollCoil;
+		_flags.sollOut = 0;
+		_flags.sollAct = true;
+	}
 }
 //..............    
 void Fcoil::set( uint8_t dccSoll, uint8_t dccState ) {
@@ -57,6 +70,16 @@ void Fcoil::set( uint8_t dccSoll, uint8_t dccState ) {
     _flags.sollCoil = dccSoll;
     _flags.sollOut = dccState;
     _flags.sollAct = true;
+	if ( getParam( MODE) & CSTATIC ) {
+		// im STATIC Mode werden die Ausgänge direkt geschaltet
+		digitalWrite( _outP[dccSoll], dccState );
+		setState( digitalRead(_outP[0]) | (digitalRead(_outP[1])<<1) );
+	} else {
+		// Schalten der Ausgänge in process()
+		_flags.sollCoil = dccSoll;
+		_flags.sollOut = dccState;
+		_flags.sollAct = true;
+	}
 	// Wenn 3. Pin definiert ist, den Sollzustand ausgeben ( invertiert, wenn CINVERT Bit gesetzt ).
 	_digitalWrite( _outP[2], (getParam(MODE) & CINVERT)? !_flags.sollCoil : _flags.sollCoil );
     DBCL_PRINT( "SetFcoil OutPins %d,%d,%d ", digitalRead(_outP[0]), digitalRead(_outP[1]), digitalRead(_outP[2]) );
@@ -64,6 +87,9 @@ void Fcoil::set( uint8_t dccSoll, uint8_t dccState ) {
 
 //..............    
 void Fcoil::process() {
+	// In STATIC mode keine Bearbeitung per Timer, EIN/AUS direkt in set-Methode
+	if ( getParam( MODE) & CSTATIC) return;
+	
         // Pulseausgägne einschalten
     if (  !_flags.pulseON && !_pulseT.running() &&  _flags.sollAct ) {
         // Aktionen am Ausgang nur wenn kein aktiver Impuls und der Pausentimer nicht läuft

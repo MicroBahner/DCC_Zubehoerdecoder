@@ -108,6 +108,8 @@
 						- invertiert
 						- Blinkfrequenz
 						Damit lassen sich z.B. auch 2 Ausgänge parallel schalten.
+					- FCOIL:    bei gesetztem (neuen)Flag 'CSTATIC' werden die Ausgägne ausschließlich über DCC Befehle
+					            gesteuert. Es können auch beide Ausgägne parallel aktiv sein.
 					- FSIGNAL: 	Das Ignoriereren von Befehlen durch setzen des Bitmusters auf 255 funktioniert wieder.
 					Bugfix: 2. Folgeadresse bei Vorsignalen berücksichtigt.
 					Dokumentation erweitert und Fehler korrigiert.

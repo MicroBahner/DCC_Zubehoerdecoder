@@ -45,6 +45,8 @@ void _digitalWrite( byte port, byte state ) ;
 // Flags für CV 'MODE'
 #define CAUTOOFF 0x01   // Die Impulsdauer wird intern begrenzt
 #define CINVERT  0x02	// Pin 3 invertiert ausgeben ( wenn aktiv )
+#define CSTATIC  0x04   // Pin1/2 lassen sich unabhängig schalten ( können auch beide aktiv sein )
+						// keine Abschaltung per Timer, EIN/AUS nur über DCC
 #define NOPOSCHK 0x08   // Die Ausgänge reagieren auch auf einen Befehl, wenn die aktuelle
                         // Postion nicht verändert wird.
  
