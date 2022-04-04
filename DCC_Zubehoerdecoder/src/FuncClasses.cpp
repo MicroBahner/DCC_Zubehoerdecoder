@@ -48,8 +48,13 @@ Fcoil::Fcoil( int cvAdr, uint8_t out1P[] ) {
 	if ( getParam( MODE) & CSTATIC ) {	
 		// im STATIC Mode Ausgänge setzen
 		byte lastState = getParam( STATE );
-		_digitalWrite( _outP[0], lastState & 1 );
-		_digitalWrite( _outP[1], lastState & 2 );
+		if ( getParam( MODE) & CINVERT ) {
+			_digitalWrite( _outP[0], !(lastState & 1) );
+			_digitalWrite( _outP[1], !(lastState & 2) );
+		} else {
+			_digitalWrite( _outP[0], lastState & 1 );
+			_digitalWrite( _outP[1], lastState & 2 );
+		}
 		_flags.pulseON =0;
 		_flags.sollCoil = 0;
 		_flags.istCoil = 0;
@@ -72,8 +77,13 @@ void Fcoil::set( uint8_t dccSoll, uint8_t dccState ) {
     _flags.sollAct = true;
 	if ( getParam( MODE) & CSTATIC ) {
 		// im STATIC Mode werden die Ausgänge direkt geschaltet
-		digitalWrite( _outP[dccSoll], dccState );
-		setState( digitalRead(_outP[0]) | (digitalRead(_outP[1])<<1) );
+		if ( getParam( MODE) & CINVERT ) {
+			digitalWrite( _outP[dccSoll], !dccState  );
+			setState( !digitalRead(_outP[0]) | ((!digitalRead(_outP[1]))<<1) );
+		} else {
+			digitalWrite( _outP[dccSoll], dccState  );
+			setState( digitalRead(_outP[0]) | (digitalRead(_outP[1])<<1) );
+		}
 	} else {
 		// Schalten der Ausgänge in process()
 		_flags.sollCoil = dccSoll;
