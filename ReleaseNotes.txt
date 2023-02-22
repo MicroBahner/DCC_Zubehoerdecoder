@@ -114,4 +114,5 @@
 					Bugfix: 2. Folgeadresse bei Vorsignalen berücksichtigt.
 					Dokumentation erweitert und Fehler korrigiert.
 
-                      
+     Version 7.1.1	- Fehler in der Standard DCC_Zubehoerdecoder.h beseitigt. Die erste Zeile für ein alternatives Konfig-File 
+					  war nicht auskommentiert, so dass immer eine Konfig aus den Beispielen verwendet wurde.                 
