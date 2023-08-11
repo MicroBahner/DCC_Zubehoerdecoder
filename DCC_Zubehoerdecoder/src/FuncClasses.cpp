@@ -28,7 +28,10 @@ void _pinMode( byte port, byte mode ) {
 }
 
 void _digitalWrite( byte port, byte state ) {
-    if( port != NC ) digitalWrite( port, state );
+    if( port != NC ) {
+		digitalWrite( port, state );
+		//DBSV_PRINT("DW: Pin%d=%d", port,state );
+	}
 }
 //#########################  Klassendefinitionen #################################
 
@@ -323,18 +326,19 @@ Fservo::Fservo( int cvAdr, uint8_t pins[], uint8_t posZahl, int8_t modeOffs ) {
     else                                    _istPos = getParam( STATE );
     _sollPos = _istPos ;
     _flags.relOn = _istPos;
-    if ( posZahl > 2 ) {
+	// 11.8.23 ( V7.1.2) Relais werden imer in .process geschaltet
+    /*if ( posZahl > 2 ) {
         // 4-Position-Servo: Relais immer entsprechend aktueller Position setzen
         _digitalWrite( _outP[_relIx[_istPos]], ON );
     } else {
         // Servo mit 2 Positionen ( Mittenumschaltung oder 2 Relais mit Positions-Schaltung )
         _digitalWrite( _outP[REL1P], _flags.relOn );
         _digitalWrite( _outP[REL2P], !_flags.relOn );
-    }
+    }*/
     _flags.sollAct = false;
     _flags.moving = false;
     _weicheS.write( getParam( posOffset[_istPos]+_parOffs ) );
-    DBSV_PRINT("ServoObj@%04x, Pins=%04x, cvAdr=%d, modeOffs=%d", (uint32_t)this , _outP, _cvAdr, _modeOffs);
+    DBSV_PRINT("ServoObj@%04x, Pins=%d %d %d %d %d %d , cvAdr=%d, modeOffs=%d", (uint32_t)this , _outP[0],_outP[1],_outP[2],_outP[3],_outP[4],_outP[5], _cvAdr, _modeOffs);
     DBSV_PRINT("ModeByte=%02x", getParam( _modeOffs ) ) ;
    
 }
@@ -392,7 +396,6 @@ void Fservo::process() {
         }
     } else if ( _flags.sollAct  && (_sollPos != _istPos || (getParam( _modeOffs) & NOPOSCHK))  ) {
         // Weiche muss umgestellt werden
-        DBSV_PRINT( "Weiche stellen, Ist=%d,Soll=%d", _istPos, _sollPos );
         _istPos = _sollPos;    // Istwert auf Sollwert 
         _flags.moving = true;               // und MOVING-Flagt setzen.
         DBSV_PRINT("Servo-write=%d", getParam( posOffset[_sollPos]+_parOffs ) );
@@ -413,8 +416,6 @@ void Fservo::process() {
             _digitalWrite( _outP[_relIx[_sollPos]], ON );
         }
     }
-    
-   
 }
 //..............    
 bool Fservo::isMoving () {
