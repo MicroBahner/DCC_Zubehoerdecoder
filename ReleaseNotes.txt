@@ -115,4 +115,7 @@
 					Dokumentation erweitert und Fehler korrigiert.
 
      Version 7.1.1	- Fehler in der Standard DCC_Zubehoerdecoder.h beseitigt. Die erste Zeile für ein alternatives Konfig-File 
-					  war nicht auskommentiert, so dass immer eine Konfig aus den Beispielen verwendet wurde.                 
+					  war nicht auskommentiert, so dass immer eine Konfig aus den Beispielen verwendet wurde.    
+
+     Version 7.1.2	- Bei einem Servo mit 2 Relais waren nach Reset bis zum ersten Weichenbefehl beide Relais angezogen.
+					  
