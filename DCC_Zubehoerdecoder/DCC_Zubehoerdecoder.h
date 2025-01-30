@@ -1,5 +1,5 @@
 //#define KONFIG_FILE "examples\DCC_Zubehoerdecoder_STATIC_COIL.h"  // Pfad zu einer alternativen Konfig-Datei
-//#define KONFIG_FILE "TestKonf\DCC_ZubehoerdecoderV712.h"  // Pfad zu einer alternativen Konfig-Datei
+//#define KONFIG_FILE "TestKonf\DCC_ZubehoerdecoderV71-Blinker.h"  // Pfad zu einer alternativen Konfig-Datei
 #if !defined( KONFIG_FILE ) || defined ( EXEC_KONFIG )
 
 // ----------------- DCC-Zubehördecoder ---------------------------------------
